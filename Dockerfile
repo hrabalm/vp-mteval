@@ -14,7 +14,7 @@ RUN pip install pdm
 RUN pdm install
 
 # Copy the rest of the application code to the container
-COPY server/src/ .
+COPY server/src/ /app
 
 # Command to run the application
 CMD ["pdm", "run", "python", "-m", "server"]
