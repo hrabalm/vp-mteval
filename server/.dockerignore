@@ -1,1 +1,3 @@
-.venv
+#.venv
+.pdm-build
+.pdm-python

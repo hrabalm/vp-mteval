@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7-labs
 # Use the official Python image from the Docker Hub
 FROM python:3.12-slim
 
@@ -5,7 +6,7 @@ FROM python:3.12-slim
 WORKDIR /app/server
 
 # Copy the pyproject.toml and pdm.lock files to the container
-COPY server/pyproject.toml server/pdm.lock ./
+COPY server/pyproject.toml server/pdm.lock server/pdm.toml ./
 
 # Copy the rest of the application code to the container
 COPY ./server/. /app/server/
