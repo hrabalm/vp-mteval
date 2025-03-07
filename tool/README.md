@@ -1,0 +1,2 @@
+- a tool for uploading translations to the server, either through the pythonic API, or through the CLI interface.
+- also provides a wrapper for translation using user models passed as Python file implementing provided interface

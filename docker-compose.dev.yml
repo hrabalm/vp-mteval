@@ -1,0 +1,10 @@
+services:
+  app:
+    volumes:
+      - ./server:/app/server
+
+volumes:
+  db_data:
+
+networks:
+  mynetwork:
