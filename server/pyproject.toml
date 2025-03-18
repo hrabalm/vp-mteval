@@ -5,7 +5,7 @@ description = "Default template for PDM package"
 authors = [
     {name = "Miroslav Hrabal", email = "mhn@email.cz"},
 ]
-dependencies = ["litestar[attrs,brotli,pydantic,sqlalchemy,standard]>=2.14.0"]
+dependencies = ["litestar[attrs,brotli,pydantic,sqlalchemy,standard]>=2.14.0", "ruff>=0.9.10"]
 requires-python = ">=3.13"
 readme = "README.md"
 license = {text = "MIT"}
