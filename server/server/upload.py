@@ -12,7 +12,16 @@ Challenges:
   entries to the UUID of the transaction that added them.
 """
 
-def upload_translation_run(
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
+
+class TranslationRun(BaseModel):
+    pass
+
+
+async def upload_translation_run(
+    translation_run: TranslationRun,
+    session: AsyncSession,
 ):
     pass

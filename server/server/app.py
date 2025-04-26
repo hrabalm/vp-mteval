@@ -1,7 +1,6 @@
 import os
 from collections.abc import AsyncGenerator
 
-import models as m
 from litestar import Litestar, get, post, put
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import ClientException, NotFoundException
@@ -9,7 +8,8 @@ from litestar.status_codes import HTTP_409_CONFLICT
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+import server.models as m
 
 
 async def provide_transaction(
