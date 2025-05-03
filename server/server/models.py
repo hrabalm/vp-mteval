@@ -32,7 +32,8 @@ class Segment(Base):
     __table_args__ = ()
 
     dataset_id: Mapped[int] = mapped_column(
-        ForeignKey("datasets.id"), ondelete="CASCADE", nullable=False
+        ForeignKey("datasets.id"),
+        nullable=False,
     )
     src: Mapped[str] = mapped_column(Text, nullable=False)
     tgt: Mapped[str] = mapped_column(Text, nullable=False)
@@ -53,7 +54,8 @@ class Dataset(Base):
 
     __tablename__ = "datasets"
     namespace_id: Mapped[int] = mapped_column(
-        ForeignKey("namespaces.id"), ondelete="CASCADE", nullable=False
+        ForeignKey("namespaces.id"),
+        nullable=False,
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     data_hash: Mapped[str] = mapped_column(Text, nullable=False)
@@ -61,6 +63,10 @@ class Dataset(Base):
     source_lang: Mapped[str] = mapped_column(Text, nullable=False)  # iso639-1 code
     target_lang: Mapped[str] = mapped_column(Text, nullable=False)  # iso639-1 code
 
+    namespace: Mapped["Namespace"] = relationship(
+        "Namespace",
+        back_populates="datasets",
+    )
     segments: Mapped[list[Segment]] = relationship(
         "Segment",
         back_populates="dataset",
@@ -80,11 +86,11 @@ class SegmentTranslation(Base):
     __tablename__ = "segment_translations"
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
-        ondelete="CASCADE",
         nullable=False,
     )
     segment_id: Mapped[int] = mapped_column(
-        ForeignKey("segments.id"), ondelete="CASCADE", nullable=False
+        ForeignKey("segments.id"),
+        nullable=False,
     )
     segment: Mapped[Segment] = relationship("Segment", back_populates="translations")
 
@@ -98,7 +104,8 @@ class SegmentTranslation(Base):
 class TranslationRun(Base):
     __tablename__ = "translation_runs"
     dataset_id: Mapped[int] = mapped_column(
-        ForeignKey("datasets.id"), ondelete="CASCADE", nullable=False
+        ForeignKey("datasets.id"),
+        nullable=False,
     )
     dataset: Mapped[Dataset] = relationship(
         "Dataset",
@@ -182,10 +189,17 @@ class Namespace(Base):
         cascade="all, delete-orphan",
     )
 
+    namespace_users: Mapped[list["NamespaceUser"]] = relationship(
+        "NamespaceUser",
+        back_populates="namespace",
+        cascade="all, delete-orphan",
+    )
+
     users: Mapped[list["User"]] = relationship(
         "User",
         secondary="namespace_users",
         back_populates="namespaces",
+        viewonly=True,
     )
 
 
@@ -195,15 +209,23 @@ class NamespaceUser(Base):
     __tablename__ = "namespace_users"
 
     namespace_id: Mapped[int] = mapped_column(
-        ForeignKey("namespaces.id"), primary_key=True, ondelete="CASCADE"
+        ForeignKey("namespaces.id"),
+        primary_key=True,
     )
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), primary_key=True, ondelete="CASCADE"
+        ForeignKey("users.id"),
+        primary_key=True,
     )
     can_write: Mapped[bool] = mapped_column(nullable=False, default=False)
 
-    namespace: Mapped["Namespace"] = relationship("Namespace")
-    user: Mapped["User"] = relationship("User")
+    namespace: Mapped["Namespace"] = relationship(
+        "Namespace",
+        back_populates="namespace_users",
+    )
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="namespace_users",
+    )
 
 
 class User(Base):
@@ -217,6 +239,13 @@ class User(Base):
         "Namespace",
         secondary="namespace_users",
         back_populates="users",
+        viewonly=True,
+    )
+
+    namespace_users: Mapped[list["NamespaceUser"]] = relationship(
+        "NamespaceUser",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
 

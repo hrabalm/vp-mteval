@@ -7,7 +7,13 @@ from litestar.exceptions import ClientException, NotFoundException
 from litestar.status_codes import HTTP_409_CONFLICT
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from starlette_admin.contrib.sqla import ModelView
+from starlette_admin_litestar_plugin import (
+    StarlettAdminPluginConfig,
+    StarletteAdminPlugin,
+)
+
 
 import server.models as m
 
@@ -66,15 +72,27 @@ async def update_item(
     return todo_item
 
 
+engine = create_async_engine(os.environ["DATABASE_URL"])
+
 db_config = SQLAlchemyAsyncConfig(
-    connection_string=os.environ["DATABASE_URL"],
     metadata=m.Base.metadata,
     create_all=True,
     before_send_handler="autocommit",
+    engine_instance=engine,
+)
+
+# Configure admin
+admin_config = StarlettAdminPluginConfig(
+    views=[ModelView(m.TodoItem), ModelView(m.Dataset)],
+    engine=engine,
+    title="My Admin",
 )
 
 app = Litestar(
     [get_list, add_item, update_item],
     dependencies={"transaction": provide_transaction},
-    plugins=[SQLAlchemyPlugin(db_config)],
+    plugins=[
+        SQLAlchemyPlugin(db_config),
+        StarletteAdminPlugin(starlette_admin_config=admin_config),
+    ],
 )
