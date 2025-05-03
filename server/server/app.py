@@ -83,7 +83,18 @@ db_config = SQLAlchemyAsyncConfig(
 
 # Configure admin
 admin_config = StarlettAdminPluginConfig(
-    views=[ModelView(m.TodoItem), ModelView(m.Dataset)],
+    views=[
+        ModelView(m.TodoItem),
+        ModelView(m.Dataset),
+        ModelView(m.Segment),
+        ModelView(m.TranslationRun),
+        ModelView(m.SegmentTranslation),
+        ModelView(m.SegmentMetric),
+        ModelView(m.DatasetMetric),
+        ModelView(m.Namespace),
+        ModelView(m.NamespaceUser),
+        ModelView(m.User),
+    ],
     engine=engine,
     title="My Admin",
 )
