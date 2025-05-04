@@ -5,7 +5,7 @@
 To start the development environment with Docker Compose, run:
 
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 This will start the Litestar server and a PostgreSQL database.
