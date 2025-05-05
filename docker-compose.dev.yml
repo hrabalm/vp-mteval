@@ -1,10 +1,16 @@
 services:
+  db:
+    ports:
+      - "5432:5432" # expose for testing
   app:
     volumes:
       - ./server:/app/server
+    environment:
+      DATABASE_DROP: "true" # drop the database on startup
 
 volumes:
   db_data:
+
 
 networks:
   mynetwork:

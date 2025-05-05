@@ -36,7 +36,6 @@ class Segment(Base):
         nullable=False,
     )
     src: Mapped[str] = mapped_column(Text, nullable=False)
-    tgt: Mapped[str] = mapped_column(Text, nullable=False)
 
     dataset: Mapped["Dataset"] = relationship("Dataset", back_populates="segments")
 
@@ -57,12 +56,16 @@ class Dataset(Base):
         ForeignKey("namespaces.id"),
         nullable=False,
     )
-    name: Mapped[str] = mapped_column(Text, nullable=False)
-    data_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    data_hash: Mapped[str] = mapped_column(Text, nullable=False, index=True)
 
     source_lang: Mapped[str] = mapped_column(Text, nullable=False)  # iso639-1 code
     target_lang: Mapped[str] = mapped_column(Text, nullable=False)  # iso639-1 code
 
+    names: Mapped[list["DatasetName"]] = relationship(
+        "DatasetName",
+        back_populates="dataset",
+        cascade="all, delete-orphan",
+    )
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",
         back_populates="datasets",
@@ -79,11 +82,25 @@ class Dataset(Base):
     )
 
 
+class DatasetName(Base):
+    __tablename__ = "dataset_names"
+    dataset_id: Mapped[int] = mapped_column(
+        ForeignKey("datasets.id"),
+        primary_key=True,
+    )
+    dataset: Mapped[Dataset] = relationship(
+        "Dataset",
+        back_populates="names",
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 # Translations
 
 
 class SegmentTranslation(Base):
     __tablename__ = "segment_translations"
+    tgt: Mapped[str] = mapped_column(Text, nullable=False)
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
@@ -107,6 +124,10 @@ class TranslationRun(Base):
         ForeignKey("datasets.id"),
         nullable=False,
     )
+    namespace_id: Mapped[int] = mapped_column(
+        ForeignKey("namespaces.id"),
+        nullable=False,
+    )
     dataset: Mapped[Dataset] = relationship(
         "Dataset",
         back_populates="translation_runs",
@@ -116,6 +137,9 @@ class TranslationRun(Base):
         "SegmentMetric",
         back_populates="run",
         cascade="all, delete-orphan",
+    )
+    namespace: Mapped["Namespace"] = relationship(
+        "Namespace",
     )
 
 
