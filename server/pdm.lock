@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:47125d93bcd2654df79d967eeb11c2dd09754d17fcd6b06dfeb34449923ff5ca"
+content_hash = "sha256:06addadeda88f8333dec6f2c034390625a13cb14e87c5694245fad6271c27be1"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -347,6 +347,16 @@ dependencies = [
 ]
 files = [
     {file = "jsbeautifier-1.15.1.tar.gz", hash = "sha256:ebd733b560704c602d744eafc839db60a1ee9326e30a2a80c4adb8718adc1b24"},
+]
+
+[[package]]
+name = "json-canonical"
+version = "2.0.0"
+summary = "Conanicalize JSON in JCS format"
+groups = ["default"]
+files = [
+    {file = "json-canonical-2.0.0.tar.gz", hash = "sha256:fa25000b9dc53c03ee2f0a098dbad81517aa9a8c6aa20de32abbb1f1950409a0"},
+    {file = "json_canonical-2.0.0-py3-none-any.whl", hash = "sha256:3a572808ee94cdf7b50a168b968b65141449acc4703497d308ae5cf42bf9a403"},
 ]
 
 [[package]]
