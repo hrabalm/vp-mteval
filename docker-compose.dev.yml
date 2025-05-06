@@ -3,6 +3,10 @@ services:
     ports:
       - "5432:5432" # expose for testing
   app:
+    build:
+      args:
+        - "UID=${UID:-1000}"
+        - "GID=${GID:-1000}"
     volumes:
       - ./server:/app/server
     environment:
