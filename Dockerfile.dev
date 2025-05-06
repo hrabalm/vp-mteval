@@ -14,11 +14,22 @@ COPY server/pyproject.toml server/pdm.lock server/pdm.toml ./
 # Install PDM
 RUN pip install pdm
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gdb \
+    git \
+    wget \
+    curl \
+    fish \
+    xonsh \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install the dependencies
 RUN pdm sync -g --project .
 
 # Create a non-root user and group
 RUN groupadd -g "${GID}" appuser && useradd --create-home --no-log-init -u "${UID}" -g ${GID} appuser
+
 USER appuser
 
 # Copy the rest of the application code to the container
