@@ -7,6 +7,7 @@ from litestar import Litestar, get, post, put
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.status_codes import HTTP_409_CONFLICT
+from pydantic import BaseModel
 from sqlalchemy import MetaData, create_engine, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -73,9 +74,6 @@ async def update_item(
     return todo_item
 
 
-from pydantic import BaseModel
-
-
 class SegmentPostData(BaseModel):
     src: str
     tgt: str
@@ -85,7 +83,7 @@ class TranslationRunPostData(BaseModel):
     """Complex data structure that also contains a list of segments and allows
     us to either find or create the related dataset."""
 
-    namespace_id: int
+    namespace_name: str
     dataset_name: str
     dataset_source_lang: str
     dataset_target_lang: str
@@ -113,8 +111,40 @@ def dataset_hash(segments: list[SegmentPostData], source_lang, target_lang) -> s
         "target_lang": target_lang,
     }
 
-    canonical_json = cast(str, canonicalize(data))
-    return hashlib.blake2b(canonical_json.encode("utf-8")).hexdigest()
+    canonical_json = cast(bytes, canonicalize(data))
+    return hashlib.blake2b(canonical_json).hexdigest()
+
+
+async def get_or_create_default_namespace(transaction: AsyncSession) -> m.Namespace:
+    """Create the default namespace if it does not exist. This is a
+    convenience function to allow us to create the default namespace
+    in the database."""
+    query = select(m.Namespace).where(m.Namespace.id == 1)
+    result = await transaction.execute(query)
+    try:
+        return result.scalar_one()
+    except NoResultFound:
+        # create the default namespace
+        namespace = m.Namespace(id=1, name="default")
+        transaction.add(namespace)
+        return namespace
+
+
+async def get_namespace_by_name(
+    namespace_name: str, transaction: AsyncSession
+) -> m.Namespace:
+    """Get the namespace by name."""
+    query = select(m.Namespace).where(m.Namespace.name == namespace_name)
+    result = await transaction.execute(query)
+    try:
+        return result.scalar_one()
+    except NoResultFound as e:
+        raise NotFoundException(detail=f"Namespace {namespace_name!r} not found") from e
+    except MultipleResultsFound as e:
+        raise ClientException(
+            status_code=HTTP_409_CONFLICT,
+            detail=f"Namespace {namespace_name!r} not unique",
+        ) from e
 
 
 @post("/translations-runs/")
@@ -149,17 +179,17 @@ async def add_translation_run(
         dataset = await get_dataset_by_hash(dataset_hash_value)
     except NotFoundException:
         dataset = m.Dataset(
-            name=data.dataset_name,
             source_lang=data.dataset_source_lang,
             target_lang=data.dataset_target_lang,
             data_hash=dataset_hash_value,
         )
         transaction.add(dataset)
+        dataset_name = m.DatasetName(dataset=dataset, name=data.dataset_name)
+        transaction.add(dataset_name)
         # create segments
         for segment in data.segments:
             db_segment = m.Segment(
                 src=segment.src,
-                tgt=segment.tgt,
                 dataset=dataset,
             )
             transaction.add(db_segment)
@@ -170,9 +200,14 @@ async def add_translation_run(
             )
             transaction.add(db_translation)
 
+    if data.namespace_name == "default":
+        namespace = await get_or_create_default_namespace(transaction)
+    else:
+        namespace = await get_namespace_by_name(data.namespace_name, transaction)
+
     db_data = m.TranslationRun(
         dataset_id=dataset.id,
-        namespace_id=data.namespace_id,
+        namespace_id=namespace.id,
     )
     transaction.add(db_data)
     await transaction.commit()
@@ -217,7 +252,8 @@ admin_config = StarlettAdminPluginConfig(
 )
 
 app = Litestar(
-    [get_list, add_item, update_item],
+    [get_list, add_item, update_item, add_translation_run],
+    debug=True,
     dependencies={"transaction": provide_transaction},
     plugins=[
         SQLAlchemyPlugin(db_config),

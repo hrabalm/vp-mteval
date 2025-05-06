@@ -205,7 +205,7 @@ class Namespace(Base):
 
     __tablename__ = "namespaces"
 
-    name: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
 
     datasets: Mapped[list[Dataset]] = relationship(
         "Dataset",
