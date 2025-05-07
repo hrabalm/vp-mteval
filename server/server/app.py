@@ -3,12 +3,13 @@ from collections.abc import AsyncGenerator
 from typing import cast
 
 import iso639
+from advanced_alchemy.config import AsyncSessionConfig
 from litestar import Litestar, get, post, put
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.status_codes import HTTP_409_CONFLICT
 from pydantic import BaseModel
-from sqlalchemy import MetaData, create_engine, select, text
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from starlette_admin.contrib.sqla import ModelView
@@ -147,82 +148,108 @@ async def get_namespace_by_name(
         ) from e
 
 
+async def get_dataset_by_hash(
+    dataset_hash_value: str, transaction: AsyncSession
+) -> m.Dataset:
+    query = select(m.Dataset).where(
+        m.Dataset.data_hash == dataset_hash_value,
+    )
+    result = await transaction.execute(query)
+    try:
+        return result.scalar_one()
+    except NoResultFound as e:
+        raise NotFoundException(
+            detail=f"Dataset {dataset_hash_value!r} not found"
+        ) from e
+    except MultipleResultsFound as e:
+        raise ClientException(
+            status_code=HTTP_409_CONFLICT,
+            detail=f"Dataset {dataset_hash_value!r} not unique",
+        ) from e
+
+
+class ReadTranslationRun(BaseModel):
+    id: int
+    dataset_id: int
+    namespace_id: int
+
+
 @post("/translations-runs/")
 async def add_translation_run(
-    data: TranslationRunPostData, transaction: AsyncSession
-) -> m.TranslationRun:
-    # TODO: this should be a more complex POST request which creates missing entities
+    data: TranslationRunPostData,
+    transaction: AsyncSession,
+) -> ReadTranslationRun:
+    """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
 
     # Calculate the hash of the dataset (we canonicalize the JSON represenation)
     dataset_hash_value = dataset_hash(
         data.segments, data.dataset_source_lang, data.dataset_target_lang
     )
 
-    async def get_dataset_by_hash(dataset_hash_value: str) -> m.Dataset:
-        query = select(m.Dataset).where(
-            m.Dataset.data_hash == dataset_hash_value,
-        )
-        result = await transaction.execute(query)
-        try:
-            return result.scalar_one()
-        except NoResultFound as e:
-            raise NotFoundException(
-                detail=f"Dataset {dataset_hash_value!r} not found"
-            ) from e
-        except MultipleResultsFound as e:
-            raise ClientException(
-                status_code=HTTP_409_CONFLICT,
-                detail=f"Dataset {dataset_hash_value!r} not unique",
-            ) from e
-
-    try:
-        dataset = await get_dataset_by_hash(dataset_hash_value)
-    except NotFoundException:
-        dataset = m.Dataset(
-            source_lang=data.dataset_source_lang,
-            target_lang=data.dataset_target_lang,
-            data_hash=dataset_hash_value,
-        )
-        transaction.add(dataset)
-        dataset_name = m.DatasetName(dataset=dataset, name=data.dataset_name)
-        transaction.add(dataset_name)
-        # create segments
-        for segment in data.segments:
-            db_segment = m.Segment(
-                src=segment.src,
-                dataset=dataset,
-            )
-            transaction.add(db_segment)
-            # create translations
-            db_translation = m.SegmentTranslation(
-                tgt=segment.tgt,
-                segment=db_segment,
-            )
-            transaction.add(db_translation)
-
     if data.namespace_name == "default":
         namespace = await get_or_create_default_namespace(transaction)
     else:
         namespace = await get_namespace_by_name(data.namespace_name, transaction)
 
+    await transaction.flush()
+
+    try:
+        dataset = await get_dataset_by_hash(dataset_hash_value, transaction)
+    except NotFoundException:
+        dataset = m.Dataset(
+            source_lang=data.dataset_source_lang,
+            target_lang=data.dataset_target_lang,
+            data_hash=dataset_hash_value,
+            namespace_id=namespace.id,
+        )
+        transaction.add(dataset)
+        dataset_name = m.DatasetName(dataset=dataset, name=data.dataset_name)
+        transaction.add(dataset_name)
+
+    await transaction.flush()
+
     db_data = m.TranslationRun(
+        dataset_id=dataset.id,
+        namespace=namespace,
+    )
+    transaction.add(db_data)
+
+    await transaction.flush()
+
+    # create segments
+    for segment in data.segments:
+        db_segment = m.Segment(
+            src=segment.src,
+            dataset_id=dataset.id,
+        )
+        transaction.add(db_segment)
+        await transaction.flush()
+        # create translations
+        db_translation = m.SegmentTranslation(
+            run_id=db_data.id,
+            tgt=segment.tgt,
+            segment=db_segment,
+        )
+        transaction.add(db_translation)
+        await transaction.flush()
+    await transaction.flush()
+    return ReadTranslationRun(
+        id=db_data.id,
         dataset_id=dataset.id,
         namespace_id=namespace.id,
     )
-    transaction.add(db_data)
-    await transaction.commit()
-    return db_data
 
 
 engine = create_async_engine(os.environ["DATABASE_URL"])
 
+# TODO: move this to a optional on startup event
 # for testing: drop all tables if the environment variable DATABASE_DROP is set
-if os.environ.get("DATABASE_DROP", "").lower() == "true":
-    sync_engine = create_engine(os.environ["DATABASE_URL"])
+# if os.environ.get("DATABASE_DROP", "").lower() == "true":
+#     sync_engine = create_engine(os.environ["DATABASE_URL"])
 
-    metadata = MetaData()
-    metadata.reflect(sync_engine)
-    metadata.drop_all(sync_engine)
+#     metadata = MetaData()
+#     metadata.reflect(sync_engine)
+#     metadata.drop_all(sync_engine)
 
 
 db_config = SQLAlchemyAsyncConfig(
@@ -230,6 +257,7 @@ db_config = SQLAlchemyAsyncConfig(
     create_all=True,
     before_send_handler="autocommit",
     engine_instance=engine,
+    session_config=AsyncSessionConfig(expire_on_commit=False),  # keep attributes alive
 )
 
 # Configure admin
