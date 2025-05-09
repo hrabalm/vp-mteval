@@ -174,6 +174,62 @@ class ReadTranslationRun(BaseModel):
     namespace_id: int
 
 
+async def get_or_create_dataset(
+    dataset_hash_value: str, 
+    namespace_id: int,
+    dataset_name: str,
+    source_lang: str,
+    target_lang: str,
+    transaction: AsyncSession
+) -> m.Dataset:
+    """Get an existing dataset by hash or create a new one."""
+    try:
+        return await get_dataset_by_hash(dataset_hash_value, transaction)
+    except NotFoundException:
+        dataset = m.Dataset(
+            source_lang=source_lang,
+            target_lang=target_lang,
+            data_hash=dataset_hash_value,
+            namespace_id=namespace_id,
+        )
+        transaction.add(dataset)
+        await transaction.flush()
+        
+        dataset_name_obj = m.DatasetName(dataset=dataset, name=dataset_name)
+        transaction.add(dataset_name_obj)
+        await transaction.flush()
+        
+        return dataset
+
+
+async def create_segments_and_translations(
+    segments: list[SegmentPostData],
+    dataset_id: int, 
+    run_id: int,
+    transaction: AsyncSession
+) -> None:
+    """Create segment and translation records in bulk."""
+    for segment in segments:
+        db_segment = m.Segment(
+            src=segment.src,
+            dataset_id=dataset_id,
+        )
+        transaction.add(db_segment)
+        
+        # We need to flush to get the segment ID
+        await transaction.flush()
+        
+        db_translation = m.SegmentTranslation(
+            run_id=run_id,
+            tgt=segment.tgt,
+            segment=db_segment,
+        )
+        transaction.add(db_translation)
+    
+    # Final flush after adding all segments and translations
+    await transaction.flush()
+
+
 @post("/translations-runs/")
 async def add_translation_run(
     data: TranslationRunPostData,
@@ -181,60 +237,45 @@ async def add_translation_run(
 ) -> ReadTranslationRun:
     """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
 
-    # Calculate the hash of the dataset (we canonicalize the JSON represenation)
+    # Calculate the hash of the dataset
     dataset_hash_value = dataset_hash(
         data.segments, data.dataset_source_lang, data.dataset_target_lang
     )
 
+    # Get or create namespace
     if data.namespace_name == "default":
         namespace = await get_or_create_default_namespace(transaction)
     else:
         namespace = await get_namespace_by_name(data.namespace_name, transaction)
+    
+    # Get or create dataset
+    dataset = await get_or_create_dataset(
+        dataset_hash_value=dataset_hash_value,
+        namespace_id=namespace.id,
+        dataset_name=data.dataset_name,
+        source_lang=data.dataset_source_lang,
+        target_lang=data.dataset_target_lang,
+        transaction=transaction,
+    )
 
-    await transaction.flush()
-
-    try:
-        dataset = await get_dataset_by_hash(dataset_hash_value, transaction)
-    except NotFoundException:
-        dataset = m.Dataset(
-            source_lang=data.dataset_source_lang,
-            target_lang=data.dataset_target_lang,
-            data_hash=dataset_hash_value,
-            namespace_id=namespace.id,
-        )
-        transaction.add(dataset)
-        dataset_name = m.DatasetName(dataset=dataset, name=data.dataset_name)
-        transaction.add(dataset_name)
-
-    await transaction.flush()
-
-    db_data = m.TranslationRun(
+    # Create translation run
+    translation_run = m.TranslationRun(
         dataset_id=dataset.id,
         namespace=namespace,
     )
-    transaction.add(db_data)
-
+    transaction.add(translation_run)
     await transaction.flush()
 
-    # create segments
-    for segment in data.segments:
-        db_segment = m.Segment(
-            src=segment.src,
-            dataset_id=dataset.id,
-        )
-        transaction.add(db_segment)
-        await transaction.flush()
-        # create translations
-        db_translation = m.SegmentTranslation(
-            run_id=db_data.id,
-            tgt=segment.tgt,
-            segment=db_segment,
-        )
-        transaction.add(db_translation)
-        await transaction.flush()
-    await transaction.flush()
+    # Create segments and translations
+    await create_segments_and_translations(
+        segments=data.segments,
+        dataset_id=dataset.id,
+        run_id=translation_run.id,
+        transaction=transaction,
+    )
+
     return ReadTranslationRun(
-        id=db_data.id,
+        id=translation_run.id,
         dataset_id=dataset.id,
         namespace_id=namespace.id,
     )
