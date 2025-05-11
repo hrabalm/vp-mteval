@@ -9,7 +9,7 @@ from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchem
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.status_codes import HTTP_409_CONFLICT
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, MetaData
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from starlette_admin.contrib.sqla import ModelView
@@ -246,14 +246,23 @@ async def add_translation_run(
 
 engine = create_async_engine(os.environ["DATABASE_URL"])
 
-# TODO: move this to a optional on startup event
-# for testing: drop all tables if the environment variable DATABASE_DROP is set
-# if os.environ.get("DATABASE_DROP", "").lower() == "true":
-#     sync_engine = create_engine(os.environ["DATABASE_URL"])
 
-#     metadata = MetaData()
-#     metadata.reflect(sync_engine)
-#     metadata.drop_all(sync_engine)
+async def drop_all_tables_if_requested(app: Litestar) -> None:
+    if os.environ.get("DATABASE_DROP", "").lower() == "true":
+        print("Dropping all tables...", flush=True)
+        metadata = MetaData()
+
+        # We can't call reflect on AsyncEngine, se we need to wrap it
+        def drop_all_tables(engine):
+            metadata.reflect(engine)
+            metadata.drop_all(engine)
+
+        async with engine.connect() as conn:
+            await conn.run_sync(lambda sync_conn: drop_all_tables(sync_conn))
+            await conn.commit()
+            # Recreate all tables, because this is run after the SQLAlchemyPlugin hooks
+            await conn.run_sync(m.Base.metadata.create_all)
+            await conn.commit()
 
 
 db_config = SQLAlchemyAsyncConfig(
@@ -291,5 +300,8 @@ app = Litestar(
     plugins=[
         SQLAlchemyPlugin(db_config),
         StarletteAdminPlugin(starlette_admin_config=admin_config),
+    ],
+    on_startup=[
+        drop_all_tables_if_requested,
     ],
 )
