@@ -194,11 +194,15 @@ class GenericMetric(Base):
 
 
 class Namespace(Base):
-    """Users are global, everything else belongs to some namespace. User has either no-access/read-only/read-write access to each namespace. We plan no further granularity. Read-only access is meant to be used for public demos if any."""
+    """Users are global, everything else belongs to some namespace. User has either no-access/read-only/read-write access to each namespace. We plan no further granularity. Read-only access is meant to be used for public demos if any.
+
+    Note that internally, we use integer IDs for namespaces, but to
+    the user, we expose them as unique strings.
+    """
 
     __tablename__ = "namespaces"
 
-    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True, index=True)
 
     datasets: Mapped[list[Dataset]] = relationship(
         "Dataset",

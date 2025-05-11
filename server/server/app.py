@@ -79,6 +79,8 @@ async def get_or_create_default_namespace(transaction: AsyncSession) -> m.Namesp
     """Create the default namespace if it does not exist. This is a
     convenience function to allow us to create the default namespace
     in the database."""
+    # FIXME: we should move the default namespace creation to DB
+    # migration/initialization
     query = select(m.Namespace).where(m.Namespace.id == 1)
     result = await transaction.execute(query)
     try:
@@ -131,6 +133,7 @@ class ReadTranslationRun(BaseModel):
     id: int
     dataset_id: int
     namespace_id: int
+    namespace_name: str
 
 
 async def get_or_create_dataset(
@@ -237,6 +240,7 @@ async def add_translation_run(
         id=translation_run.id,
         dataset_id=dataset.id,
         namespace_id=namespace.id,
+        namespace_name=namespace.name,
     )
 
 
