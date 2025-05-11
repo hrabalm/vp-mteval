@@ -1,6 +1,7 @@
 import os
+import uuid as uuid_lib  # we need to rename this to avoid conflict with uuid var in dataclasses
 from collections.abc import AsyncGenerator
-from typing import cast
+from typing import Optional, cast
 
 import iso639
 from advanced_alchemy.config import AsyncSessionConfig
@@ -9,7 +10,7 @@ from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchem
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.status_codes import HTTP_409_CONFLICT
 from pydantic import BaseModel
-from sqlalchemy import select, MetaData
+from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from starlette_admin.contrib.sqla import ModelView
@@ -48,6 +49,7 @@ class TranslationRunPostData(BaseModel):
     dataset_source_lang: str
     dataset_target_lang: str
     segments: list[SegmentPostData]
+    uuid: Optional[uuid_lib.UUID] = None
 
 
 def dataset_hash(segments: list[SegmentPostData], source_lang, target_lang) -> str:
@@ -131,6 +133,7 @@ async def get_dataset_by_hash(
 
 class ReadTranslationRun(BaseModel):
     id: int
+    uuid: uuid_lib.UUID
     dataset_id: int
     namespace_id: int
     namespace_name: str
@@ -224,6 +227,7 @@ async def add_translation_run(
     translation_run = m.TranslationRun(
         dataset_id=dataset.id,
         namespace=namespace,
+        uuid=data.uuid,
     )
     transaction.add(translation_run)
     await transaction.flush()
@@ -238,6 +242,7 @@ async def add_translation_run(
 
     return ReadTranslationRun(
         id=translation_run.id,
+        uuid=translation_run.uuid,
         dataset_id=dataset.id,
         namespace_id=namespace.id,
         namespace_name=namespace.name,
@@ -263,6 +268,12 @@ async def drop_all_tables_if_requested(app: Litestar) -> None:
             # Recreate all tables, because this is run after the SQLAlchemyPlugin hooks
             await conn.run_sync(m.Base.metadata.create_all)
             await conn.commit()
+
+
+async def initialize_db_extensions():
+    """Create required PostgreSQL extensions."""
+    async with engine.begin() as conn:
+        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
 
 
 db_config = SQLAlchemyAsyncConfig(
@@ -303,5 +314,6 @@ app = Litestar(
     ],
     on_startup=[
         drop_all_tables_if_requested,
+        initialize_db_extensions,
     ],
 )

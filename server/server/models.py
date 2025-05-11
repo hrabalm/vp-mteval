@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from advanced_alchemy.base import BigIntAuditBase
-from sqlalchemy import JSON, DateTime, ForeignKey, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Text, func, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -120,6 +120,13 @@ class TranslationRun(Base):
     namespace_id: Mapped[int] = mapped_column(
         ForeignKey("namespaces.id"),
         nullable=False,
+    )
+    uuid: Mapped[Uuid] = mapped_column(
+        Uuid,
+        nullable=False,
+        default=func.uuid_generate_v4(),
+        unique=True,
+        index=True,
     )
     dataset: Mapped[Dataset] = relationship(
         "Dataset",
