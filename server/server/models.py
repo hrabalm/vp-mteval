@@ -11,13 +11,6 @@ class Base(BigIntAuditBase):
     __abstract__ = True
 
 
-class TodoItem(Base):
-    __tablename__ = "todo_items"
-
-    title: Mapped[str] = mapped_column(primary_key=True)
-    done: Mapped[bool] = mapped_column(nullable=False)
-
-
 # TODO:
 # - How do I store metrics data?:
 #   - Sentence level / Document level / special (n-grams)

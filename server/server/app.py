@@ -34,47 +34,6 @@ async def provide_transaction(
         ) from exc
 
 
-async def get_todo_by_title(todo_name, session: AsyncSession) -> m.TodoItem:
-    query = select(m.TodoItem).where(m.TodoItem.title == todo_name)
-    result = await session.execute(query)
-    try:
-        return result.scalar_one()
-    except NoResultFound as e:
-        raise NotFoundException(detail=f"TODO {todo_name!r} not found") from e
-
-
-async def get_todo_list(done: bool | None, session: AsyncSession) -> list[m.TodoItem]:
-    query = select(m.TodoItem)
-    if done is not None:
-        query = query.where(m.TodoItem.done.is_(done))
-
-    result = await session.execute(query)
-    return result.scalars().all()
-
-
-@get("/")
-async def get_list(
-    transaction: AsyncSession, done: bool | None = None
-) -> list[m.TodoItem]:
-    return await get_todo_list(done, transaction)
-
-
-@post("/")
-async def add_item(data: m.TodoItem, transaction: AsyncSession) -> m.TodoItem:
-    transaction.add(data)
-    return data
-
-
-@put("/{item_title:str}")
-async def update_item(
-    item_title: str, data: m.TodoItem, transaction: AsyncSession
-) -> m.TodoItem:
-    todo_item = await get_todo_by_title(item_title, transaction)
-    todo_item.title = data.title
-    todo_item.done = data.done
-    return todo_item
-
-
 class SegmentPostData(BaseModel):
     src: str
     tgt: str
@@ -175,12 +134,12 @@ class ReadTranslationRun(BaseModel):
 
 
 async def get_or_create_dataset(
-    dataset_hash_value: str, 
+    dataset_hash_value: str,
     namespace_id: int,
     dataset_name: str,
     source_lang: str,
     target_lang: str,
-    transaction: AsyncSession
+    transaction: AsyncSession,
 ) -> m.Dataset:
     """Get an existing dataset by hash or create a new one."""
     try:
@@ -194,19 +153,19 @@ async def get_or_create_dataset(
         )
         transaction.add(dataset)
         await transaction.flush()
-        
+
         dataset_name_obj = m.DatasetName(dataset=dataset, name=dataset_name)
         transaction.add(dataset_name_obj)
         await transaction.flush()
-        
+
         return dataset
 
 
 async def create_segments_and_translations(
     segments: list[SegmentPostData],
-    dataset_id: int, 
+    dataset_id: int,
     run_id: int,
-    transaction: AsyncSession
+    transaction: AsyncSession,
 ) -> None:
     """Create segment and translation records in bulk."""
     for segment in segments:
@@ -215,17 +174,17 @@ async def create_segments_and_translations(
             dataset_id=dataset_id,
         )
         transaction.add(db_segment)
-        
+
         # We need to flush to get the segment ID
         await transaction.flush()
-        
+
         db_translation = m.SegmentTranslation(
             run_id=run_id,
             tgt=segment.tgt,
             segment=db_segment,
         )
         transaction.add(db_translation)
-    
+
     # Final flush after adding all segments and translations
     await transaction.flush()
 
@@ -247,7 +206,7 @@ async def add_translation_run(
         namespace = await get_or_create_default_namespace(transaction)
     else:
         namespace = await get_namespace_by_name(data.namespace_name, transaction)
-    
+
     # Get or create dataset
     dataset = await get_or_create_dataset(
         dataset_hash_value=dataset_hash_value,
@@ -304,7 +263,6 @@ db_config = SQLAlchemyAsyncConfig(
 # Configure admin
 admin_config = StarlettAdminPluginConfig(
     views=[
-        ModelView(m.TodoItem),
         ModelView(m.Dataset),
         ModelView(m.DatasetName),
         ModelView(m.Segment),
@@ -321,7 +279,9 @@ admin_config = StarlettAdminPluginConfig(
 )
 
 app = Litestar(
-    [get_list, add_item, update_item, add_translation_run],
+    [
+        add_translation_run,
+    ],
     debug=True,
     dependencies={"transaction": provide_transaction},
     plugins=[
