@@ -38,6 +38,7 @@ async def provide_transaction(
 class SegmentPostData(BaseModel):
     src: str
     tgt: str
+    ref: str | None = None
 
 
 class TranslationRunPostData(BaseModel):
@@ -147,6 +148,7 @@ async def get_or_create_dataset(
     dataset_name: str,
     source_lang: str,
     target_lang: str,
+    has_reference: bool,
     transaction: AsyncSession,
 ) -> m.Dataset:
     """Get an existing dataset by hash or create a new one."""
@@ -157,6 +159,7 @@ async def get_or_create_dataset(
             source_lang=source_lang,
             target_lang=target_lang,
             data_hash=dataset_hash_value,
+            has_reference=has_reference,
             namespace_id=namespace_id,
         )
         transaction.add(dataset)
@@ -215,6 +218,13 @@ async def add_translation_run(
     else:
         namespace = await get_namespace_by_name(data.namespace_name, transaction)
 
+    # check if the dataset has references
+    has_reference = False
+    for segment in data.segments:
+        if segment.ref is not None:
+            has_reference = True
+            break
+
     # Get or create dataset
     dataset = await get_or_create_dataset(
         dataset_hash_value=dataset_hash_value,
@@ -223,6 +233,7 @@ async def add_translation_run(
         source_lang=data.dataset_source_lang,
         target_lang=data.dataset_target_lang,
         transaction=transaction,
+        has_reference=has_reference,
     )
 
     # Create translation run

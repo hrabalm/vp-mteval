@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from advanced_alchemy.base import BigIntAuditBase
-from sqlalchemy import JSON, DateTime, ForeignKey, Text, func, Uuid
+from sqlalchemy import JSON, DateTime, ForeignKey, Text, func, Uuid, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -29,6 +29,7 @@ class Segment(Base):
         nullable=False,
     )
     src: Mapped[str] = mapped_column(Text, nullable=False)
+    tgt: Mapped[str] = mapped_column(Text, nullable=True)  # optional reference
 
     dataset: Mapped["Dataset"] = relationship("Dataset", back_populates="segments")
 
@@ -53,6 +54,7 @@ class Dataset(Base):
 
     source_lang: Mapped[str] = mapped_column(Text, nullable=False)  # iso639-1 code
     target_lang: Mapped[str] = mapped_column(Text, nullable=False)  # iso639-1 code
+    has_reference: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     names: Mapped[list["DatasetName"]] = relationship(
         "DatasetName",
