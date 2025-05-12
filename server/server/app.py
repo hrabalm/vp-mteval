@@ -1,7 +1,7 @@
 import os
 import uuid as uuid_lib  # we need to rename this to avoid conflict with uuid var in dataclasses
 from collections.abc import AsyncGenerator
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
 import iso639
 from advanced_alchemy.config import AsyncSessionConfig
@@ -50,6 +50,7 @@ class TranslationRunPostData(BaseModel):
     dataset_target_lang: str
     segments: list[SegmentPostData]
     uuid: Optional[uuid_lib.UUID] = None
+    config: dict[str, Any] = {}
 
 
 def dataset_hash(segments: list[SegmentPostData], source_lang, target_lang) -> str:
@@ -137,6 +138,7 @@ class ReadTranslationRun(BaseModel):
     dataset_id: int
     namespace_id: int
     namespace_name: str
+    config: dict[str, Any]
 
 
 async def get_or_create_dataset(
@@ -228,6 +230,7 @@ async def add_translation_run(
         dataset_id=dataset.id,
         namespace=namespace,
         uuid=data.uuid,
+        config=data.config,
     )
     transaction.add(translation_run)
     await transaction.flush()
@@ -246,6 +249,7 @@ async def add_translation_run(
         dataset_id=dataset.id,
         namespace_id=namespace.id,
         namespace_name=namespace.name,
+        config=translation_run.config,
     )
 
 

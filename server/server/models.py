@@ -141,6 +141,11 @@ class TranslationRun(Base):
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",
     )
+    config: Mapped[JSON] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict
+    )
 
 
 # Metric results
