@@ -11,6 +11,8 @@ services:
       - ./server:/app/server
     environment:
       DATABASE_DROP: "true" # drop the database on startup
+      VITE_HOT_RELOAD: "true" # enable hot reload
+      VITE_DEV_MODE: "true" # enable dev mode
 
 volumes:
   db_data:

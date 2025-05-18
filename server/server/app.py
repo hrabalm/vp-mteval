@@ -5,10 +5,14 @@ from typing import Any, Optional, cast
 
 import iso639
 from advanced_alchemy.config import AsyncSessionConfig
-from litestar import Litestar, get, post, put
+from litestar import Controller, Litestar, get, post
+from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import ClientException, NotFoundException
-from litestar.status_codes import HTTP_409_CONFLICT
+from litestar.response import Template
+from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT
+from litestar.template.config import TemplateConfig
+from litestar_vite import ViteConfig, VitePlugin
 from pydantic import BaseModel
 from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
@@ -264,6 +268,15 @@ async def add_translation_run(
     )
 
 
+class WebController(Controller):
+    opt = {"exclude_from_auth": True}
+    include_in_schema = False
+
+    @get(["/", "/{path:str}"], status_code=HTTP_200_OK)
+    async def index(self) -> Template:
+        return Template(template_name="index.html.j2")
+
+
 engine = create_async_engine(os.environ["DATABASE_URL"])
 
 
@@ -317,18 +330,28 @@ admin_config = StarlettAdminPluginConfig(
     title="My Admin",
 )
 
+template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates/"))
+vite_plugin = VitePlugin(
+    config=ViteConfig(
+        use_server_lifespan=True,
+    )
+)
+
 app = Litestar(
     [
         add_translation_run,
+        WebController,
     ],
     debug=True,
     dependencies={"transaction": provide_transaction},
     plugins=[
         SQLAlchemyPlugin(db_config),
         StarletteAdminPlugin(starlette_admin_config=admin_config),
+        vite_plugin,
     ],
     on_startup=[
         drop_all_tables_if_requested,
         initialize_db_extensions,
     ],
+    template_config=template_config,
 )
