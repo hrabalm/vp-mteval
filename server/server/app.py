@@ -334,6 +334,7 @@ template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates
 vite_plugin = VitePlugin(
     config=ViteConfig(
         use_server_lifespan=True,
+        is_react=True,
     )
 )
 
