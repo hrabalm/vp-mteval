@@ -2,21 +2,26 @@ services:
   db:
     ports:
       - "5432:5432" # expose PostgreSQL for testing
-      - "5173:5173" # expose Vite dev server
   app:
     build:
+      context: .
+      dockerfile: Dockerfile.dev
       args:
         - "UID=${UID:-1000}"
         - "GID=${GID:-1000}"
     volumes:
       - ./server:/app/server
+      - node_modules:/app/server/node_modules
     environment:
       DATABASE_DROP: "true" # drop the database on startup
       VITE_HOT_RELOAD: "true" # enable hot reload
       VITE_DEV_MODE: "true" # enable dev mode
+    ports:
+      - "5173:5173" # expose Vite dev server
 
 volumes:
   db_data:
+  node_modules:
 
 networks:
   mynetwork:

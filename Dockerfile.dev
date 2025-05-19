@@ -1,43 +1,47 @@
 # syntax=docker/dockerfile:1.7-labs
-# Use the official Python image from the Docker Hub
 FROM python:3.13-slim
 
 ARG UID=1000
 ARG GID=1000
 
-ENV PATH="/opt/nodeenv/bin:$PATH"
+# Install system deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gdb git wget curl fish xonsh && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set the working directory in the container
-WORKDIR /app/server
-
-# Copy the pyproject.toml and pdm.lock files to the container
-COPY server/pyproject.toml server/pdm.lock server/pdm.toml ./
-
-# Install PDM
+# Install PDM globally
 RUN pip install --no-cache-dir pdm
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gdb \
-    git \
-    wget \
-    curl \
-    fish \
-    xonsh \
-    && rm -rf /var/lib/apt/lists/*
+# Create non-root user early
+RUN groupadd -g ${GID} appuser && \
+    useradd --create-home --no-log-init -u ${UID} -g ${GID} appuser
 
-# Install the dependencies
+# Set workdir
+WORKDIR /app/server
+
+# Copy Python project files and install
+COPY server/pyproject.toml server/pdm.lock server/pdm.toml ./
 RUN pdm sync -g --project .
-RUN pdm run nodeenv --quiet /opt/nodeenv/
-RUN NODE_OPTIONS="--no-deprecation --disable-warning=ExperimentalWarning" npm install --ignore-scripts --no-fund
 
-# Create a non-root user and group
-RUN groupadd -g "${GID}" appuser && useradd --create-home --no-log-init -u "${UID}" -g ${GID} appuser
+# Bootstrap Node.js environment via pdm
+RUN pdm run nodeenv --node=22.15.1 --with-npm --quiet /opt/nodeenv
 
+# Update PATH for nodeenv
+ENV PATH="/opt/nodeenv/bin:/opt/nodeenv/node_modules/.bin:$PATH"
+
+# Copy Node project files into app directory
+COPY server/package.json server/package-lock.json ./
+
+# Install Node dependencies in the project folder
+RUN . /opt/nodeenv/bin/activate && npm ci
+
+# Copy application code and fix permissions
+COPY server/. ./
+RUN chown -R appuser:appuser /app/server
+
+# Switch to non-root
 USER appuser
 
-# Copy the rest of the application code to the container
-COPY ./server/. /app/server/
-
-# Command to run the application
-CMD ["litestar", "--app", "server.app:app", "run", "--reload" ,"--host", "0.0.0.0", "--port", "8000"]
+# Expose port and set default command
+EXPOSE 8000
+CMD ["litestar", "--app", "server.app:app", "run", "--reload", "--host", "0.0.0.0", "--port", "8000"]
