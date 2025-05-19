@@ -4,10 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     volumes:
-      - .:/workspace:cached
+      - .:/app:cached
     # command: sleep infinity
     environment:
-      - PYTHONPATH=/workspace/server
+      - PYTHONPATH=/app/server
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
     user: appuser

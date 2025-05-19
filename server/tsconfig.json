@@ -9,21 +9,30 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
     "noEmit": true,
     "composite": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": "resources",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
-    "types": ["vite/client"]
+    "types": [
+      "vite/client"
+    ]
   },
   "include": [
     "**/*.d.ts",
-    "resources/**/*.js" ,
-    "resources/**/*.ts" ,
-    "vite.config.ts"
-, "resources/main.tsx"  ]
+    "resources/**/*.js",
+    "resources/**/*.ts",
+    "vite.config.ts",
+    "resources/main.tsx"
+  ]
 }
