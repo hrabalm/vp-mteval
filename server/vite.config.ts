@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
-
-
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
 import litestar from "litestar-vite-plugin";
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 const ASSET_URL = process.env.ASSET_URL || "/static/";
 const VITE_PORT = process.env.VITE_PORT || "5173";
@@ -11,23 +12,38 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: +`${VITE_PORT}`,
+    // cors: {
+    //   origin: "http://localhost:8000",
+    //   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    //   credentials: true
+    // },
     cors: true,
     hmr: {
       host: `${VITE_HOST}`,
     },
   },
   plugins: [
-    
-    
     litestar({
       input: [
-        "resources/styles.css", "resources/main.ts"
+        "resources/main.tsx",
       ],
       assetUrl: `${ASSET_URL}`,
       bundleDirectory: "public",
       resourceDirectory: "resources",
       hotFile: "public/hot"
     }),
+    // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
+    TanStackRouterVite(
+      {
+        target: 'react',
+        autoCodeSplitting: true,
+        routesDirectory: "./resources/routes",
+        generatedRouteTree: "./resources/routeTree.gen.ts",
+        routeFileIgnorePrefix: "-",
+        quoteStyle: "single"
+      }),
+    react(),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
