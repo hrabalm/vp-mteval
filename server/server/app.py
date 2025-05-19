@@ -1,6 +1,7 @@
 import os
 import uuid as uuid_lib  # we need to rename this to avoid conflict with uuid var in dataclasses
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Any, Optional, cast
 
 import iso639
@@ -17,11 +18,6 @@ from pydantic import BaseModel
 from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from starlette_admin.contrib.sqla import ModelView
-from starlette_admin_litestar_plugin import (
-    StarlettAdminPluginConfig,
-    StarletteAdminPlugin,
-)
 
 import server.models as m
 
@@ -277,9 +273,6 @@ class WebController(Controller):
         return Template(template_name="index.html.j2")
 
 
-engine = create_async_engine(os.environ["DATABASE_URL"])
-
-
 async def drop_all_tables_if_requested(app: Litestar) -> None:
     if os.environ.get("DATABASE_DROP", "").lower() == "true":
         print("Dropping all tables...", flush=True)
@@ -290,7 +283,7 @@ async def drop_all_tables_if_requested(app: Litestar) -> None:
             metadata.reflect(engine)
             metadata.drop_all(engine)
 
-        async with engine.connect() as conn:
+        async with app.state.db_engine.connect() as conn:
             await conn.run_sync(lambda sync_conn: drop_all_tables(sync_conn))
             await conn.commit()
             # Recreate all tables, because this is run after the SQLAlchemyPlugin hooks
@@ -298,36 +291,18 @@ async def drop_all_tables_if_requested(app: Litestar) -> None:
             await conn.commit()
 
 
-async def initialize_db_extensions():
+async def initialize_db_extensions(app: Litestar):
     """Create required PostgreSQL extensions."""
-    async with engine.begin() as conn:
+    async with app.state.db_engine.begin() as conn:
         await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
 
 
 db_config = SQLAlchemyAsyncConfig(
+    connection_string=os.environ["DATABASE_URL"],
     metadata=m.Base.metadata,
     create_all=True,
     before_send_handler="autocommit",
-    engine_instance=engine,
     session_config=AsyncSessionConfig(expire_on_commit=False),  # keep attributes alive
-)
-
-# Configure admin
-admin_config = StarlettAdminPluginConfig(
-    views=[
-        ModelView(m.Dataset),
-        ModelView(m.DatasetName),
-        ModelView(m.Segment),
-        ModelView(m.TranslationRun),
-        ModelView(m.SegmentTranslation),
-        ModelView(m.SegmentMetric),
-        ModelView(m.DatasetMetric),
-        ModelView(m.Namespace),
-        ModelView(m.NamespaceUser),
-        ModelView(m.User),
-    ],
-    engine=engine,
-    title="My Admin",
 )
 
 template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates/"))
@@ -347,7 +322,6 @@ app = Litestar(
     dependencies={"transaction": provide_transaction},
     plugins=[
         SQLAlchemyPlugin(db_config),
-        StarletteAdminPlugin(starlette_admin_config=admin_config),
         vite_plugin,
     ],
     on_startup=[
