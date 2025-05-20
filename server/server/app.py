@@ -6,7 +6,7 @@ from typing import Any, Optional, cast
 
 import iso639
 from advanced_alchemy.config import AsyncSessionConfig
-from litestar import Controller, Litestar, get, post
+from litestar import Controller, Litestar, Router, get, post
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import ClientException, NotFoundException
@@ -268,7 +268,7 @@ class WebController(Controller):
     opt = {"exclude_from_auth": True}
     include_in_schema = False
 
-    @get(["/", "/{path:str}"], status_code=HTTP_200_OK)
+    @get(["/", "/{path:path}"], status_code=HTTP_200_OK)
     async def index(self) -> Template:
         return Template(template_name="index.html.j2")
 
@@ -313,9 +313,16 @@ vite_plugin = VitePlugin(
     )
 )
 
+api_v1_router = Router(
+    "/api/v1",
+    route_handlers=[
+        add_translation_run,
+    ],
+)
+
 app = Litestar(
     [
-        add_translation_run,
+        api_v1_router,
         WebController,
     ],
     debug=True,
