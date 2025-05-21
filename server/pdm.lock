@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:0d7017ff35861fec62117dbe67803b5c39c7a70547e3105269aa2c47a5952b20"
+content_hash = "sha256:202fe8f13b3fbb13498eaffc47f17b77d16399d4bbf50eff48231568e7c0f869"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -981,6 +981,20 @@ dependencies = [
 files = [
     {file = "structlog-25.3.0-py3-none-any.whl", hash = "sha256:a341f5524004c158498c3127eecded091eb67d3a611e7a3093deca30db06e172"},
     {file = "structlog-25.3.0.tar.gz", hash = "sha256:8dab497e6f6ca962abad0c283c46744185e0c9ba900db52a423cb6db99f7abeb"},
+]
+
+[[package]]
+name = "typed-settings"
+version = "24.6.0"
+requires_python = ">=3.9"
+summary = "Typed settings based on attrs classes"
+groups = ["default"]
+dependencies = [
+    "tomli>=2; python_version < \"3.11\"",
+]
+files = [
+    {file = "typed_settings-24.6.0-py3-none-any.whl", hash = "sha256:22221598a821395700beaafd8eab0e1bc596b394767aa37e0926c5f74d0b6a62"},
+    {file = "typed_settings-24.6.0.tar.gz", hash = "sha256:9a5595de33f80452a2038e018bc45508fffc238a8752f08f5c03dc8e7bc0d1e2"},
 ]
 
 [[package]]
