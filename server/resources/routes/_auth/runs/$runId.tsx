@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/datasets/')({
+export const Route = createFileRoute('/_auth/runs/$runId')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <div>Hello "/datasets/"!</div>
+  return <div>Hello "/runs/$runId"!</div>
 }
