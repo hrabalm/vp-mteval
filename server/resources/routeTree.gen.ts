@@ -11,20 +11,21 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SettingsImport } from './routes/settings'
+import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
-import { Route as RunsIndexImport } from './routes/runs/index'
-import { Route as NamespacesIndexImport } from './routes/namespaces/index'
-import { Route as DatasetsIndexImport } from './routes/datasets/index'
-import { Route as RunsRunIdImport } from './routes/runs/$runId'
-import { Route as NamespacesNamespaceIdImport } from './routes/namespaces/$namespaceId'
-import { Route as DatasetsDatasetIdImport } from './routes/datasets/$datasetId'
+import { Route as AuthSettingsImport } from './routes/_auth/settings'
+import { Route as AuthRunsIndexImport } from './routes/_auth/runs/index'
+import { Route as AuthNamespacesIndexImport } from './routes/_auth/namespaces/index'
+import { Route as AuthDatasetsIndexImport } from './routes/_auth/datasets/index'
+import { Route as AuthRunsRunIdImport } from './routes/_auth/runs/$runId'
+import { Route as AuthNamespacesNamespaceIdImport } from './routes/_auth/namespaces/$namespaceId'
+import { Route as AuthDatasetsDatasetIdImport } from './routes/_auth/datasets/$datasetId'
 
 // Create/Update Routes
 
-const SettingsRoute = SettingsImport.update({
-  id: '/settings',
-  path: '/settings',
+const LoginRoute = LoginImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -34,38 +35,44 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const RunsIndexRoute = RunsIndexImport.update({
-  id: '/runs/',
+const AuthSettingsRoute = AuthSettingsImport.update({
+  id: '/_auth/settings',
+  path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthRunsIndexRoute = AuthRunsIndexImport.update({
+  id: '/_auth/runs/',
   path: '/runs/',
   getParentRoute: () => rootRoute,
 } as any)
 
-const NamespacesIndexRoute = NamespacesIndexImport.update({
-  id: '/namespaces/',
+const AuthNamespacesIndexRoute = AuthNamespacesIndexImport.update({
+  id: '/_auth/namespaces/',
   path: '/namespaces/',
   getParentRoute: () => rootRoute,
 } as any)
 
-const DatasetsIndexRoute = DatasetsIndexImport.update({
-  id: '/datasets/',
+const AuthDatasetsIndexRoute = AuthDatasetsIndexImport.update({
+  id: '/_auth/datasets/',
   path: '/datasets/',
   getParentRoute: () => rootRoute,
 } as any)
 
-const RunsRunIdRoute = RunsRunIdImport.update({
-  id: '/runs/$runId',
+const AuthRunsRunIdRoute = AuthRunsRunIdImport.update({
+  id: '/_auth/runs/$runId',
   path: '/runs/$runId',
   getParentRoute: () => rootRoute,
 } as any)
 
-const NamespacesNamespaceIdRoute = NamespacesNamespaceIdImport.update({
-  id: '/namespaces/$namespaceId',
+const AuthNamespacesNamespaceIdRoute = AuthNamespacesNamespaceIdImport.update({
+  id: '/_auth/namespaces/$namespaceId',
   path: '/namespaces/$namespaceId',
   getParentRoute: () => rootRoute,
 } as any)
 
-const DatasetsDatasetIdRoute = DatasetsDatasetIdImport.update({
-  id: '/datasets/$datasetId',
+const AuthDatasetsDatasetIdRoute = AuthDatasetsDatasetIdImport.update({
+  id: '/_auth/datasets/$datasetId',
   path: '/datasets/$datasetId',
   getParentRoute: () => rootRoute,
 } as any)
@@ -81,53 +88,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/settings': {
-      id: '/settings'
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/_auth/settings': {
+      id: '/_auth/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof SettingsImport
+      preLoaderRoute: typeof AuthSettingsImport
       parentRoute: typeof rootRoute
     }
-    '/datasets/$datasetId': {
-      id: '/datasets/$datasetId'
+    '/_auth/datasets/$datasetId': {
+      id: '/_auth/datasets/$datasetId'
       path: '/datasets/$datasetId'
       fullPath: '/datasets/$datasetId'
-      preLoaderRoute: typeof DatasetsDatasetIdImport
+      preLoaderRoute: typeof AuthDatasetsDatasetIdImport
       parentRoute: typeof rootRoute
     }
-    '/namespaces/$namespaceId': {
-      id: '/namespaces/$namespaceId'
+    '/_auth/namespaces/$namespaceId': {
+      id: '/_auth/namespaces/$namespaceId'
       path: '/namespaces/$namespaceId'
       fullPath: '/namespaces/$namespaceId'
-      preLoaderRoute: typeof NamespacesNamespaceIdImport
+      preLoaderRoute: typeof AuthNamespacesNamespaceIdImport
       parentRoute: typeof rootRoute
     }
-    '/runs/$runId': {
-      id: '/runs/$runId'
+    '/_auth/runs/$runId': {
+      id: '/_auth/runs/$runId'
       path: '/runs/$runId'
       fullPath: '/runs/$runId'
-      preLoaderRoute: typeof RunsRunIdImport
+      preLoaderRoute: typeof AuthRunsRunIdImport
       parentRoute: typeof rootRoute
     }
-    '/datasets/': {
-      id: '/datasets/'
+    '/_auth/datasets/': {
+      id: '/_auth/datasets/'
       path: '/datasets'
       fullPath: '/datasets'
-      preLoaderRoute: typeof DatasetsIndexImport
+      preLoaderRoute: typeof AuthDatasetsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/namespaces/': {
-      id: '/namespaces/'
+    '/_auth/namespaces/': {
+      id: '/_auth/namespaces/'
       path: '/namespaces'
       fullPath: '/namespaces'
-      preLoaderRoute: typeof NamespacesIndexImport
+      preLoaderRoute: typeof AuthNamespacesIndexImport
       parentRoute: typeof rootRoute
     }
-    '/runs/': {
-      id: '/runs/'
+    '/_auth/runs/': {
+      id: '/_auth/runs/'
       path: '/runs'
       fullPath: '/runs'
-      preLoaderRoute: typeof RunsIndexImport
+      preLoaderRoute: typeof AuthRunsIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -137,42 +151,46 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/datasets/$datasetId': typeof DatasetsDatasetIdRoute
-  '/namespaces/$namespaceId': typeof NamespacesNamespaceIdRoute
-  '/runs/$runId': typeof RunsRunIdRoute
-  '/datasets': typeof DatasetsIndexRoute
-  '/namespaces': typeof NamespacesIndexRoute
-  '/runs': typeof RunsIndexRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof AuthSettingsRoute
+  '/datasets/$datasetId': typeof AuthDatasetsDatasetIdRoute
+  '/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdRoute
+  '/runs/$runId': typeof AuthRunsRunIdRoute
+  '/datasets': typeof AuthDatasetsIndexRoute
+  '/namespaces': typeof AuthNamespacesIndexRoute
+  '/runs': typeof AuthRunsIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/datasets/$datasetId': typeof DatasetsDatasetIdRoute
-  '/namespaces/$namespaceId': typeof NamespacesNamespaceIdRoute
-  '/runs/$runId': typeof RunsRunIdRoute
-  '/datasets': typeof DatasetsIndexRoute
-  '/namespaces': typeof NamespacesIndexRoute
-  '/runs': typeof RunsIndexRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof AuthSettingsRoute
+  '/datasets/$datasetId': typeof AuthDatasetsDatasetIdRoute
+  '/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdRoute
+  '/runs/$runId': typeof AuthRunsRunIdRoute
+  '/datasets': typeof AuthDatasetsIndexRoute
+  '/namespaces': typeof AuthNamespacesIndexRoute
+  '/runs': typeof AuthRunsIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/datasets/$datasetId': typeof DatasetsDatasetIdRoute
-  '/namespaces/$namespaceId': typeof NamespacesNamespaceIdRoute
-  '/runs/$runId': typeof RunsRunIdRoute
-  '/datasets/': typeof DatasetsIndexRoute
-  '/namespaces/': typeof NamespacesIndexRoute
-  '/runs/': typeof RunsIndexRoute
+  '/login': typeof LoginRoute
+  '/_auth/settings': typeof AuthSettingsRoute
+  '/_auth/datasets/$datasetId': typeof AuthDatasetsDatasetIdRoute
+  '/_auth/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdRoute
+  '/_auth/runs/$runId': typeof AuthRunsRunIdRoute
+  '/_auth/datasets/': typeof AuthDatasetsIndexRoute
+  '/_auth/namespaces/': typeof AuthNamespacesIndexRoute
+  '/_auth/runs/': typeof AuthRunsIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/settings'
     | '/datasets/$datasetId'
     | '/namespaces/$namespaceId'
@@ -183,6 +201,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/settings'
     | '/datasets/$datasetId'
     | '/namespaces/$namespaceId'
@@ -193,36 +212,39 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/settings'
-    | '/datasets/$datasetId'
-    | '/namespaces/$namespaceId'
-    | '/runs/$runId'
-    | '/datasets/'
-    | '/namespaces/'
-    | '/runs/'
+    | '/login'
+    | '/_auth/settings'
+    | '/_auth/datasets/$datasetId'
+    | '/_auth/namespaces/$namespaceId'
+    | '/_auth/runs/$runId'
+    | '/_auth/datasets/'
+    | '/_auth/namespaces/'
+    | '/_auth/runs/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SettingsRoute: typeof SettingsRoute
-  DatasetsDatasetIdRoute: typeof DatasetsDatasetIdRoute
-  NamespacesNamespaceIdRoute: typeof NamespacesNamespaceIdRoute
-  RunsRunIdRoute: typeof RunsRunIdRoute
-  DatasetsIndexRoute: typeof DatasetsIndexRoute
-  NamespacesIndexRoute: typeof NamespacesIndexRoute
-  RunsIndexRoute: typeof RunsIndexRoute
+  LoginRoute: typeof LoginRoute
+  AuthSettingsRoute: typeof AuthSettingsRoute
+  AuthDatasetsDatasetIdRoute: typeof AuthDatasetsDatasetIdRoute
+  AuthNamespacesNamespaceIdRoute: typeof AuthNamespacesNamespaceIdRoute
+  AuthRunsRunIdRoute: typeof AuthRunsRunIdRoute
+  AuthDatasetsIndexRoute: typeof AuthDatasetsIndexRoute
+  AuthNamespacesIndexRoute: typeof AuthNamespacesIndexRoute
+  AuthRunsIndexRoute: typeof AuthRunsIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SettingsRoute: SettingsRoute,
-  DatasetsDatasetIdRoute: DatasetsDatasetIdRoute,
-  NamespacesNamespaceIdRoute: NamespacesNamespaceIdRoute,
-  RunsRunIdRoute: RunsRunIdRoute,
-  DatasetsIndexRoute: DatasetsIndexRoute,
-  NamespacesIndexRoute: NamespacesIndexRoute,
-  RunsIndexRoute: RunsIndexRoute,
+  LoginRoute: LoginRoute,
+  AuthSettingsRoute: AuthSettingsRoute,
+  AuthDatasetsDatasetIdRoute: AuthDatasetsDatasetIdRoute,
+  AuthNamespacesNamespaceIdRoute: AuthNamespacesNamespaceIdRoute,
+  AuthRunsRunIdRoute: AuthRunsRunIdRoute,
+  AuthDatasetsIndexRoute: AuthDatasetsIndexRoute,
+  AuthNamespacesIndexRoute: AuthNamespacesIndexRoute,
+  AuthRunsIndexRoute: AuthRunsIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -236,38 +258,42 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/settings",
-        "/datasets/$datasetId",
-        "/namespaces/$namespaceId",
-        "/runs/$runId",
-        "/datasets/",
-        "/namespaces/",
-        "/runs/"
+        "/login",
+        "/_auth/settings",
+        "/_auth/datasets/$datasetId",
+        "/_auth/namespaces/$namespaceId",
+        "/_auth/runs/$runId",
+        "/_auth/datasets/",
+        "/_auth/namespaces/",
+        "/_auth/runs/"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/settings": {
-      "filePath": "settings.tsx"
+    "/login": {
+      "filePath": "login.tsx"
     },
-    "/datasets/$datasetId": {
-      "filePath": "datasets/$datasetId.tsx"
+    "/_auth/settings": {
+      "filePath": "_auth/settings.tsx"
     },
-    "/namespaces/$namespaceId": {
-      "filePath": "namespaces/$namespaceId.tsx"
+    "/_auth/datasets/$datasetId": {
+      "filePath": "_auth/datasets/$datasetId.tsx"
     },
-    "/runs/$runId": {
-      "filePath": "runs/$runId.tsx"
+    "/_auth/namespaces/$namespaceId": {
+      "filePath": "_auth/namespaces/$namespaceId.tsx"
     },
-    "/datasets/": {
-      "filePath": "datasets/index.tsx"
+    "/_auth/runs/$runId": {
+      "filePath": "_auth/runs/$runId.tsx"
     },
-    "/namespaces/": {
-      "filePath": "namespaces/index.tsx"
+    "/_auth/datasets/": {
+      "filePath": "_auth/datasets/index.tsx"
     },
-    "/runs/": {
-      "filePath": "runs/index.tsx"
+    "/_auth/namespaces/": {
+      "filePath": "_auth/namespaces/index.tsx"
+    },
+    "/_auth/runs/": {
+      "filePath": "_auth/runs/index.tsx"
     }
   }
 }
