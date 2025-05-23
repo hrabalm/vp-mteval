@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from advanced_alchemy.base import BigIntAuditBase
-from sqlalchemy import JSON, DateTime, ForeignKey, Text, func, Uuid, Boolean
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -143,11 +143,7 @@ class TranslationRun(Base):
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",
     )
-    config: Mapped[JSON] = mapped_column(
-        JSON,
-        nullable=False,
-        default=dict
-    )
+    config: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
 
 
 # Metric results
@@ -292,3 +288,26 @@ class User(Base):
 
 class Job(Base):
     __tablename__ = "jobs"
+
+    namespace_id: Mapped[int] = mapped_column(
+        ForeignKey("namespaces.id"),
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    payload: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
+
+    namespace: Mapped["Namespace"] = relationship(
+        "Namespace",
+        back_populates="jobs",
+    )
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="jobs",
+    )
