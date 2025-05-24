@@ -18,3 +18,15 @@ build-backend = "pdm.backend"
 [tool.pdm]
 distribution = false
 
+
+[dependency-groups]
+dev = [
+    "sphinx>=8.2.3",
+    "sphinx-autobuild>=2024.10.3",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-toolbox>=4.0.0",
+    "sphinx-design>=0.6.1",
+    "sphinx-click>=6.0.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "shibuya>=2025.4.25",
+]
