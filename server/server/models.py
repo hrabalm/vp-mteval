@@ -305,9 +305,7 @@ class Job(Base):
 
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",
-        back_populates="jobs",
     )
     user: Mapped["User"] = relationship(
         "User",
-        back_populates="jobs",
     )
