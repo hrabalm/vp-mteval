@@ -32,7 +32,8 @@
     "**/*.d.ts",
     "resources/**/*.js",
     "resources/**/*.ts",
+    "resources/**/*.tsx",
     "vite.config.ts",
-    "resources/main.tsx"
+    "resources/main.tsx",
   ]
 }

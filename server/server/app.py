@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import selectinload
 
 import server.models as m
 
@@ -264,6 +265,32 @@ async def add_translation_run(
     )
 
 
+@get("/translations-runs/{run_id:int}")
+async def get_translation_run(
+    run_id: int,
+    transaction: AsyncSession,
+) -> ReadTranslationRun:
+    """Get a translation run by ID."""
+    query = (
+        select(m.TranslationRun)
+        .options(selectinload(m.TranslationRun.namespace))
+        .where(m.TranslationRun.id == run_id)
+    )
+    result = await transaction.execute(query)
+    try:
+        result1 = result.scalar_one()
+        return ReadTranslationRun(
+            id=result1.id,
+            uuid=result1.uuid,
+            dataset_id=result1.dataset_id,
+            namespace_id=result1.namespace_id,
+            namespace_name=result1.namespace.name,
+            config=result1.config,
+        )
+    except NoResultFound as e:
+        raise NotFoundException(detail=f"Translation run {run_id} not found")
+
+
 class WebController(Controller):
     opt = {"exclude_from_auth": True}
     include_in_schema = False
@@ -317,6 +344,7 @@ api_v1_router = Router(
     "/api/v1",
     route_handlers=[
         add_translation_run,
+        get_translation_run,
     ],
 )
 
