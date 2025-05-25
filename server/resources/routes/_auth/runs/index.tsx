@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { fetchRuns } from '../../../runs';
 
@@ -14,6 +14,13 @@ function RunsTable({ runs }) {
   const columns = [
     columnHelper.accessor('id', {
       header: () => 'ID',
+      cell: ({ getValue }) => (
+        <Link
+          to="/runs/$runId"
+          params={{ runId: getValue() }}
+          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+        >{getValue()}</Link>
+      ),
     }),
     columnHelper.accessor('uuid', {
       header: () => 'UUID',
