@@ -3,6 +3,14 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
 const appName = import.meta.env.VITE_APP_NAME || 'VP MTEval'
 
+const NavLink = ({ to, children }: { to: string, children: React.ReactNode }) => (
+  <Link
+    to={to}
+    className="flex items-center px-4 py-2 text-slate-700 rounded-md hover:bg-slate-200 [&.active]:bg-slate-200 [&.active]:font-medium [&.active]:text-slate-900"
+  >
+    {children}
+  </Link>
+)
 
 export const Route = createRootRoute({
   component: () => (
@@ -13,36 +21,11 @@ export const Route = createRootRoute({
           <h1 className="text-xl font-bold text-slate-800">{appName}</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <Link
-            to="/"
-            className="flex items-center px-4 py-2 text-slate-700 rounded-md hover:bg-slate-200 [&.active]:bg-slate-200 [&.active]:font-medium [&.active]:text-slate-900"
-          >
-            Home
-          </Link>
-          <Link
-            to="/namespaces/"
-            className="flex items-center px-4 py-2 text-slate-700 rounded-md hover:bg-slate-200 [&.active]:bg-slate-200 [&.active]:font-medium [&.active]:text-slate-900"
-          >
-            Namespaces
-          </Link>
-          <Link
-            to="/datasets/"
-            className="flex items-center px-4 py-2 text-slate-700 rounded-md hover:bg-slate-200 [&.active]:bg-slate-200 [&.active]:font-medium [&.active]:text-slate-900"
-          >
-            Datasets
-          </Link>
-          <Link
-            to="/runs"
-            className="flex items-center px-4 py-2 text-slate-700 rounded-md hover:bg-slate-200 [&.active]:bg-slate-200 [&.active]:font-medium [&.active]:text-slate-900"
-          >
-            Runs
-          </Link>
-          <Link
-            to="/settings"
-            className="flex items-center px-4 py-2 text-slate-700 rounded-md hover:bg-slate-200 [&.active]:bg-slate-200 [&.active]:font-medium [&.active]:text-slate-900"
-          >
-            Settings
-          </Link>
+          <NavLink to="/">Home</NavLink>
+          <NavLink to="/namespaces">Namespaces</NavLink>
+          <NavLink to="/datasets">Datasets</NavLink>
+          <NavLink to="/runs">Runs</NavLink>
+          <NavLink to="/settings">Settings</NavLink>
         </nav>
       </div>
 
