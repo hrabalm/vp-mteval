@@ -17,6 +17,6 @@ export const fetchRun = async (runId: string) => {
 
 export const fetchRuns = async () => {
     return api
-        .get('api/v1/runs')
+        .get('api/v1/translations-runs/')
         .then((r) => r.data)
 }

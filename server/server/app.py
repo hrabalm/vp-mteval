@@ -265,6 +265,32 @@ async def add_translation_run(
     )
 
 
+@get("/translations-runs/")
+async def get_translation_runs(
+    transaction: AsyncSession,
+) -> list[ReadTranslationRun]:
+    """Get all translation runs."""
+    query = (
+        select(m.TranslationRun)
+        .options(selectinload(m.TranslationRun.namespace))
+        .order_by(m.TranslationRun.id.desc())
+    )
+    result = await transaction.execute(query)
+    runs = result.scalars().all()
+
+    return [
+        ReadTranslationRun(
+            id=run.id,
+            uuid=run.uuid,
+            dataset_id=run.dataset_id,
+            namespace_id=run.namespace_id,
+            namespace_name=run.namespace.name,
+            config=run.config,
+        )
+        for run in runs
+    ]
+
+
 @get("/translations-runs/{run_id:int}")
 async def get_translation_run(
     run_id: int,
@@ -345,6 +371,7 @@ api_v1_router = Router(
     route_handlers=[
         add_translation_run,
         get_translation_run,
+        get_translation_runs,
     ],
 )
 
