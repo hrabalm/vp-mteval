@@ -1,8 +1,9 @@
-import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite"
-import react from "@vitejs/plugin-react"
+import tailwindcss from "@tailwindcss/vite";
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
+import react from "@vitejs/plugin-react";
 import litestar from "litestar-vite-plugin";
-import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import path from 'path';
+import { defineConfig } from "vite";
 
 const ASSET_URL = process.env.ASSET_URL || "/static/";
 const VITE_PORT = process.env.VITE_PORT || "5173";
@@ -47,7 +48,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": "resources"
+      // "@": "resources"
+      '@': path.resolve(__dirname, './resources')
     },
   },
 });

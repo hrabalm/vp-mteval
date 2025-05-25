@@ -1,3 +1,4 @@
+import { ModeToggle } from '@/components/mode-toggle'
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
@@ -19,6 +20,7 @@ export const Route = createRootRoute({
       <div className="w-64 bg-slate-50 border-r border-slate-200 h-full flex flex-col">
         <div className="p-4 border-b border-slate-200">
           <h1 className="text-xl font-bold text-slate-800">{appName}</h1>
+          <ModeToggle />
         </div>
         <nav className="flex-1 p-4 space-y-2">
           <NavLink to="/">Home</NavLink>
