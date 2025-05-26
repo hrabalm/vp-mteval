@@ -11,16 +11,25 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as LogoutImport } from './routes/logout'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
+import { Route as AuthUsersIndexImport } from './routes/_auth/users/index'
 import { Route as AuthRunsIndexImport } from './routes/_auth/runs/index'
 import { Route as AuthNamespacesIndexImport } from './routes/_auth/namespaces/index'
 import { Route as AuthDatasetsIndexImport } from './routes/_auth/datasets/index'
+import { Route as AuthUsersUserIdImport } from './routes/_auth/users/$userId'
 import { Route as AuthRunsRunIdImport } from './routes/_auth/runs/$runId'
 import { Route as AuthNamespacesNamespaceIdImport } from './routes/_auth/namespaces/$namespaceId'
 import { Route as AuthDatasetsDatasetIdImport } from './routes/_auth/datasets/$datasetId'
 
 // Create/Update Routes
+
+const LogoutRoute = LogoutImport.update({
+  id: '/logout',
+  path: '/logout',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
   id: '/login',
@@ -31,6 +40,12 @@ const LoginRoute = LoginImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthUsersIndexRoute = AuthUsersIndexImport.update({
+  id: '/_auth/users/',
+  path: '/users/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -49,6 +64,12 @@ const AuthNamespacesIndexRoute = AuthNamespacesIndexImport.update({
 const AuthDatasetsIndexRoute = AuthDatasetsIndexImport.update({
   id: '/_auth/datasets/',
   path: '/datasets/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthUsersUserIdRoute = AuthUsersUserIdImport.update({
+  id: '/_auth/users/$userId',
+  path: '/users/$userId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -88,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/logout': {
+      id: '/logout'
+      path: '/logout'
+      fullPath: '/logout'
+      preLoaderRoute: typeof LogoutImport
+      parentRoute: typeof rootRoute
+    }
     '/_auth/datasets/$datasetId': {
       id: '/_auth/datasets/$datasetId'
       path: '/datasets/$datasetId'
@@ -107,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/runs/$runId'
       fullPath: '/runs/$runId'
       preLoaderRoute: typeof AuthRunsRunIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/_auth/users/$userId': {
+      id: '/_auth/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof AuthUsersUserIdImport
       parentRoute: typeof rootRoute
     }
     '/_auth/datasets/': {
@@ -130,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRunsIndexImport
       parentRoute: typeof rootRoute
     }
+    '/_auth/users/': {
+      id: '/_auth/users/'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthUsersIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -138,35 +180,44 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
   '/datasets/$datasetId': typeof AuthDatasetsDatasetIdRoute
   '/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdRoute
   '/runs/$runId': typeof AuthRunsRunIdRoute
+  '/users/$userId': typeof AuthUsersUserIdRoute
   '/datasets': typeof AuthDatasetsIndexRoute
   '/namespaces': typeof AuthNamespacesIndexRoute
   '/runs': typeof AuthRunsIndexRoute
+  '/users': typeof AuthUsersIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
   '/datasets/$datasetId': typeof AuthDatasetsDatasetIdRoute
   '/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdRoute
   '/runs/$runId': typeof AuthRunsRunIdRoute
+  '/users/$userId': typeof AuthUsersUserIdRoute
   '/datasets': typeof AuthDatasetsIndexRoute
   '/namespaces': typeof AuthNamespacesIndexRoute
   '/runs': typeof AuthRunsIndexRoute
+  '/users': typeof AuthUsersIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/logout': typeof LogoutRoute
   '/_auth/datasets/$datasetId': typeof AuthDatasetsDatasetIdRoute
   '/_auth/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdRoute
   '/_auth/runs/$runId': typeof AuthRunsRunIdRoute
+  '/_auth/users/$userId': typeof AuthUsersUserIdRoute
   '/_auth/datasets/': typeof AuthDatasetsIndexRoute
   '/_auth/namespaces/': typeof AuthNamespacesIndexRoute
   '/_auth/runs/': typeof AuthRunsIndexRoute
+  '/_auth/users/': typeof AuthUsersIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -174,55 +225,70 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/logout'
     | '/datasets/$datasetId'
     | '/namespaces/$namespaceId'
     | '/runs/$runId'
+    | '/users/$userId'
     | '/datasets'
     | '/namespaces'
     | '/runs'
+    | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/logout'
     | '/datasets/$datasetId'
     | '/namespaces/$namespaceId'
     | '/runs/$runId'
+    | '/users/$userId'
     | '/datasets'
     | '/namespaces'
     | '/runs'
+    | '/users'
   id:
     | '__root__'
     | '/'
     | '/login'
+    | '/logout'
     | '/_auth/datasets/$datasetId'
     | '/_auth/namespaces/$namespaceId'
     | '/_auth/runs/$runId'
+    | '/_auth/users/$userId'
     | '/_auth/datasets/'
     | '/_auth/namespaces/'
     | '/_auth/runs/'
+    | '/_auth/users/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  LogoutRoute: typeof LogoutRoute
   AuthDatasetsDatasetIdRoute: typeof AuthDatasetsDatasetIdRoute
   AuthNamespacesNamespaceIdRoute: typeof AuthNamespacesNamespaceIdRoute
   AuthRunsRunIdRoute: typeof AuthRunsRunIdRoute
+  AuthUsersUserIdRoute: typeof AuthUsersUserIdRoute
   AuthDatasetsIndexRoute: typeof AuthDatasetsIndexRoute
   AuthNamespacesIndexRoute: typeof AuthNamespacesIndexRoute
   AuthRunsIndexRoute: typeof AuthRunsIndexRoute
+  AuthUsersIndexRoute: typeof AuthUsersIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  LogoutRoute: LogoutRoute,
   AuthDatasetsDatasetIdRoute: AuthDatasetsDatasetIdRoute,
   AuthNamespacesNamespaceIdRoute: AuthNamespacesNamespaceIdRoute,
   AuthRunsRunIdRoute: AuthRunsRunIdRoute,
+  AuthUsersUserIdRoute: AuthUsersUserIdRoute,
   AuthDatasetsIndexRoute: AuthDatasetsIndexRoute,
   AuthNamespacesIndexRoute: AuthNamespacesIndexRoute,
   AuthRunsIndexRoute: AuthRunsIndexRoute,
+  AuthUsersIndexRoute: AuthUsersIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -237,12 +303,15 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/login",
+        "/logout",
         "/_auth/datasets/$datasetId",
         "/_auth/namespaces/$namespaceId",
         "/_auth/runs/$runId",
+        "/_auth/users/$userId",
         "/_auth/datasets/",
         "/_auth/namespaces/",
-        "/_auth/runs/"
+        "/_auth/runs/",
+        "/_auth/users/"
       ]
     },
     "/": {
@@ -250,6 +319,9 @@ export const routeTree = rootRoute
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/logout": {
+      "filePath": "logout.tsx"
     },
     "/_auth/datasets/$datasetId": {
       "filePath": "_auth/datasets/$datasetId.tsx"
@@ -260,6 +332,9 @@ export const routeTree = rootRoute
     "/_auth/runs/$runId": {
       "filePath": "_auth/runs/$runId.tsx"
     },
+    "/_auth/users/$userId": {
+      "filePath": "_auth/users/$userId.tsx"
+    },
     "/_auth/datasets/": {
       "filePath": "_auth/datasets/index.tsx"
     },
@@ -268,6 +343,9 @@ export const routeTree = rootRoute
     },
     "/_auth/runs/": {
       "filePath": "_auth/runs/index.tsx"
+    },
+    "/_auth/users/": {
+      "filePath": "_auth/users/index.tsx"
     }
   }
 }

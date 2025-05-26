@@ -13,6 +13,36 @@ const NavLink = ({ to, children }: { to: string, children: React.ReactNode }) =>
   </Link>
 )
 
+const NavLinkSeparator = () => (
+  <div className="h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
+)
+
+const UnauthenticatedNavLinks = () => (
+  <>
+    <NavLink to="/">Home</NavLink>
+    <NavLink to="/login">Login</NavLink>
+  </>
+)
+
+const AuthenticatedNavLinks = () => (
+  <>
+    <NavLink to="/">Home</NavLink>
+    <NavLink to="/namespaces">Namespaces</NavLink>
+    <NavLink to="/datasets">Datasets</NavLink>
+    <NavLink to="/runs">Runs</NavLink>
+    <AdminNavLinks />
+    <NavLinkSeparator />
+    <NavLink to="/logout">Logout</NavLink>
+  </>
+)
+
+const AdminNavLinks = () => (
+  <>
+    <NavLinkSeparator />
+    <NavLink to="/users">Users</NavLink>
+  </>
+)
+
 export const Route = createRootRoute({
   component: () => (
     <div className="flex h-screen dark:bg-slate-900">
@@ -23,10 +53,7 @@ export const Route = createRootRoute({
           <ModeToggle />
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <NavLink to="/">Home</NavLink>
-          <NavLink to="/namespaces">Namespaces</NavLink>
-          <NavLink to="/datasets">Datasets</NavLink>
-          <NavLink to="/runs">Runs</NavLink>
+          <AuthenticatedNavLinks />
         </nav>
       </div>
 
