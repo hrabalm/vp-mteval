@@ -14,6 +14,7 @@ services:
       - node_modules:/app/server/node_modules
     environment:
       DATABASE_DROP: "true" # drop the database on startup
+      DATABASE_SEED: "true" # seed the database on startup
       VITE_HOT_RELOAD: "true" # enable hot reload
       VITE_DEV_MODE: "true" # enable dev mode
       VITE_API_BASE_URL: "http://localhost:8000"
