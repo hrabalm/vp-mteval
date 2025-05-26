@@ -1,4 +1,6 @@
+import json
 import os
+import pathlib
 import uuid as uuid_lib  # we need to rename this to avoid conflict with uuid var in dataclasses
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -201,8 +203,7 @@ async def create_segments_and_translations(
     await transaction.flush()
 
 
-@post("/translations-runs/")
-async def add_translation_run(
+async def _add_translation_run(
     data: TranslationRunPostData,
     transaction: AsyncSession,
 ) -> ReadTranslationRun:
@@ -262,6 +263,18 @@ async def add_translation_run(
         namespace_id=namespace.id,
         namespace_name=namespace.name,
         config=translation_run.config,
+    )
+
+
+@post("/translations-runs/")
+async def add_translation_run(
+    data: TranslationRunPostData,
+    transaction: AsyncSession,
+) -> ReadTranslationRun:
+    """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
+    return await _add_translation_run(
+        data=data,
+        transaction=transaction,
     )
 
 
@@ -348,6 +361,29 @@ async def initialize_db_extensions(app: Litestar):
     """Create required PostgreSQL extensions."""
     async with app.state.db_engine.begin() as conn:
         await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
+        await conn.commit()
+
+
+async def seed_database_with_testing_data(app: Litestar):
+    """Seed database with initial data if configured."""
+    if os.environ.get("DATABASE_SEED", "").lower() != "true":
+        return
+
+    print("Seeding database with initial data...", flush=True)
+
+    async with AsyncSession(app.state.db_engine, expire_on_commit=False) as session:
+        async with session.begin():
+            data_path = (
+                pathlib.Path(__file__).parent.parent / "data/translation_runs.json"
+            )
+            translation_runs = json.loads(open(data_path).read())
+            for run in translation_runs:
+                await _add_translation_run(
+                    data=TranslationRunPostData(
+                        **run,
+                    ),
+                    transaction=session,
+                )
 
 
 db_config = SQLAlchemyAsyncConfig(
@@ -389,6 +425,7 @@ app = Litestar(
     on_startup=[
         drop_all_tables_if_requested,
         initialize_db_extensions,
+        seed_database_with_testing_data,
     ],
     template_config=template_config,
 )
