@@ -27,7 +27,6 @@ export const Route = createRootRoute({
           <NavLink to="/namespaces">Namespaces</NavLink>
           <NavLink to="/datasets">Datasets</NavLink>
           <NavLink to="/runs">Runs</NavLink>
-          <NavLink to="/settings">Settings</NavLink>
         </nav>
       </div>
 
