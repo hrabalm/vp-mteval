@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
 
 import server.models as m
+from server.config import settings
 
 
 async def provide_transaction(
@@ -340,7 +341,9 @@ class WebController(Controller):
 
 
 async def drop_all_tables_if_requested(app: Litestar) -> None:
-    if os.environ.get("DATABASE_DROP", "").lower() == "true":
+    """On startup callback to drop all tables (for testing)
+    when configured to do so."""
+    if settings.drop_database_on_startup:
         print("Dropping all tables...", flush=True)
         metadata = MetaData()
 
@@ -366,7 +369,7 @@ async def initialize_db_extensions(app: Litestar):
 
 async def seed_database_with_testing_data(app: Litestar):
     """Seed database with initial data if configured."""
-    if os.environ.get("DATABASE_SEED", "").lower() != "true":
+    if settings.seed_database_on_startup is False:
         return
 
     print("Seeding database with initial data...", flush=True)
@@ -387,7 +390,7 @@ async def seed_database_with_testing_data(app: Litestar):
 
 
 db_config = SQLAlchemyAsyncConfig(
-    connection_string=os.environ["DATABASE_URL"],
+    connection_string=settings.database_connection_string,
     metadata=m.Base.metadata,
     create_all=True,
     before_send_handler="autocommit",

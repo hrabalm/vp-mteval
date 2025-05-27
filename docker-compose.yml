@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/mydatabase
+      SERVER_DATABASE_CONNECTION_STRING: postgresql+psycopg://postgres:postgres@db:5432/mydatabase
     ports:
       - "8000:8000"
     depends_on:
