@@ -106,7 +106,7 @@ class SegmentTranslation(Base):
     )
     segment: Mapped[Segment] = relationship("Segment", back_populates="translations")
 
-    metrics: Mapped[list["SegmentMetric"]] = relationship(
+    segment_metrics: Mapped[list["SegmentMetric"]] = relationship(
         "SegmentMetric",
         back_populates="segment_translation",
         cascade="all, delete-orphan",
@@ -135,8 +135,18 @@ class TranslationRun(Base):
         back_populates="translation_runs",
         cascade="all",
     )
-    metrics: Mapped[list["SegmentMetric"]] = relationship(
+    segment_metrics: Mapped[list["SegmentMetric"]] = relationship(
         "SegmentMetric",
+        back_populates="run",
+        cascade="all, delete-orphan",
+    )
+    dataset_metrics: Mapped[list["DatasetMetric"]] = relationship(
+        "DatasetMetric",
+        back_populates="run",
+        cascade="all, delete-orphan",
+    )
+    generic_metrics: Mapped[list["GenericMetric"]] = relationship(
+        "GenericMetric",
         back_populates="run",
         cascade="all, delete-orphan",
     )
@@ -166,11 +176,11 @@ class SegmentMetric(Base):
     )
     run: Mapped[TranslationRun] = relationship(
         "TranslationRun",
-        back_populates="metrics",
+        back_populates="segment_metrics",
     )
     segment_translation: Mapped[SegmentTranslation] = relationship(
         "SegmentTranslation",
-        back_populates="metrics",
+        back_populates="segment_metrics",
     )
 
 

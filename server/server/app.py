@@ -146,6 +146,18 @@ async def get_dataset_by_hash(
         ) from e
 
 
+class ReadSegmentMetric(BaseModel):
+    pass
+
+
+class ReadDatasetMetric(BaseModel):
+    pass
+
+
+class ReadGenericMetric(BaseModel):
+    pass
+
+
 class ReadTranslationRun(BaseModel):
     id: int
     uuid: uuid_lib.UUID
@@ -153,6 +165,8 @@ class ReadTranslationRun(BaseModel):
     namespace_id: int
     namespace_name: str
     config: dict[str, Any]
+    segment_metrics: list[ReadSegmentMetric]
+    dataset_metrics: list[ReadDatasetMetric]
 
 
 async def get_or_create_dataset(
@@ -273,6 +287,8 @@ async def _add_translation_run(
         namespace_id=namespace.id,
         namespace_name=namespace.name,
         config=translation_run.config,
+        segment_metrics=[],
+        dataset_metrics=[],
     )
 
 
@@ -295,7 +311,11 @@ async def get_translation_runs(
     """Get all translation runs."""
     query = (
         select(m.TranslationRun)
-        .options(selectinload(m.TranslationRun.namespace))
+        .options(
+            selectinload(m.TranslationRun.namespace),
+            selectinload(m.TranslationRun.segment_metrics),
+            selectinload(m.TranslationRun.dataset_metrics),
+        )
         .order_by(m.TranslationRun.id.desc())
     )
     result = await transaction.execute(query)
@@ -309,6 +329,8 @@ async def get_translation_runs(
             namespace_id=run.namespace_id,
             namespace_name=run.namespace.name,
             config=run.config,
+            segment_metrics=[ReadSegmentMetric(**sm) for sm in run.segment_metrics],
+            dataset_metrics=[ReadDatasetMetric(**dm) for dm in run.dataset_metrics],
         )
         for run in runs
     ]
@@ -322,7 +344,11 @@ async def get_translation_run(
     """Get a translation run by ID."""
     query = (
         select(m.TranslationRun)
-        .options(selectinload(m.TranslationRun.namespace))
+        .options(
+            selectinload(m.TranslationRun.namespace),
+            selectinload(m.TranslationRun.segment_metrics),
+            selectinload(m.TranslationRun.dataset_metrics),
+        )
         .where(m.TranslationRun.id == run_id)
     )
     result = await transaction.execute(query)
@@ -335,6 +361,8 @@ async def get_translation_run(
             namespace_id=result1.namespace_id,
             namespace_name=result1.namespace.name,
             config=result1.config,
+            segment_metrics=[ReadSegmentMetric(**sm) for sm in result1.segment_metrics],
+            dataset_metrics=[ReadDatasetMetric(**dm) for dm in result1.dataset_metrics],
         )
     except NoResultFound as e:
         raise NotFoundException(detail=f"Translation run {run_id} not found")
