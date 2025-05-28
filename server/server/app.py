@@ -64,6 +64,9 @@ def dataset_hash(segments: list[SegmentPostData], source_lang, target_lang) -> s
 
     For canonical JSON, see JCS(RFC8785):
     - https://datatracker.ietf.org/doc/html/rfc8785
+
+    Note that we take only the source and reference segments into
+    account as the target segments are linked to a run, not a dataset.
     """
     import hashlib
 
@@ -74,7 +77,13 @@ def dataset_hash(segments: list[SegmentPostData], source_lang, target_lang) -> s
     target_lang = iso639.Language.match(target_lang).part1
 
     data = {
-        "segments": [s.model_dump() for s in segments],
+        "segments": [
+            {
+                "src": s.src,
+                "ref": s.ref if s.ref is not None else "",
+            }
+            for s in segments
+        ],
         "source_lang": source_lang,
         "target_lang": target_lang,
     }
