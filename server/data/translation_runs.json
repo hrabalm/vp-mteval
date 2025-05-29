@@ -1,0 +1,18 @@
+[
+  {
+    "namespace_name": "default",
+    "dataset_name": "example_dataset",
+    "dataset_source_lang": "en",
+    "dataset_target_lang": "fr",
+    "segments": [
+      {
+        "src": "Hello, world!",
+        "tgt": "Bonjour, le monde!"
+      },
+      {
+        "src": "How are you?",
+        "tgt": "Comment ça va?"
+      }
+    ]
+  }
+]
