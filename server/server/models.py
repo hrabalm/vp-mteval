@@ -1,7 +1,16 @@
-from datetime import datetime
+import enum
 
 from advanced_alchemy.base import BigIntAuditBase
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, Text, Uuid, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Enum,
+    ForeignKey,
+    Integer,
+    Text,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -296,6 +305,30 @@ class User(Base):
 # - user and namespace (so that the job runner can choose to filter jobs by it)
 
 
+class WorkerStatus(enum.Enum):
+    WAITING = 1
+    WORKING = 2
+
+
+class Worker(Base):
+    __tablename__ = "workers"
+
+    namespace_id: Mapped[int] = mapped_column(
+        ForeignKey("namespaces.id"),
+        nullable=False,
+    )
+    status: Mapped[WorkerStatus] = mapped_column(
+        Enum(WorkerStatus, name="worker_status_enum"),
+        nullable=False,
+    )
+
+
+class JobStatus(enum.Enum):
+    PENDING = 1
+    RUNNING = 2
+    COMPLETED = 3
+
+
 class Job(Base):
     __tablename__ = "jobs"
 
@@ -310,7 +343,9 @@ class Job(Base):
 
     queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     priority: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    status: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    status: Mapped[JobStatus] = mapped_column(
+        Enum(JobStatus), nullable=False, index=True
+    )
     payload: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
 
     namespace: Mapped["Namespace"] = relationship(
