@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Optional, cast
 
 import iso639
-from advanced_alchemy.config import AsyncSessionConfig
+from advanced_alchemy.config import AsyncSessionConfig, EngineConfig
 from litestar import Controller, Litestar, Router, get, post
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
@@ -432,6 +432,9 @@ db_config = SQLAlchemyAsyncConfig(
     create_all=True,
     before_send_handler="autocommit",
     session_config=AsyncSessionConfig(expire_on_commit=False),  # keep attributes alive
+    engine_config=EngineConfig(
+        echo=settings.database_echo,
+    ),
 )
 
 template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates/"))
