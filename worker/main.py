@@ -1,0 +1,190 @@
+"""
+We handle main async main loop which frequently sends heartbeats to the
+server. The actual processing of jobs is done in a synchronous loop and
+data is sent to it via a queue. Results are returned through another
+queue.
+
+Ideally, I want to prefetch.
+"""
+
+# TODO: logging
+# TODO: loading external python metric definition
+import multiprocessing
+from typing import Literal, Protocol, ClassVar
+import queue
+
+import anyio
+import click
+from anyio.to_thread import run_sync
+from pydantic import BaseModel
+import httpx
+
+# Sentinel value to signal the worker to exit
+POISON_PILL = None
+HEARTBEAT_INTERVAL_SECONDS = 5
+NUM_FETCHED_TASKS = 2
+
+
+class Segment(BaseModel):
+    src: str
+    tgt: str
+    ref: str | None = None
+
+
+class WorkerExample(BaseModel):
+    segments: list[Segment]
+    src_lang: str
+    tgt_lang: str
+
+
+class WorkerExampleResult(BaseModel):
+    segment_scores: list[float] | None
+    dataset_score: float | None
+    higher_is_better: bool
+
+
+class MetricsProcessorProtocol(Protocol):
+    """Synchronous worker that continually processes examples from a queue."""
+
+    name: ClassVar[str]
+    requires_references: ClassVar[bool]
+    higher_is_better: ClassVar[bool] = True
+
+    def process_example(self, example: WorkerExample) -> WorkerExampleResult: ...
+
+
+class BLEUProcessor(MetricsProcessorProtocol):
+    def __init__(self):
+        import sacrebleu
+
+        # FIXME: setup tokenizer correctly for CJK languages
+        self.bleu = sacrebleu.BLEU()
+        # We need to use effective_order=True for sentences.
+        self.bleu_sentence = sacrebleu.BLEU(
+            effective_order=True,
+        )
+
+    name: ClassVar[str] = "BLEU"
+    requires_references: ClassVar[bool] = True
+    higher_is_better: ClassVar[bool] = True
+
+    def process_example(self, example: WorkerExample) -> WorkerExampleResult:
+        assert all(x.ref for x in example.segments)
+        hypotheses = [seg.tgt for seg in example.segments]
+        references = [seg.ref for seg in example.segments]
+        # Note: we support only BLEU with a single reference
+        # setting trg_lang to "zh", "ja" or "ko" should be sufficient
+        # as long as 13a is okay for all other considered languages.
+        bleu_score = self.bleu.corpus_score(
+            hypotheses=hypotheses,
+            references=[references],
+        )
+        # score_full = bleu_score.format()  # human-readable detailed format
+        segment_scores = [
+            self.bleu_sentence.sentence_score(hypo, [ref]).score
+            for hypo, ref in zip(hypotheses, references)
+        ]
+        print(segment_scores)
+        return WorkerExampleResult(
+            segment_scores=segment_scores,
+            dataset_score=bleu_score.score,
+            higher_is_better=self.higher_is_better,
+        )
+
+
+class Worker:
+    def __init__(self, metrics_processor: MetricsProcessorProtocol):
+        self.job_queue = multiprocessing.Queue()
+        self.result_queue = multiprocessing.Queue()
+        self.metrics_processor = metrics_processor
+
+    def main_loop(self):
+        while True:
+            example = self.job_queue.get()
+            if example is POISON_PILL:
+                self.result_queue.put(POISON_PILL)
+                break
+            result = self.metrics_processor.process_example(example)
+            self.result_queue.put(result)
+
+
+async def send_heartbeats(interval_seconds: int):
+    """Periodically send a heartbeat."""
+    while True:
+        print("Sending heartbeat...")
+        await anyio.sleep(interval_seconds)
+
+
+async def fetch_task():
+    # TODO: Depending on whether to process only current or indefinitely wait
+    # for new tasks, we either wait or emit POISON_PILL.
+    pass
+
+
+async def process_result():
+    pass
+
+
+async def register_worker(
+    host: str,
+    token: str,
+    metric: str,
+    namespace: str,
+    username: str | None,
+):
+    async with httpx.AsyncClient() as client:
+        headers = {
+            "Authorization": f"Bearer {token}",
+        }
+        response = await client.post(
+            f"{host}/api/v1/workers/register",
+            headers=headers,
+            json={
+                "namespace_id": namespace,
+                "metric": metric,
+                "username": username,
+            },
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+async def unregister_worker(
+    host: str,
+    token: str,
+    worker_id: str,
+):
+    async with httpx.AsyncClient() as client:
+        headers = {
+            "Authorization": f"Bearer {token}",
+        }
+        response = await client.delete(
+            f"{host}/api/v1/workers/{worker_id}",
+            headers=headers,
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+async def main():
+    # 1. Register the worker and announce what metric and what data, if in
+    #    single shot mode, we can leave if no data is provided before loading
+
+    # 2. Start the Worker subprocess and heartbeat task
+
+    # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
+
+    # 4. Every time a task is finished, push the results to the server and fetch another task. If not available, either wait (persistent mode) or emit POISON_PILL (single shot mode).
+    pass
+
+
+
+
+@click.command()
+def cli():
+    pass
+
+
+if __name__ == "__main__":
+    # cli()
+    pass
