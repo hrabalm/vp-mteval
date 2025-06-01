@@ -81,18 +81,64 @@ def test_bleu_processor_imperfect():
     )
 
 
-async def test_main():
+async def test_main_mp():
     import queue
     bleu_processor = main.BLEUProcessor()
     worker_instance = main.Worker(metrics_processor=bleu_processor)
 
     print(f"Starting worker with {bleu_processor.name} processor...")
 
-    async with anyio.create_task_group() as tg:
-        # Start the worker's main_loop in a separate thread
-        tg.start_soon(run_sync, worker_instance.main_loop)
-        print("Worker main_loop started in a background thread.")
+    # Start the worker's main_loop in a subprocess
+    worker_instance.start()
+    print("Worker main_loop started in a background subprocess.")
 
+    async with anyio.create_task_group() as tg:
+        # Start the heartbeat task
+        tg.start_soon(main.send_heartbeats, main.HEARTBEAT_INTERVAL_SECONDS)
+
+        # Prepare an example job
+        example_job = EXAMPLE_PERFECT_TRANSLATION
+
+        # Send the job to the worker
+        print("Sending job to worker...")
+        await run_sync(worker_instance.job_queue.put, example_job)
+
+        # Send another job
+        example_job_2 = EXAMPLE_IMPERFECT_TRANSLATION
+        print("Sending another job to worker...")
+        await run_sync(worker_instance.job_queue.put, example_job_2)
+
+        # Signal the worker to exit
+        print("Sending POISON_PILL to worker...")
+        await run_sync(worker_instance.job_queue.put, main.POISON_PILL)
+        print("Worker shutdown signaled.")
+
+        # Process the results
+        while True:
+            try:
+                result = await run_sync(worker_instance.result_queue.get_nowait)
+                print(f"Processed result: {result}")
+                if result is main.POISON_PILL:
+                    print("Received POISON_PILL, exiting result processing loop.")
+                    tg.cancel_scope.cancel()  # stop remaining heartbeat task
+                    break
+            except queue.Empty:
+                await anyio.sleep(1)
+    print("Worker has shut down. Main function finished.")
+
+
+async def test_main_threading():
+    import queue
+    bleu_processor = main.BLEUProcessor()
+    worker_instance = main.Worker(metrics_processor=bleu_processor)
+
+    print(f"Starting worker with {bleu_processor.name} processor...")
+
+    # Start the worker's main_loop in a subprocess
+    worker_instance.start_thread()
+    print("Worker main_loop started in a background subprocess.")
+
+    async with anyio.create_task_group() as tg:
         # Start the heartbeat task
         tg.start_soon(main.send_heartbeats, main.HEARTBEAT_INTERVAL_SECONDS)
 

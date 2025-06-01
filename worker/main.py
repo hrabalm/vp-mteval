@@ -98,7 +98,7 @@ class Worker:
         self.result_queue = multiprocessing.Queue()
         self.metrics_processor = metrics_processor
 
-    def main_loop(self):
+    def _main_loop(self):
         while True:
             example = self.job_queue.get()
             if example is POISON_PILL:
@@ -106,6 +106,17 @@ class Worker:
                 break
             result = self.metrics_processor.process_example(example)
             self.result_queue.put(result)
+    
+    def start(self):
+        """Start the worker in a separate process."""
+        self.process = multiprocessing.Process(target=self._main_loop)
+        self.process.start()
+    
+    def start_thread(self):
+        """Start the worker in a separate thread."""
+        import threading
+        self.thread = threading.Thread(target=self._main_loop)
+        self.thread.start()
 
 
 async def send_heartbeats(interval_seconds: int):
