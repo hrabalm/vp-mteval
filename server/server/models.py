@@ -10,6 +10,7 @@ from sqlalchemy import (
     Text,
     Uuid,
     func,
+    Float,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -308,6 +309,7 @@ class User(Base):
 class WorkerStatus(enum.Enum):
     WAITING = 1
     WORKING = 2
+    FINISHED = 3
 
 
 class Worker(Base):
@@ -317,10 +319,17 @@ class Worker(Base):
         ForeignKey("namespaces.id"),
         nullable=False,
     )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
     status: Mapped[WorkerStatus] = mapped_column(
         Enum(WorkerStatus, name="worker_status_enum"),
         nullable=False,
     )
+    last_heartbeat: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0
+    )  # Unix timestamp in seconds
 
 
 class JobStatus(enum.Enum):

@@ -424,6 +424,24 @@ async def seed_database_with_testing_data(app: Litestar):
                     ),
                     transaction=session,
                 )
+            
+            # Create default namespace if it doesn't exist
+            try:
+                await get_or_create_default_namespace(session)
+            except IntegrityError as e:
+                print(f"Error creating default namespace: {e}", flush=True)
+            
+            # Create default user if it doesn't exist
+            try:
+                default_user = m.User(
+                    id=1,
+                    username="default",
+                    email="test@ufal",
+                    password_hash="xxxx",
+                )
+                session.add(default_user)
+            except IntegrityError as e:
+                print(f"Error creating default user: {e}", flush=True)
 
 
 db_config = SQLAlchemyAsyncConfig(
@@ -445,12 +463,16 @@ vite_plugin = VitePlugin(
     )
 )
 
+# from server.routes.worker import worker_routes
+import server.routes.worker as worker_module  # Changed import
+
 api_v1_router = Router(
     "/api/v1",
     route_handlers=[
         add_translation_run,
         get_translation_run,
         get_translation_runs,
+        *worker_module.worker_routes,
     ],
 )
 
