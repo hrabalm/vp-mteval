@@ -8,7 +8,10 @@ Ideally, I want to prefetch.
 """
 
 # TODO: logging
+# TODO: logging levels per click option
 # TODO: loading external python metric definition
+# TODO: catch status error exceptions or remove them
+
 import multiprocessing
 from typing import Literal, Protocol, ClassVar
 import queue
@@ -18,6 +21,7 @@ import click
 from anyio.to_thread import run_sync
 from pydantic import BaseModel
 import httpx
+from functools import partial
 
 # Sentinel value to signal the worker to exit
 POISON_PILL = None
@@ -41,6 +45,11 @@ class WorkerExampleResult(BaseModel):
     segment_scores: list[float] | None
     dataset_score: float | None
     higher_is_better: bool
+
+
+class WorkerRegistrationResponse(BaseModel):
+    worker_id: int
+    num_jobs: int
 
 
 class MetricsProcessorProtocol(Protocol):
@@ -106,23 +115,36 @@ class Worker:
                 break
             result = self.metrics_processor.process_example(example)
             self.result_queue.put(result)
-    
+
     def start(self):
         """Start the worker in a separate process."""
         self.process = multiprocessing.Process(target=self._main_loop)
         self.process.start()
-    
+
     def start_thread(self):
         """Start the worker in a separate thread."""
         import threading
+
         self.thread = threading.Thread(target=self._main_loop)
         self.thread.start()
 
 
-async def send_heartbeats(interval_seconds: int):
+async def send_heartbeat(host, worker_id: int):
+    """Send a heartbeat to the server."""
+    async with httpx.AsyncClient() as client:
+        response = await client.put(f"{host}/api/v1/workers/{worker_id}/heartbeat")
+        response.raise_for_status()
+        return response.json()
+
+
+async def send_heartbeats(
+    interval_seconds: int, host: str, worker_id: int, is_fake: bool = False
+):
     """Periodically send a heartbeat."""
     while True:
         print("Sending heartbeat...")
+        if not is_fake:
+            await send_heartbeat(host, worker_id)
         await anyio.sleep(interval_seconds)
 
 
@@ -136,28 +158,32 @@ async def process_result():
     pass
 
 
+def create_auth_headers(token: str) -> dict[str, str]:
+    """Create headers for authentication."""
+    return {
+        "Authorization": f"Bearer {token}",
+    }
+
+
 async def register_worker(
     host: str,
     token: str,
     metric: str,
     namespace: str,
     username: str | None,
-):
+) -> WorkerRegistrationResponse:
     async with httpx.AsyncClient() as client:
-        headers = {
-            "Authorization": f"Bearer {token}",
-        }
         response = await client.post(
             f"{host}/api/v1/workers/register",
-            headers=headers,
+            headers=create_auth_headers(token),
             json={
-                "namespace_id": namespace,
+                "namespace_name": namespace,
                 "metric": metric,
                 "username": username,
             },
         )
         response.raise_for_status()
-        return response.json()
+        return WorkerRegistrationResponse.model_validate(response.json())
 
 
 async def unregister_worker(
@@ -166,36 +192,75 @@ async def unregister_worker(
     worker_id: str,
 ):
     async with httpx.AsyncClient() as client:
-        headers = {
-            "Authorization": f"Bearer {token}",
-        }
         response = await client.delete(
             f"{host}/api/v1/workers/{worker_id}",
-            headers=headers,
+            headers=create_auth_headers(token),
         )
         response.raise_for_status()
         return response.json()
 
 
-async def main():
+def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
+    tg.start_soon(
+        partial(
+            send_heartbeats,
+            interval_seconds,
+            host=host,
+            worker_id=worker_id,
+        )
+    )
+
+
+async def main(host, token, username, namespace, metric):
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
+    res = await register_worker(
+        host=host,
+        token=token,
+        metric=metric,
+        namespace=namespace,
+        username=username,
+    )
+    print(res)
 
-    # 2. Start the Worker subprocess and heartbeat task
+    async with anyio.create_task_group() as tg:
+        # 2. Start the Worker subprocess and heartbeat task
+        start_heartbeat_task(tg, 5, host, worker_id=res.worker_id)  # FIXME
 
     # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
 
     # 4. Every time a task is finished, push the results to the server and fetch another task. If not available, either wait (persistent mode) or emit POISON_PILL (single shot mode).
+
+    # 5. If we want to end, unregister the worker explicitly and exit.
+    # TODO: also call this on signal termination
     pass
-
-
 
 
 @click.command()
-def cli():
-    pass
+@click.option("--host", type=str, required=True, help="Server host URL")
+@click.option("--token", type=str, required=True, help="Authentication token")
+@click.option("--username", type=str, required=True, help="Username for the worker")
+@click.option(
+    "--namespace",
+    type=str,
+    required=True,
+    help="Namespace for the worker",
+    default="default",
+    show_default=True,
+)
+@click.option("--metric", type=str, required=True, help="Metric to be used")
+def cli(host, token, username, namespace, metric):
+    anyio.run(
+        partial(
+            main,
+            host=host,
+            token=token,
+            username=username,
+            namespace=namespace,
+            metric=metric,
+        )
+    )
 
 
 if __name__ == "__main__":
-    # cli()
-    pass
+    cli()

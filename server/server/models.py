@@ -310,6 +310,7 @@ class WorkerStatus(enum.Enum):
     WAITING = 1
     WORKING = 2
     FINISHED = 3
+    TIMED_OUT = 4  # Worker did not explicitly finish, but stopped sending heartbeats
 
 
 class Worker(Base):

@@ -2,6 +2,7 @@ import pytest
 import main
 import anyio
 from anyio.to_thread import run_sync
+from functools import partial
 
 pytestmark = pytest.mark.anyio
 
@@ -83,6 +84,7 @@ def test_bleu_processor_imperfect():
 
 async def test_main_mp():
     import queue
+
     bleu_processor = main.BLEUProcessor()
     worker_instance = main.Worker(metrics_processor=bleu_processor)
 
@@ -94,7 +96,15 @@ async def test_main_mp():
 
     async with anyio.create_task_group() as tg:
         # Start the heartbeat task
-        tg.start_soon(main.send_heartbeats, main.HEARTBEAT_INTERVAL_SECONDS)
+        tg.start_soon(
+            partial(
+                main.send_heartbeats,
+                main.HEARTBEAT_INTERVAL_SECONDS,
+                host="",
+                worker_id=1,
+                is_fake=True,
+            )
+        )
 
         # Prepare an example job
         example_job = EXAMPLE_PERFECT_TRANSLATION
@@ -129,6 +139,7 @@ async def test_main_mp():
 
 async def test_main_threading():
     import queue
+
     bleu_processor = main.BLEUProcessor()
     worker_instance = main.Worker(metrics_processor=bleu_processor)
 
@@ -140,7 +151,15 @@ async def test_main_threading():
 
     async with anyio.create_task_group() as tg:
         # Start the heartbeat task
-        tg.start_soon(main.send_heartbeats, main.HEARTBEAT_INTERVAL_SECONDS)
+        tg.start_soon(
+            partial(
+                main.send_heartbeats,
+                main.HEARTBEAT_INTERVAL_SECONDS,
+                host="",
+                worker_id=1,
+                is_fake=True,
+            )
+        )
 
         # Prepare an example job
         example_job = EXAMPLE_PERFECT_TRANSLATION
