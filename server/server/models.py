@@ -337,6 +337,7 @@ class Worker(Base):
         nullable=False,
         index=True,
     )
+    queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)
 
     user: Mapped["User"] = relationship(
         "User",

@@ -51,7 +51,9 @@ async def find_runs_without_jobs(
 async def create_new_jobs(transaction: AsyncSession, worker: models.Worker):
     """Create new jobs for translation runs that don't have associated jobs yet for this worker."""
     # Find runs without jobs for this worker
-    runs_without_jobs = await find_runs_without_jobs(transaction, worker.namespace_id, worker.metric)
+    runs_without_jobs = await find_runs_without_jobs(
+        transaction, worker.namespace_id, worker.metric
+    )
 
     # Create a new job for each run
     jobs = []
@@ -78,8 +80,11 @@ async def create_new_jobs(transaction: AsyncSession, worker: models.Worker):
 
 class WorkerRegistrationData(BaseModel):
     namespace_name: str
-    username: str | None  # If None, runs of all users are considered.
     metric: str
+    username: str | None = None  # If None, runs of all users are considered.
+    queue: str | None = (
+        None  # If None, the worker will be assigned to the default queue.
+    )
 
 
 class WorkerRegistrationResponse(BaseModel):
@@ -113,6 +118,7 @@ async def register_worker(
         user_id=user.id,
         status=models.WorkerStatus.WAITING,
         metric=data.metric,
+        queue=data.queue or "default",  # Default to "default" queue if not specified
     )
     transaction.add(worker)
     await transaction.flush()
