@@ -331,6 +331,12 @@ class Worker(Base):
     last_heartbeat: Mapped[float] = mapped_column(
         Float, nullable=False, default=0
     )  # Unix timestamp in seconds
+    metric: Mapped[str] = mapped_column(
+        # This string should uniquely identify the type of the metric
+        Text,
+        nullable=False,
+        index=True,
+    )
 
     user: Mapped["User"] = relationship(
         "User",
@@ -357,6 +363,10 @@ class Job(Base):
         ForeignKey("users.id"),
         nullable=False,
     )
+    run_id: Mapped[int] = mapped_column(
+        ForeignKey("translation_runs.id"),
+        nullable=False,
+    )
 
     queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     priority: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
@@ -364,10 +374,19 @@ class Job(Base):
         Enum(JobStatus), nullable=False, index=True
     )
     payload: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
+    metric: Mapped[str] = mapped_column(
+        # This string should uniquely identify the type of the metric
+        Text,
+        nullable=False,
+        index=True,
+    )
 
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",
     )
     user: Mapped["User"] = relationship(
         "User",
+    )
+    run: Mapped["TranslationRun"] = relationship(
+        "TranslationRun",
     )

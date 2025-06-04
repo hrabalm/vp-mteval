@@ -17,7 +17,8 @@ perhaps gRPC would be a better fit in the future.
 import litestar
 import litestar.exceptions
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, and_
+from sqlalchemy.orm import aliased
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
@@ -27,8 +28,53 @@ import server.models as models
 
 # region Worker Registration and Management
 
-async def assign_new_jobs():
-    pass
+
+async def find_runs_without_jobs(
+    transaction: AsyncSession, namespace_id: int, metric: str
+):
+    """Find translation runs that do not have associated jobs for the given namespace and metric."""
+    jobs = aliased(models.Job)
+
+    query = (
+        select(models.TranslationRun)
+        .outerjoin(
+            jobs,
+            and_(models.TranslationRun.id == jobs.run_id, jobs.metric == metric),
+        )
+        .filter(models.TranslationRun.namespace_id == namespace_id, jobs.id == None)
+    )
+
+    result = await transaction.execute(query)
+    return result.scalars().all()
+
+
+async def create_new_jobs(transaction: AsyncSession, worker: models.Worker):
+    """Create new jobs for translation runs that don't have associated jobs yet for this worker."""
+    # Find runs without jobs for this worker
+    runs_without_jobs = await find_runs_without_jobs(transaction, worker.namespace_id, worker.metric)
+
+    # Create a new job for each run
+    jobs = []
+    for run in runs_without_jobs:
+        job = models.Job(
+            namespace_id=worker.namespace_id,
+            user_id=worker.user_id,
+            run_id=run.id,
+            queue="default",  # Default queue, could be customized based on requirements
+            priority=1,  # Default priority
+            status=models.JobStatus.PENDING,
+            metric=worker.metric,
+            payload={},  # Empty payload initially
+        )
+        transaction.add(job)
+        jobs.append(job)
+
+    # Only commit if we actually created jobs
+    if jobs:
+        await transaction.flush()
+
+    return jobs
+
 
 class WorkerRegistrationData(BaseModel):
     namespace_name: str
@@ -66,13 +112,20 @@ async def register_worker(
         namespace_id=namespace.id,
         user_id=user.id,
         status=models.WorkerStatus.WAITING,
+        metric=data.metric,
     )
     transaction.add(worker)
     await transaction.flush()
-    # TODO: Create a list of affected runs and corresponding jobs. Count only those that are not finished yet.
+
+    # Create and assign jobs for the worker
+    # note that they are not yet assigned to it yet, because
+    # another worker doing the same metric might get to them first.
+    jobs = await create_new_jobs(transaction, worker)
+    await transaction.flush()
+
     return WorkerRegistrationResponse(
         worker_id=worker.id,
-        num_jobs=0,  # Replace with the actual number of jobs
+        num_jobs=len(jobs),
     )
 
 
