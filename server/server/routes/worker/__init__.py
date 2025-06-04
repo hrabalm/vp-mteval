@@ -27,6 +27,8 @@ import server.models as models
 
 # region Worker Registration and Management
 
+async def assign_new_jobs():
+    pass
 
 class WorkerRegistrationData(BaseModel):
     namespace_name: str
@@ -74,21 +76,51 @@ async def register_worker(
     )
 
 
+class ReadWorker(BaseModel):
+    id: int
+    namespace_name: str
+    username: str | None
+    status: models.WorkerStatus
+    last_heartbeat: float
+
+
 @litestar.get("/workers/{worker_id:int}")
 async def get_worker(
-    request: Any,
+    worker_id: int,
     transaction: AsyncSession,
-) -> None:
-    pass
+) -> ReadWorker:
+    worker = await transaction.get(models.Worker, worker_id)
+    if worker is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found."
+        )
+    return ReadWorker(
+        id=worker.id,
+        namespace_name=worker.namespace.name,
+        username=worker.user.username,
+        status=worker.status,
+        last_heartbeat=worker.last_heartbeat,
+    )
 
 
-@litestar.delete("/workers/{worker_id:int}")
-async def delete_worker(
-    request: Any,
+@litestar.post("/workers/{worker_id:int}/unregister")
+async def unregister_worker(
+    worker_id: int,
     transaction: AsyncSession,
 ) -> None:
-    """Explicitly delete/unregister a worker from the server and remove all its unfinished jobs. In case the worker forgets to call this, the cleanup will take place after a timeout."""
-    pass
+    """Explicitly unregister a worker from the server. In case the worker forgets to call this, the cleanup will take place after a timeout."""
+    try:
+        worker = await transaction.get(models.Worker, worker_id)
+    except NoResultFound:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found."
+        )
+    assert worker is not None
+    worker.status = models.WorkerStatus.FINISHED
+
+    # TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.
+
+    await transaction.commit()
 
 
 @litestar.put("/workers/{worker_id:int}/heartbeat")
@@ -100,9 +132,10 @@ async def heartbeat_worker(
     try:
         worker = await transaction.get(models.Worker, worker_id)
     except NoResultFound:
-        return litestar.exceptions.NotFoundException(
+        raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found."
         )
+    assert worker is not None
     worker.last_heartbeat = time.time()
     await transaction.commit()
 
@@ -141,7 +174,7 @@ async def heartbeat_worker(
 worker_routes = [
     register_worker,
     get_worker,
-    delete_worker,
+    unregister_worker,
     heartbeat_worker,
     # assign_job,
     # report_job_result,

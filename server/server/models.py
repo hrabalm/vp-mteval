@@ -332,6 +332,13 @@ class Worker(Base):
         Float, nullable=False, default=0
     )  # Unix timestamp in seconds
 
+    user: Mapped["User"] = relationship(
+        "User",
+    )
+    namespace: Mapped["Namespace"] = relationship(
+        "Namespace",
+    )
+
 
 class JobStatus(enum.Enum):
     PENDING = 1
