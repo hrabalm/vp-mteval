@@ -227,8 +227,14 @@ def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
         )
     )
 
+async def fetch_jobs(maximum: int) -> list:
+    ...
 
-async def main(host, token, username, namespace, metric):
+async def report_job_results():
+    ...
+
+async def main(host, token, username, namespace, metric, mode):
+    # TODO: handle mode
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
     res = await register_worker(
@@ -296,7 +302,8 @@ async def main(host, token, username, namespace, metric):
     show_default=True,
 )
 @click.option("--metric", type=str, required=True, help="Metric to be used")
-def cli(host, token, username, namespace, metric):
+@click.option("--mode", type=click.Choice(["persistent", "one-shot"]), default="persistent", show_default=True, help="Mode of operation. If one-shot, the worker will exit after processing all available runs. If persisent, it will keep running and processing runs until explicitly stopped.")
+def cli(host, token, username, namespace, metric, mode):
     anyio.run(
         partial(
             main,
@@ -305,6 +312,7 @@ def cli(host, token, username, namespace, metric):
             username=username,
             namespace=namespace,
             metric=metric,
+            mode=mode,
         )
     )
 
