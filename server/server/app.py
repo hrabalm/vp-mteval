@@ -146,6 +146,12 @@ async def get_dataset_by_hash(
         ) from e
 
 
+class ReadSegment(BaseModel):
+    src: str
+    tgt: str
+    ref: Optional[str] = None
+
+
 class ReadSegmentMetric(BaseModel):
     pass
 
@@ -165,6 +171,7 @@ class ReadTranslationRun(BaseModel):
     namespace_id: int
     namespace_name: str
     config: dict[str, Any]
+    segments: list[ReadSegment] | None = None
     segment_metrics: list[ReadSegmentMetric]
     dataset_metrics: list[ReadDatasetMetric]
 
@@ -289,6 +296,7 @@ async def _add_translation_run(
         config=translation_run.config,
         segment_metrics=[],
         dataset_metrics=[],
+        segments=None,
     )
 
 
@@ -331,6 +339,7 @@ async def get_translation_runs(
             config=run.config,
             segment_metrics=[ReadSegmentMetric(**sm) for sm in run.segment_metrics],
             dataset_metrics=[ReadDatasetMetric(**dm) for dm in run.dataset_metrics],
+            segments=None,
         )
         for run in runs
     ]
@@ -348,12 +357,24 @@ async def get_translation_run(
             selectinload(m.TranslationRun.namespace),
             selectinload(m.TranslationRun.segment_metrics),
             selectinload(m.TranslationRun.dataset_metrics),
+            selectinload(m.TranslationRun.dataset).selectinload(m.Dataset.segments),
+            selectinload(m.TranslationRun.translations),
         )
         .where(m.TranslationRun.id == run_id)
     )
     result = await transaction.execute(query)
     try:
         result1 = result.scalar_one()
+        dataset_segments = result1.dataset.segments
+        translation_segments = result1.translations
+        segments = [
+            ReadSegment(
+                src=ds.src,
+                tgt=ts.tgt,
+                ref=ds.tgt if ds.tgt is not None else None,
+            )
+            for ds, ts in zip(dataset_segments, translation_segments)
+        ]
         return ReadTranslationRun(
             id=result1.id,
             uuid=result1.uuid,
@@ -363,6 +384,7 @@ async def get_translation_run(
             config=result1.config,
             segment_metrics=[ReadSegmentMetric(**sm) for sm in result1.segment_metrics],
             dataset_metrics=[ReadDatasetMetric(**dm) for dm in result1.dataset_metrics],
+            segments=segments,
         )
     except NoResultFound as e:
         raise NotFoundException(detail=f"Translation run {run_id} not found")
@@ -424,13 +446,13 @@ async def seed_database_with_testing_data(app: Litestar):
                     ),
                     transaction=session,
                 )
-            
+
             # Create default namespace if it doesn't exist
             try:
                 await get_or_create_default_namespace(session)
             except IntegrityError as e:
                 print(f"Error creating default namespace: {e}", flush=True)
-            
+
             # Create default user if it doesn't exist
             try:
                 default_user = m.User(

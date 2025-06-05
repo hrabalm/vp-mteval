@@ -103,13 +103,13 @@ class BLEUProcessor(MetricsProcessorProtocol):
 
 class Worker:
     def __init__(self, metrics_processor: MetricsProcessorProtocol):
-        self.job_queue = multiprocessing.Queue()
+        self.examples_queue = multiprocessing.Queue()
         self.result_queue = multiprocessing.Queue()
         self.metrics_processor = metrics_processor
 
     def _main_loop(self):
         while True:
-            example = self.job_queue.get()
+            example = self.examples_queue.get()
             if example is POISON_PILL:
                 self.result_queue.put(POISON_PILL)
                 break
@@ -199,6 +199,23 @@ async def unregister_worker(
         response.raise_for_status()
         return response.json()
 
+async def assign_and_get_job(
+    host: str,
+    token: str,
+    worker_id: int,
+) -> dict | None:
+    """Assign a job to the worker and return it."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{host}/api/v1/workers/{worker_id}/jobs/assign",
+            headers=create_auth_headers(token),
+        )
+        response.raise_for_status()
+        data = response.json()
+        if not data:
+            return None
+        return data  # FIXME
+
 
 def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
     tg.start_soon(
@@ -227,7 +244,37 @@ async def main(host, token, username, namespace, metric):
         # 2. Start the Worker subprocess and heartbeat task
         start_heartbeat_task(tg, 5, host, worker_id=res.worker_id)  # FIXME
 
-    # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
+        # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
+        print("Fetching a single initial task...", flush=True)
+        job = await assign_and_get_job(
+            host=host,
+            token=token,
+            worker_id=res.worker_id,
+        )
+        print(job)
+        print("Fetched a single initial task...", flush=True)
+
+        initial_jobs = [job]
+
+        if len(initial_jobs) > 0:
+            worker = Worker(metrics_processor=BLEUProcessor())
+            worker.start()
+            for job in initial_jobs:
+                example = WorkerExample(
+                    # placeholder FIXME
+                    segments=[
+                        Segment(
+                            src=seg["src"],
+                            tgt=seg["tgt"],
+                            ref=seg.get("ref"),
+                        )
+                        for seg in job["segments"]
+                    ],
+                    src_lang=job["src_lang"],
+                    tgt_lang=job["tgt_lang"],
+                )
+                worker.examples_queue.put(example)
+
 
     # 4. Every time a task is finished, push the results to the server and fetch another task. If not available, either wait (persistent mode) or emit POISON_PILL (single shot mode).
 

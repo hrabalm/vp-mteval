@@ -18,10 +18,10 @@ import litestar
 import litestar.exceptions
 from pydantic import BaseModel
 from sqlalchemy import select, and_
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any
+from typing import Any, Optional
 import time
 
 import server.models as models
@@ -204,12 +204,93 @@ async def heartbeat_worker(
 # region Job Management
 
 
-# @litestar.post()
-# async def assign_job(
-#     request: Any,
-#     transaction: AsyncSession,
-# ):
-#     pass
+# FIXME: this type should not be duplicated, move it to a commin place
+class ReadSegment(BaseModel):
+    src: str
+    tgt: str
+    ref: Optional[str] = None
+
+
+class ReadJob(BaseModel):
+    id: int
+    namespace_id: int
+    user_id: int | None
+    run_id: int
+    queue: str
+    priority: int
+    status: models.JobStatus
+    metric: str
+    payload: dict | None
+    segments: list[ReadSegment] | None = None
+
+
+async def _assign_job_to_worker(
+    worker_id: int,
+    transaction: AsyncSession,
+) -> models.Job | None:
+    """Assign a job to a worker if available."""
+    # Find a job that is pending and not assigned to any worker
+    worker = await transaction.get(models.Worker, worker_id)
+    if worker is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found."
+        )
+    job_query = (
+        select(models.Job)
+        .options(
+            selectinload(models.Job.run).selectinload(models.TranslationRun.dataset).selectinload(models.Dataset.segments),
+            selectinload(models.Job.run).selectinload(models.TranslationRun.translations),
+        )
+        .where(
+            models.Job.namespace_id == worker.namespace_id,
+            models.Job.status == models.JobStatus.PENDING,
+            models.Job.worker_id == None,  # Not assigned to any worker
+        )
+        .order_by(
+            models.Job.priority.desc(),  # Prefer higher priority jobs
+            models.Job.created_at.desc(),  # Prefer newer jobs
+        )
+        .limit(1)
+    )
+    job = await transaction.scalar(job_query)
+
+    if job:
+        job.worker_id = worker_id  # Assign the job to the worker
+        job.status = models.JobStatus.RUNNING
+        return job
+
+
+@litestar.post("/workers/{worker_id:int}/jobs/assign")
+async def assign_job(
+    # data: Any,
+    worker_id: int,
+    transaction: AsyncSession,
+) -> ReadJob:
+    job = await _assign_job_to_worker(worker_id, transaction)
+    if job is None:
+        raise litestar.exceptions.NotFoundException(
+            f"No available job found for worker ID '{worker_id}'."
+        )
+    segments = [
+        ReadSegment(
+            src=ds.src,
+            tgt=ts.tgt,
+            ref=ds.tgt if ds.tgt is not None else None,
+        )
+        for ds, ts in zip(job.run.dataset.segments, job.run.translations)
+    ]
+    return ReadJob(
+        id=job.id,
+        namespace_id=job.namespace_id,
+        user_id=job.user_id,
+        run_id=job.run_id,
+        queue=job.queue,
+        priority=job.priority,
+        status=job.status,
+        metric=job.metric,
+        payload=job.payload or {},
+        segments=segments,
+    )
 
 
 # @litestar.post()
@@ -235,7 +316,7 @@ worker_routes = [
     get_worker,
     unregister_worker,
     heartbeat_worker,
-    # assign_job,
+    assign_job,
     # report_job_result,
     # get_job,
 ]

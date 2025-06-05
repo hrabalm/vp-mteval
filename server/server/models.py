@@ -115,6 +115,10 @@ class SegmentTranslation(Base):
         nullable=False,
     )
     segment: Mapped[Segment] = relationship("Segment", back_populates="translations")
+    run: Mapped["TranslationRun"] = relationship(
+        "TranslationRun",
+        back_populates="translations",
+    )
 
     segment_metrics: Mapped[list["SegmentMetric"]] = relationship(
         "SegmentMetric",
@@ -144,6 +148,11 @@ class TranslationRun(Base):
         "Dataset",
         back_populates="translation_runs",
         cascade="all",
+    )
+    translations: Mapped[list[SegmentTranslation]] = relationship(
+        "SegmentTranslation",
+        back_populates="run",
+        cascade="all, delete-orphan",
     )
     segment_metrics: Mapped[list["SegmentMetric"]] = relationship(
         "SegmentMetric",
@@ -367,6 +376,10 @@ class Job(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
+    )
+    worker_id: Mapped[int] = mapped_column(
+        ForeignKey("workers.id"),
+        nullable=True,  # Nullable if the job is not yet assigned to a worker
     )
 
     queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)

@@ -111,16 +111,16 @@ async def test_main_mp():
 
         # Send the job to the worker
         print("Sending job to worker...")
-        await run_sync(worker_instance.job_queue.put, example_job)
+        await run_sync(worker_instance.examples_queue.put, example_job)
 
         # Send another job
         example_job_2 = EXAMPLE_IMPERFECT_TRANSLATION
         print("Sending another job to worker...")
-        await run_sync(worker_instance.job_queue.put, example_job_2)
+        await run_sync(worker_instance.examples_queue.put, example_job_2)
 
         # Signal the worker to exit
         print("Sending POISON_PILL to worker...")
-        await run_sync(worker_instance.job_queue.put, main.POISON_PILL)
+        await run_sync(worker_instance.examples_queue.put, main.POISON_PILL)
         print("Worker shutdown signaled.")
 
         # Process the results
@@ -166,16 +166,16 @@ async def test_main_threading():
 
         # Send the job to the worker
         print("Sending job to worker...")
-        await run_sync(worker_instance.job_queue.put, example_job)
+        await run_sync(worker_instance.examples_queue.put, example_job)
 
         # Send another job
         example_job_2 = EXAMPLE_IMPERFECT_TRANSLATION
         print("Sending another job to worker...")
-        await run_sync(worker_instance.job_queue.put, example_job_2)
+        await run_sync(worker_instance.examples_queue.put, example_job_2)
 
         # Signal the worker to exit
         print("Sending POISON_PILL to worker...")
-        await run_sync(worker_instance.job_queue.put, main.POISON_PILL)
+        await run_sync(worker_instance.examples_queue.put, main.POISON_PILL)
         print("Worker shutdown signaled.")
 
         # Process the results
