@@ -81,6 +81,7 @@ async def create_new_jobs(transaction: AsyncSession, worker: models.Worker):
 class WorkerRegistrationData(BaseModel):
     namespace_name: str
     metric: str
+    metric_requires_references: bool
     username: str | None = None  # If None, runs of all users are considered.
     queue: str | None = (
         None  # If None, the worker will be assigned to the default queue.
@@ -118,6 +119,7 @@ async def register_worker(
         user_id=user.id,
         status=models.WorkerStatus.WAITING,
         metric=data.metric,
+        metric_requires_references=data.metric_requires_references,
         queue=data.queue or "default",  # Default to "default" queue if not specified
     )
     transaction.add(worker)
@@ -140,6 +142,8 @@ class ReadWorker(BaseModel):
     namespace_name: str
     username: str | None
     status: models.WorkerStatus
+    metric: str
+    metric_requires_references: bool
     last_heartbeat: float
 
 
@@ -158,6 +162,8 @@ async def get_worker(
         namespace_name=worker.namespace.name,
         username=worker.user.username,
         status=worker.status,
+        metric=worker.metric,
+        metric_requires_references=worker.metric_requires_references,
         last_heartbeat=worker.last_heartbeat,
     )
 
@@ -178,6 +184,12 @@ async def unregister_worker(
     worker.status = models.WorkerStatus.FINISHED
 
     # TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.
+    query = select(m.Jobs).where(m.Jobs.worker_id == worker_id)
+    unfinished_jobs = await transaction.scalars(query).all()
+    print(f"Worker {worker_id} is ending with {len(unfinished_jobs)} unfinished jobs...")
+    for job in unfinished_jobs:
+        job.worker_id = None
+        job.status = m.JobStatus.PENDING
 
     await transaction.commit()
 
@@ -222,6 +234,8 @@ class ReadJob(BaseModel):
     metric: str
     payload: dict | None
     segments: list[ReadSegment] | None = None
+    source_lang: str
+    target_lang: str
 
 
 async def _assign_job_to_worker(
@@ -235,6 +249,7 @@ async def _assign_job_to_worker(
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found."
         )
+    
     job_query = (
         select(models.Job)
         .options(
@@ -245,6 +260,12 @@ async def _assign_job_to_worker(
             models.Job.namespace_id == worker.namespace_id,
             models.Job.status == models.JobStatus.PENDING,
             models.Job.worker_id == None,  # Not assigned to any worker
+            # Only add the reference requirement if the metric requires references
+            *(
+                [models.Job.run.has(models.TranslationRun.dataset.has(models.Dataset.has_reference == True))]
+                if worker.metric_requires_references
+                else []
+            ),
         )
         .order_by(
             models.Job.priority.desc(),  # Prefer higher priority jobs
@@ -268,8 +289,9 @@ async def assign_job(
 ) -> ReadJob:
     job = await _assign_job_to_worker(worker_id, transaction)
     if job is None:
+        # Return a 404
         raise litestar.exceptions.NotFoundException(
-            f"No available job found for worker ID '{worker_id}'."
+            detail=f"No jobs available jobs found for worker {worker_id}",
         )
     segments = [
         ReadSegment(
@@ -290,6 +312,8 @@ async def assign_job(
         metric=job.metric,
         payload=job.payload or {},
         segments=segments,
+        source_lang=job.run.dataset.source_lang,
+        target_lang=job.run.dataset.target_lang,
     )
 
 

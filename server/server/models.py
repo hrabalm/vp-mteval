@@ -346,6 +346,10 @@ class Worker(Base):
         nullable=False,
         index=True,
     )
+    metric_requires_references: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+    )
     queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)
 
     user: Mapped["User"] = relationship(
