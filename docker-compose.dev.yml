@@ -12,6 +12,8 @@ services:
     volumes:
       - ./server:/app/server
       - node_modules:/app/server/node_modules
+      - .:/workspace
+      - node_modules:/workspace/node_modules
     environment:
       SERVER_DROP_DATABASE_ON_STARTUP: "true" # drop the database on startup
       SERVER_SEED_DATABASE_ON_STARTUP: "true" # seed the database on startup
