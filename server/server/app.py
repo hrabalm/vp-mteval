@@ -16,7 +16,7 @@ from litestar.response import Template
 from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT
 from litestar.template.config import TemplateConfig
 from litestar_vite import ViteConfig, VitePlugin
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -153,14 +153,28 @@ class ReadSegment(BaseModel):
 
 
 class ReadSegmentMetric(BaseModel):
-    pass
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    score: float
+    higher_is_better: bool = True
+
+    run_id: int
+    segment_translation_id: int
 
 
 class ReadDatasetMetric(BaseModel):
-    pass
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    score: float
+    higher_is_better: bool = True
+
+    run_id: int
 
 
 class ReadGenericMetric(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     pass
 
 
@@ -337,8 +351,13 @@ async def get_translation_runs(
             namespace_id=run.namespace_id,
             namespace_name=run.namespace.name,
             config=run.config,
-            segment_metrics=[ReadSegmentMetric(**sm) for sm in run.segment_metrics],
-            dataset_metrics=[ReadDatasetMetric(**dm) for dm in run.dataset_metrics],
+            # segment_metrics=[
+            #     ReadSegmentMetric.model_validate(sm) for sm in run.segment_metrics
+            # ],
+            segment_metrics=[],  # NOTE: Segment metrics are not included in translation_runs response
+            dataset_metrics=[
+                ReadDatasetMetric.model_validate(dm) for dm in run.dataset_metrics
+            ],
             segments=None,
         )
         for run in runs
@@ -382,8 +401,12 @@ async def get_translation_run(
             namespace_id=result1.namespace_id,
             namespace_name=result1.namespace.name,
             config=result1.config,
-            segment_metrics=[ReadSegmentMetric(**sm) for sm in result1.segment_metrics],
-            dataset_metrics=[ReadDatasetMetric(**dm) for dm in result1.dataset_metrics],
+            segment_metrics=[
+                ReadSegmentMetric.model_validate(sm) for sm in result1.segment_metrics
+            ],
+            dataset_metrics=[
+                ReadDatasetMetric.model_validate(dm) for dm in result1.dataset_metrics
+            ],
             segments=segments,
         )
     except NoResultFound as e:
