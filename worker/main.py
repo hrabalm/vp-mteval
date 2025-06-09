@@ -7,6 +7,9 @@ queue.
 Ideally, I want to prefetch.
 """
 
+# TODO: how do I handle metrics that need references?
+#           - I could just give out min or None
+#           - or explicitly ignore
 # TODO: logging
 # TODO: logging levels per click option
 # TODO: loading external python metric definition
@@ -78,9 +81,10 @@ class BLEUProcessor(MetricsProcessorProtocol):
     higher_is_better: ClassVar[bool] = True
 
     def process_example(self, example: WorkerExample) -> WorkerExampleResult:
-        assert all(x.ref for x in example.segments)
+        # assert all(x.ref for x in example.segments)  # FIXME: enable
         hypotheses = [seg.tgt for seg in example.segments]
         references = [seg.ref for seg in example.segments]
+        references = [seg.ref if seg.ref else "" for seg in example.segments]  # FIXME: remove
         # Note: we support only BLEU with a single reference
         # setting trg_lang to "zh", "ja" or "ko" should be sufficient
         # as long as 13a is okay for all other considered languages.
@@ -169,6 +173,7 @@ async def register_worker(
     host: str,
     token: str,
     metric: str,
+    metric_requires_references: bool,
     namespace: str,
     username: str | None,
 ) -> WorkerRegistrationResponse:
@@ -179,6 +184,7 @@ async def register_worker(
             json={
                 "namespace_name": namespace,
                 "metric": metric,
+                "metric_requires_references": metric_requires_references,
                 "username": username,
             },
         )
@@ -203,18 +209,16 @@ async def assign_and_get_job(
     host: str,
     token: str,
     worker_id: int,
-) -> dict | None:
+) -> list[dict]:
     """Assign a job to the worker and return it."""
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{host}/api/v1/workers/{worker_id}/jobs/assign",
-            headers=create_auth_headers(token),
-        )
-        response.raise_for_status()
-        data = response.json()
-        if not data:
-            return None
-        return data  # FIXME
+            response = await client.post(
+                f"{host}/api/v1/workers/{worker_id}/jobs/assign",
+                headers=create_auth_headers(token),
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data
 
 
 def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
@@ -233,6 +237,23 @@ async def fetch_jobs(maximum: int) -> list:
 async def report_job_results():
     ...
 
+def job_to_example(job):
+    print(job)
+    print(job["segments"])
+    example = WorkerExample(
+        segments=[
+            Segment(
+                src=seg["src"],
+                tgt=seg["tgt"],
+                ref=seg.get("ref"),
+            ) for seg in job["segments"]
+        ],
+        src_lang="English",  # FIXME
+        tgt_lang="Czech",
+    )
+    print(example)
+    return example
+
 async def main(host, token, username, namespace, metric, mode):
     # TODO: handle mode
     # 1. Register the worker and announce what metric and what data, if in
@@ -241,6 +262,7 @@ async def main(host, token, username, namespace, metric, mode):
         host=host,
         token=token,
         metric=metric,
+        metric_requires_references=BLEUProcessor.requires_references,
         namespace=namespace,
         username=username,
     )
@@ -252,33 +274,21 @@ async def main(host, token, username, namespace, metric, mode):
 
         # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
         print("Fetching a single initial task...", flush=True)
-        job = await assign_and_get_job(
+        jobs = await assign_and_get_job(
             host=host,
             token=token,
             worker_id=res.worker_id,
         )
-        print(job)
+        print(jobs)
         print("Fetched a single initial task...", flush=True)
 
-        initial_jobs = [job]
+        initial_jobs = jobs
 
         if len(initial_jobs) > 0:
             worker = Worker(metrics_processor=BLEUProcessor())
             worker.start()
             for job in initial_jobs:
-                example = WorkerExample(
-                    # placeholder FIXME
-                    segments=[
-                        Segment(
-                            src=seg["src"],
-                            tgt=seg["tgt"],
-                            ref=seg.get("ref"),
-                        )
-                        for seg in job["segments"]
-                    ],
-                    src_lang=job["src_lang"],
-                    tgt_lang=job["tgt_lang"],
-                )
+                example = job_to_example(job)
                 worker.examples_queue.put(example)
 
 
@@ -286,7 +296,11 @@ async def main(host, token, username, namespace, metric, mode):
 
     # 5. If we want to end, unregister the worker explicitly and exit.
     # TODO: also call this on signal termination
-    pass
+    unregister_worker(
+        host=host,
+        token=token,
+        worker_id=res.worker_id,
+    )
 
 
 @click.command()

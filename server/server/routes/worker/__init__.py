@@ -286,13 +286,12 @@ async def assign_job(
     # data: Any,
     worker_id: int,
     transaction: AsyncSession,
-) -> ReadJob:
+) -> list[ReadJob]:
+    """Note that this currently returns either [] if no appropriate 
+    job available or a list of single job if any jobs are available."""
     job = await _assign_job_to_worker(worker_id, transaction)
     if job is None:
-        # Return a 404
-        raise litestar.exceptions.NotFoundException(
-            detail=f"No jobs available jobs found for worker {worker_id}",
-        )
+        return []
     segments = [
         ReadSegment(
             src=ds.src,
@@ -301,7 +300,7 @@ async def assign_job(
         )
         for ds, ts in zip(job.run.dataset.segments, job.run.translations)
     ]
-    return ReadJob(
+    return [ReadJob(
         id=job.id,
         namespace_id=job.namespace_id,
         user_id=job.user_id,
@@ -314,7 +313,7 @@ async def assign_job(
         segments=segments,
         source_lang=job.run.dataset.source_lang,
         target_lang=job.run.dataset.target_lang,
-    )
+    )]
 
 
 # @litestar.post()
