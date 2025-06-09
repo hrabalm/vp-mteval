@@ -16,6 +16,7 @@ perhaps gRPC would be a better fit in the future.
 
 import litestar
 import litestar.exceptions
+import litestar.status_codes
 from pydantic import BaseModel
 from sqlalchemy import select, and_
 from sqlalchemy.orm import aliased, selectinload
@@ -186,7 +187,9 @@ async def unregister_worker(
     # TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.
     query = select(m.Jobs).where(m.Jobs.worker_id == worker_id)
     unfinished_jobs = await transaction.scalars(query).all()
-    print(f"Worker {worker_id} is ending with {len(unfinished_jobs)} unfinished jobs...")
+    print(
+        f"Worker {worker_id} is ending with {len(unfinished_jobs)} unfinished jobs..."
+    )
     for job in unfinished_jobs:
         job.worker_id = None
         job.status = m.JobStatus.PENDING
@@ -249,12 +252,16 @@ async def _assign_job_to_worker(
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found."
         )
-    
+
     job_query = (
         select(models.Job)
         .options(
-            selectinload(models.Job.run).selectinload(models.TranslationRun.dataset).selectinload(models.Dataset.segments),
-            selectinload(models.Job.run).selectinload(models.TranslationRun.translations),
+            selectinload(models.Job.run)
+            .selectinload(models.TranslationRun.dataset)
+            .selectinload(models.Dataset.segments),
+            selectinload(models.Job.run).selectinload(
+                models.TranslationRun.translations
+            ),
         )
         .where(
             models.Job.namespace_id == worker.namespace_id,
@@ -262,7 +269,13 @@ async def _assign_job_to_worker(
             models.Job.worker_id == None,  # Not assigned to any worker
             # Only add the reference requirement if the metric requires references
             *(
-                [models.Job.run.has(models.TranslationRun.dataset.has(models.Dataset.has_reference == True))]
+                [
+                    models.Job.run.has(
+                        models.TranslationRun.dataset.has(
+                            models.Dataset.has_reference == True
+                        )
+                    )
+                ]
                 if worker.metric_requires_references
                 else []
             ),
@@ -287,7 +300,7 @@ async def assign_job(
     worker_id: int,
     transaction: AsyncSession,
 ) -> list[ReadJob]:
-    """Note that this currently returns either [] if no appropriate 
+    """Note that this currently returns either [] if no appropriate
     job available or a list of single job if any jobs are available."""
     job = await _assign_job_to_worker(worker_id, transaction)
     if job is None:
@@ -300,29 +313,97 @@ async def assign_job(
         )
         for ds, ts in zip(job.run.dataset.segments, job.run.translations)
     ]
-    return [ReadJob(
-        id=job.id,
-        namespace_id=job.namespace_id,
-        user_id=job.user_id,
-        run_id=job.run_id,
-        queue=job.queue,
-        priority=job.priority,
-        status=job.status,
-        metric=job.metric,
-        payload=job.payload or {},
-        segments=segments,
-        source_lang=job.run.dataset.source_lang,
-        target_lang=job.run.dataset.target_lang,
-    )]
+    return [
+        ReadJob(
+            id=job.id,
+            namespace_id=job.namespace_id,
+            user_id=job.user_id,
+            run_id=job.run_id,
+            queue=job.queue,
+            priority=job.priority,
+            status=job.status,
+            metric=job.metric,
+            payload=job.payload or {},
+            segments=segments,
+            source_lang=job.run.dataset.source_lang,
+            target_lang=job.run.dataset.target_lang,
+        )
+    ]
 
 
-# @litestar.post()
-# async def report_job_result(
-#     request: Any,
-#     transaction: AsyncSession,
-# ):
-#     pass
+class PostSegmentMetric(BaseModel):
+    name: str
+    higher_is_better: bool
+    scores: list[float]
 
+
+class PostDatasetMetric(BaseModel):
+    name: str
+    higher_is_better: bool
+    score: float
+
+
+class JobResultRequest(BaseModel):
+    job_id: int
+    dataset_level_metrics: list[PostDatasetMetric]
+    segment_level_metrics: list[PostSegmentMetric]
+
+
+@litestar.post("/workers/{worker_id:int}/jobs/{job_id:int}/report_result")
+async def report_job_result(
+    worker_id: int,
+    data: JobResultRequest,
+    transaction: AsyncSession,
+) -> None:
+    worker = await transaction.get(models.Worker, worker_id)
+    if worker is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found."
+        )
+    job_query = (
+        select(models.Job)
+        .options(
+            selectinload(models.Job.run)
+            .selectinload(models.TranslationRun.dataset)
+            .selectinload(models.Dataset.segments),
+            selectinload(models.Job.run).selectinload(
+                models.TranslationRun.translations
+            ),
+        )
+        .where(models.Job.id == data.job_id)
+    )
+    job = await transaction.scalar(job_query)
+    if job is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Job with ID '{data.job_id}' not found."
+        )
+    if job.worker_id != worker_id:
+        raise litestar.exceptions.HTTPException(
+            f"Job with ID '{data.job_id}' is not assigned to worker with ID '{worker_id}'.",
+            status_code=litestar.status_codes.HTTP_400_BAD_REQUEST,
+        )
+
+    # Save dataset level metrics
+    for dataset_metric in data.dataset_level_metrics:
+        metric = models.DatasetMetric(
+            run_id=job.run_id,
+            name=dataset_metric.name,
+            higher_is_better=dataset_metric.higher_is_better,
+            score=dataset_metric.score,
+        )
+        transaction.add(metric)
+    
+    # Save segment level metrics
+    for segment_metric in data.segment_level_metrics:
+        for idx, score in enumerate(segment_metric.scores):
+            metric = models.SegmentMetric(
+                run_id=job.run_id,
+                name=segment_metric.name,
+                higher_is_better=segment_metric.higher_is_better,
+                score=score,
+                segment_translation_id=job.run.translations[idx].id,
+            )
+            transaction.add(metric)
 
 # @litestar.get()
 # async def get_job(
@@ -340,6 +421,6 @@ worker_routes = [
     unregister_worker,
     heartbeat_worker,
     assign_job,
-    # report_job_result,
+    report_job_result,
     # get_job,
 ]

@@ -45,6 +45,7 @@ class WorkerExample(BaseModel):
 
 
 class WorkerExampleResult(BaseModel):
+    name: str
     segment_scores: list[float] | None
     dataset_score: float | None
     higher_is_better: bool
@@ -84,7 +85,9 @@ class BLEUProcessor(MetricsProcessorProtocol):
         # assert all(x.ref for x in example.segments)  # FIXME: enable
         hypotheses = [seg.tgt for seg in example.segments]
         references = [seg.ref for seg in example.segments]
-        references = [seg.ref if seg.ref else "" for seg in example.segments]  # FIXME: remove
+        references = [
+            seg.ref if seg.ref else "" for seg in example.segments
+        ]  # FIXME: remove
         # Note: we support only BLEU with a single reference
         # setting trg_lang to "zh", "ja" or "ko" should be sufficient
         # as long as 13a is okay for all other considered languages.
@@ -99,6 +102,7 @@ class BLEUProcessor(MetricsProcessorProtocol):
         ]
         print(segment_scores)
         return WorkerExampleResult(
+            name=self.name,
             segment_scores=segment_scores,
             dataset_score=bleu_score.score,
             higher_is_better=self.higher_is_better,
@@ -195,7 +199,7 @@ async def register_worker(
 async def unregister_worker(
     host: str,
     token: str,
-    worker_id: str,
+    worker_id: int,
 ):
     async with httpx.AsyncClient() as client:
         response = await client.delete(
@@ -205,6 +209,7 @@ async def unregister_worker(
         response.raise_for_status()
         return response.json()
 
+
 async def assign_and_get_job(
     host: str,
     token: str,
@@ -212,13 +217,13 @@ async def assign_and_get_job(
 ) -> list[dict]:
     """Assign a job to the worker and return it."""
     async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{host}/api/v1/workers/{worker_id}/jobs/assign",
-                headers=create_auth_headers(token),
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data
+        response = await client.post(
+            f"{host}/api/v1/workers/{worker_id}/jobs/assign",
+            headers=create_auth_headers(token),
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data
 
 
 def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
@@ -231,11 +236,60 @@ def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
         )
     )
 
-async def fetch_jobs(maximum: int) -> list:
-    ...
 
-async def report_job_results():
-    ...
+async def fetch_jobs(maximum: int) -> list: ...
+
+
+class PostSegmentMetric(BaseModel):
+    name: str
+    higher_is_better: bool
+    scores: list[float]
+
+
+class PostDatasetMetric(BaseModel):
+    name: str
+    higher_is_better: bool
+    score: float
+
+
+class JobResultRequest(BaseModel):
+    job_id: int
+    dataset_level_metrics: list[PostDatasetMetric]
+    segment_level_metrics: list[PostSegmentMetric]
+
+
+async def report_job_results(
+    example_result: WorkerExampleResult,
+    job_id: int,
+    host: str,
+    token: str,
+    worker_id: int,
+):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{host}/api/v1/workers/{worker_id}/jobs/{job_id}/report_result",
+            headers=create_auth_headers(token),
+            json=JobResultRequest(
+                job_id=job_id,
+                dataset_level_metrics=[
+                    PostDatasetMetric(
+                        name=example_result.name,
+                        higher_is_better=example_result.higher_is_better,
+                        score=example_result.dataset_score,
+                    )
+                ],
+                segment_level_metrics=[
+                    PostSegmentMetric(
+                        name=example_result.name,
+                        higher_is_better=example_result.higher_is_better,
+                        scores=[score for score in example_result.segment_scores],
+                    ),
+                ],
+            ).model_dump(),
+        )
+        response.raise_for_status()
+        return response.json()
+
 
 def job_to_example(job):
     print(job)
@@ -246,13 +300,15 @@ def job_to_example(job):
                 src=seg["src"],
                 tgt=seg["tgt"],
                 ref=seg.get("ref"),
-            ) for seg in job["segments"]
+            )
+            for seg in job["segments"]
         ],
         src_lang="English",  # FIXME
         tgt_lang="Czech",
     )
     print(example)
     return example
+
 
 async def main(host, token, username, namespace, metric, mode):
     # TODO: handle mode
@@ -291,12 +347,54 @@ async def main(host, token, username, namespace, metric, mode):
                 example = job_to_example(job)
                 worker.examples_queue.put(example)
 
+        # 4. Every time a task is finished, push the results to the server and fetch another task. If not available, either wait (persistent mode) or emit POISON_PILL (single shot mode).
+        while True:
+            try:
+                # Get the result from the worker
+                example_result = await run_sync(worker.result_queue.get)
+                if example_result is POISON_PILL:
+                    print("Received POISON_PILL, exiting...")
+                    break
 
-    # 4. Every time a task is finished, push the results to the server and fetch another task. If not available, either wait (persistent mode) or emit POISON_PILL (single shot mode).
+                # Report the result to the server
+                print("Reporting job results...")
+                await report_job_results(
+                    example_result=example_result,
+                    job_id=initial_jobs[0]["id"],
+                    host=host,
+                    token=token,
+                    worker_id=res.worker_id,
+                )
+                print("Job results reported successfully.")
+
+                # Fetch a new job
+                print("Fetching a new job...")
+                jobs = await assign_and_get_job(
+                    host=host,
+                    token=token,
+                    worker_id=res.worker_id,
+                )
+                if not jobs:
+                    print("No more jobs available.")
+                    if mode == "one-shot":
+                        break  # Exit if in one-shot mode
+                    else:
+                        print("Waiting for new jobs...")
+                        await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
+                        continue
+
+                # Add the new job to the worker's queue
+                for job in jobs:
+                    example = job_to_example(job)
+                    worker.examples_queue.put(example)
+
+            except queue.Empty:
+                print("No results available, waiting...")
+                await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
 
     # 5. If we want to end, unregister the worker explicitly and exit.
     # TODO: also call this on signal termination
-    unregister_worker(
+    await unregister_worker(
         host=host,
         token=token,
         worker_id=res.worker_id,
@@ -316,7 +414,13 @@ async def main(host, token, username, namespace, metric, mode):
     show_default=True,
 )
 @click.option("--metric", type=str, required=True, help="Metric to be used")
-@click.option("--mode", type=click.Choice(["persistent", "one-shot"]), default="persistent", show_default=True, help="Mode of operation. If one-shot, the worker will exit after processing all available runs. If persisent, it will keep running and processing runs until explicitly stopped.")
+@click.option(
+    "--mode",
+    type=click.Choice(["persistent", "one-shot"]),
+    default="persistent",
+    show_default=True,
+    help="Mode of operation. If one-shot, the worker will exit after processing all available runs. If persisent, it will keep running and processing runs until explicitly stopped.",
+)
 def cli(host, token, username, namespace, metric, mode):
     anyio.run(
         partial(

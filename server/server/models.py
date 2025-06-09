@@ -183,6 +183,11 @@ class TranslationRun(Base):
 class SegmentMetric(Base):
     __tablename__ = "segment_metrics"
 
+    name: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        index=True,
+    )
     score: Mapped[float] = mapped_column(nullable=False)
     higher_is_better: Mapped[bool] = mapped_column(nullable=False)
     run_id: Mapped[int] = mapped_column(
@@ -205,6 +210,11 @@ class SegmentMetric(Base):
 
 class DatasetMetric(Base):
     __tablename__ = "dataset_metrics"
+    name: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        index=True,
+    )
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
