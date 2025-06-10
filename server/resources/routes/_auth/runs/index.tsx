@@ -52,7 +52,7 @@ function RunsTable({ runs }) {
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <th key={header.id} className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-semibold">
+                <th key={header.id} className="border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-4 py-2 text-left font-semibold">
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -66,9 +66,9 @@ function RunsTable({ runs }) {
         </thead>
         <tbody>
           {table.getRowModel().rows.map(row => (
-            <tr key={row.id} className="hover:bg-gray-50">
+            <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="border border-gray-300 px-4 py-2">
+                <td key={cell.id} className="border border-gray-300 dark:border-gray-700 px-4 py-2">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
