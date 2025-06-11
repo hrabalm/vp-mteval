@@ -10,7 +10,6 @@ Ideally, I want to prefetch.
 # TODO: how do I handle metrics that need references?
 #           - I could just give out min or None
 #           - or explicitly ignore
-# TODO: logging
 # TODO: logging levels per click option
 # TODO: loading external python metric definition
 # TODO: catch status error exceptions or remove them
@@ -18,6 +17,7 @@ Ideally, I want to prefetch.
 import multiprocessing
 from typing import Literal, Protocol, ClassVar
 import queue
+import logging
 
 import anyio
 import click
@@ -30,6 +30,19 @@ from functools import partial
 POISON_PILL = None
 HEARTBEAT_INTERVAL_SECONDS = 5
 NUM_FETCHED_TASKS = 2
+
+
+def setup_logging(log_level: str):
+    """Configure logging with the specified level."""
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f"Invalid log level: {log_level}")
+    
+    logging.basicConfig(
+        level=numeric_level,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
 
 class Segment(BaseModel):
@@ -100,7 +113,7 @@ class BLEUProcessor(MetricsProcessorProtocol):
             self.bleu_sentence.sentence_score(hypo, [ref]).score
             for hypo, ref in zip(hypotheses, references)
         ]
-        print(segment_scores)
+        logging.debug(f"Segment scores: {segment_scores}")
         return WorkerExampleResult(
             name=self.name,
             segment_scores=segment_scores,
@@ -150,7 +163,7 @@ async def send_heartbeats(
 ):
     """Periodically send a heartbeat."""
     while True:
-        print("Sending heartbeat...")
+        logging.info("Sending heartbeat...")
         if not is_fake:
             await send_heartbeat(host, worker_id)
         await anyio.sleep(interval_seconds)
@@ -292,8 +305,8 @@ async def report_job_results(
 
 
 def job_to_example(job):
-    print(job)
-    print(job["segments"])
+    logging.debug(f"Processing job: {job}")
+    logging.debug(f"Job segments: {job['segments']}")
     example = WorkerExample(
         segments=[
             Segment(
@@ -306,12 +319,14 @@ def job_to_example(job):
         src_lang="English",  # FIXME
         tgt_lang="Czech",
     )
-    print(example)
+    logging.debug(f"Created example: {example}")
     return example
 
 
-async def main(host, token, username, namespace, metric, mode):
-    # TODO: handle mode
+async def main(host, token, username, namespace, metric, mode, log_level):
+    # Setup logging with the specified level
+    setup_logging(log_level)
+    
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
     res = await register_worker(
@@ -322,21 +337,21 @@ async def main(host, token, username, namespace, metric, mode):
         namespace=namespace,
         username=username,
     )
-    print(res)
+    logging.info(f"Worker registered: {res}")
 
     async with anyio.create_task_group() as tg:
         # 2. Start the Worker subprocess and heartbeat task
         start_heartbeat_task(tg, 5, host, worker_id=res.worker_id)  # FIXME
 
         # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
-        print("Fetching a single initial task...", flush=True)
+        logging.info("Fetching a single initial task...")
         jobs = await assign_and_get_job(
             host=host,
             token=token,
             worker_id=res.worker_id,
         )
-        print(jobs)
-        print("Fetched a single initial task...", flush=True)
+        logging.debug(f"Fetched jobs: {jobs}")
+        logging.info("Fetched a single initial task...")
 
         initial_jobs = jobs
 
@@ -353,11 +368,11 @@ async def main(host, token, username, namespace, metric, mode):
                 # Get the result from the worker
                 example_result = await run_sync(worker.result_queue.get)
                 if example_result is POISON_PILL:
-                    print("Received POISON_PILL, exiting...")
+                    logging.info("Received POISON_PILL, exiting...")
                     break
 
                 # Report the result to the server
-                print("Reporting job results...")
+                logging.info("Reporting job results...")
                 await report_job_results(
                     example_result=example_result,
                     job_id=initial_jobs[0]["id"],
@@ -365,21 +380,21 @@ async def main(host, token, username, namespace, metric, mode):
                     token=token,
                     worker_id=res.worker_id,
                 )
-                print("Job results reported successfully.")
+                logging.info("Job results reported successfully.")
 
                 # Fetch a new job
-                print("Fetching a new job...")
+                logging.info("Fetching a new job...")
                 jobs = await assign_and_get_job(
                     host=host,
                     token=token,
                     worker_id=res.worker_id,
                 )
                 if not jobs:
-                    print("No more jobs available.")
+                    logging.info("No more jobs available.")
                     if mode == "one-shot":
                         break  # Exit if in one-shot mode
                     else:
-                        print("Waiting for new jobs...")
+                        logging.info("Waiting for new jobs...")
                         await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
                         continue
 
@@ -389,16 +404,18 @@ async def main(host, token, username, namespace, metric, mode):
                     worker.examples_queue.put(example)
 
             except queue.Empty:
-                print("No results available, waiting...")
+                logging.info("No results available, waiting...")
                 await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
 
     # 5. If we want to end, unregister the worker explicitly and exit.
     # TODO: also call this on signal termination
+    logging.info("Unregistering worker...")
     await unregister_worker(
         host=host,
         token=token,
         worker_id=res.worker_id,
     )
+    logging.info("Worker unregistered successfully.")
 
 
 @click.command()
@@ -421,7 +438,14 @@ async def main(host, token, username, namespace, metric, mode):
     show_default=True,
     help="Mode of operation. If one-shot, the worker will exit after processing all available runs. If persisent, it will keep running and processing runs until explicitly stopped.",
 )
-def cli(host, token, username, namespace, metric, mode):
+@click.option(
+    "--log-level",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    default="INFO",
+    show_default=True,
+    help="Set the logging level",
+)
+def cli(host, token, username, namespace, metric, mode, log_level):
     anyio.run(
         partial(
             main,
@@ -431,6 +455,7 @@ def cli(host, token, username, namespace, metric, mode):
             namespace=namespace,
             metric=metric,
             mode=mode,
+            log_level=log_level,
         )
     )
 
