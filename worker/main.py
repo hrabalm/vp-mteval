@@ -355,7 +355,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
 
         initial_jobs = jobs
 
-        if len(initial_jobs) > 0:
+        if len(initial_jobs) > 0 or mode == "persistent":
             worker = Worker(metrics_processor=BLEUProcessor())
             worker.start()
             for job in initial_jobs:
