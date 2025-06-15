@@ -21,6 +21,7 @@ from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
+from litestar_saq import QueueConfig, SAQConfig, SAQPlugin, CronJob
 
 import server.models as m
 from server.config import settings
@@ -521,6 +522,10 @@ api_v1_router = Router(
     ],
 )
 
+async def periodic_task(_):
+    import asyncio
+    asyncio.sleep(5)
+
 app = Litestar(
     [
         api_v1_router,
@@ -530,6 +535,28 @@ app = Litestar(
     dependencies={"transaction": provide_transaction},
     plugins=[
         SQLAlchemyPlugin(db_config),
+        SAQPlugin(SAQConfig(
+            # dsn="postgres://postgres:postgres@postgres",  # FIXME: move to settings
+            web_enabled=True,
+            use_server_lifespan=True,
+            queue_configs=[
+                QueueConfig(
+                    # name="samples",
+                    dsn="postgresql://postgres:postgres@db/mydatabase",  # FIXME: move to settings
+                    tasks=[
+                        periodic_task,
+                    ],
+                    scheduled_tasks=[
+                        CronJob(
+                            function=periodic_task,
+                            cron="* * * * *",
+                            timeout=600,
+                            ttl=200,                            
+                        )
+                    ]
+                ),
+            ]
+        )),
         vite_plugin,
     ],
     on_startup=[
