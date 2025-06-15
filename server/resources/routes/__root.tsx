@@ -48,7 +48,7 @@ export const Route = createRootRoute({
     <div className="flex h-screen dark:bg-slate-900">
       {/* Sidebar */}
       <div className="w-64 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 h-full flex flex-col">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">{appName}</h1>
           <ModeToggle />
         </div>
