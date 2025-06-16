@@ -549,13 +549,11 @@ app = Litestar(
     plugins=[
         SQLAlchemyPlugin(db_config),
         SAQPlugin(SAQConfig(
-            # dsn="postgres://postgres:postgres@postgres",  # FIXME: move to settings
             web_enabled=True,
             use_server_lifespan=True,
             queue_configs=[
                 QueueConfig(
-                    # name="samples",
-                    dsn="postgresql://postgres:postgres@db/mydatabase",  # FIXME: move to settings
+                    dsn=settings.saq_queue_dsn,
                     tasks=[
                         periodic_task,
                     ],

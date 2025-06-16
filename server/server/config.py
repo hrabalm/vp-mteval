@@ -12,5 +12,7 @@ class Settings:
     # Show SQLAlchemy SQL queries in the logs for debugging purposes.
     database_echo: bool = False
 
+    saq_queue_dsn: str
+
 
 settings = ts.load(Settings, appname="server")
