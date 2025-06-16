@@ -23,7 +23,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
 from litestar_saq import QueueConfig, SAQConfig, SAQPlugin, CronJob
 
+import server.tasks as tasks
 import server.models as m
+import server.plugins as plugins
 from server.config import settings
 
 
@@ -503,16 +505,6 @@ async def seed_database_with_testing_data(app: Litestar):
                 print(f"Error creating default user: {e}", flush=True)
 
 
-db_config = SQLAlchemyAsyncConfig(
-    connection_string=settings.database_connection_string,
-    metadata=m.Base.metadata,
-    create_all=True,
-    before_send_handler="autocommit",
-    session_config=AsyncSessionConfig(expire_on_commit=False),  # keep attributes alive
-    engine_config=EngineConfig(
-        echo=settings.database_echo,
-    ),
-)
 
 template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates/"))
 vite_plugin = VitePlugin(
@@ -547,7 +539,7 @@ app = Litestar(
     debug=True,
     dependencies={"transaction": provide_transaction},
     plugins=[
-        SQLAlchemyPlugin(db_config),
+        plugins.alchemy_plugin,
         SAQPlugin(SAQConfig(
             web_enabled=True,
             use_server_lifespan=True,
@@ -559,7 +551,7 @@ app = Litestar(
                     ],
                     scheduled_tasks=[
                         CronJob(
-                            function=periodic_task,
+                            function=tasks.cleanup_expired_workers_and_jobs_task,
                             cron="* * * * *",
                             timeout=600,
                             ttl=200,                            
