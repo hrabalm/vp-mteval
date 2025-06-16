@@ -430,10 +430,23 @@ async def drop_all_tables_if_requested(app: Litestar) -> None:
         print("Dropping all tables...", flush=True)
         metadata = MetaData()
 
+        # We keep tables managed by plugins such as SAQ
+        tables_to_keep = [
+            "saq_jobs",
+            "saq_stats",
+            "saq_versions",
+        ]
+
         # We can't call reflect on AsyncEngine, se we need to wrap it
         def drop_all_tables(engine):
             metadata.reflect(engine)
-            metadata.drop_all(engine)
+            # Create a filtered list of tables excluding those we want to keep
+            tables_to_drop = [
+                table for name, table in metadata.tables.items() 
+                if name not in tables_to_keep
+            ]
+            # Drop only the filtered tables
+            metadata.drop_all(engine, tables=tables_to_drop)
 
         async with app.state.db_engine.connect() as conn:
             await conn.run_sync(lambda sync_conn: drop_all_tables(sync_conn))
