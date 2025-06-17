@@ -1,18 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { fetchRun } from "../../../../../runs";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
   component: RouteComponent,
   loader: ({ params }) => fetchRun(params.runId, params.namespaceId),
 })
 
-function RouteComponent() {
-  const { runId } = Route.useParams();
+function RunTable() {
   const run = Route.useLoaderData();
-  
+
   const columnHelper = createColumnHelper();
-  
+
   const columns = [
     columnHelper.accessor('src', {
       header: () => 'Source',
@@ -67,7 +67,22 @@ function RouteComponent() {
           </tbody>
         </table>
       </div>
-      <pre className="mt-4">{JSON.stringify(run, null, 4)}</pre>
+    </>
+  );
+}
+
+function RouteComponent() {
+  const run = Route.useLoaderData();
+  return (
+    <>
+      <Tabs defaultValue='details'>
+        <TabsList>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="raw">Raw Data</TabsTrigger>
+        </TabsList>
+        <TabsContent value="details"><RunTable /></TabsContent>
+        <TabsContent value="raw"><pre className="mt-4">{JSON.stringify(run, null, 4)}</pre></TabsContent>
+      </Tabs>
     </>
   );
 }
