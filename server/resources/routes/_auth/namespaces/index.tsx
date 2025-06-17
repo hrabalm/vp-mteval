@@ -19,7 +19,7 @@ function NamespacesTable({ namespaces }) {
       header: () => 'Name',
       cell: ({ getValue }) => (
         <Link
-          to="/namespaces/$namespaceId/runs"
+          to="/namespaces/$namespaceId"
           params={{ namespaceId: getValue() }}
           className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
         >{getValue()}</Link>

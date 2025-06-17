@@ -83,12 +83,28 @@ function RunsTable({ runs }) {
 
 function RouteComponent() {
   const runs = Route.useLoaderData();
+  const { namespaceId } = Route.useParams();
 
   return (
     <div>
-      <h1>Runs</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Runs for Namespace: {namespaceId}</h1>
+        <Link 
+          to="/namespaces/$namespaceId"
+          params={{ namespaceId }}
+          className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-md"
+        >
+          Back to Namespace
+        </Link>
+      </div>
+      
       <RunsTable runs={runs} />
-      <pre>{JSON.stringify(runs, null, 2)}</pre>
+      
+      {/* Optional: Show raw data in expandable section */}
+      <details className="mt-8 bg-white dark:bg-slate-800 p-4 rounded-lg">
+        <summary className="cursor-pointer font-medium">Raw Data</summary>
+        <pre className="mt-2 p-2 bg-slate-100 dark:bg-slate-900 rounded overflow-auto">{JSON.stringify(runs, null, 2)}</pre>
+      </details>
     </div>
   );
 }
