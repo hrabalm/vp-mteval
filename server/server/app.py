@@ -240,7 +240,11 @@ async def create_segments_and_translations(
     """Create segment and translation records in bulk."""
     # 1. Bulk create Segment objects
     db_segments = [
-        m.Segment(src=segment.src, dataset_id=dataset_id)
+        m.Segment(
+            src=segment.src,
+            tgt=segment.ref,
+            dataset_id=dataset_id,
+        )
         for segment in segments
     ]
     transaction.add_all(db_segments)
