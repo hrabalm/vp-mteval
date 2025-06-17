@@ -80,7 +80,6 @@ async def create_new_jobs(transaction: AsyncSession, worker: models.Worker):
 
 
 class WorkerRegistrationData(BaseModel):
-    namespace_name: str
     metric: str
     metric_requires_references: bool
     username: str | None = None  # If None, runs of all users are considered.
@@ -94,19 +93,20 @@ class WorkerRegistrationResponse(BaseModel):
     num_jobs: int  # estimated number of remaining jobs at the moment (in case it is zero and the worker is working in one shot mode, it can exit without fully loading expensive libraries/models/etc.)
 
 
-@litestar.post("/workers/register")
+@litestar.post("/namespaces/{namespace_name:str}/workers/register")
 async def register_worker(
+    namespace_name: str,
     data: WorkerRegistrationData,
     transaction: AsyncSession,
 ) -> WorkerRegistrationResponse:
     # Create a worker record
     namespace_query = select(models.Namespace).where(
-        models.Namespace.name == data.namespace_name
+        models.Namespace.name == namespace_name
     )
     namespace = await transaction.scalar(namespace_query)
     if namespace is None:
         raise litestar.exceptions.NotFoundException(
-            f"Namespace with name '{data.namespace_name}' not found."
+            f"Namespace with name '{namespace_name}' not found."
         )
 
     user_query = select(models.User).where(models.User.username == data.username)
@@ -148,15 +148,25 @@ class ReadWorker(BaseModel):
     last_heartbeat: float
 
 
-@litestar.get("/workers/{worker_id:int}")
+@litestar.get("/namespaces/{namespace_name:str}/workers/{worker_id:int}")
 async def get_worker(
+    namespace_name: str,
     worker_id: int,
     transaction: AsyncSession,
 ) -> ReadWorker:
-    worker = await transaction.get(models.Worker, worker_id)
-    if worker is None:
+    namespace_query = select(models.Namespace).where(
+        models.Namespace.name == namespace_name
+    )
+    namespace = await transaction.scalar(namespace_query)
+    if namespace is None:
         raise litestar.exceptions.NotFoundException(
-            f"Worker with ID '{worker_id}' not found."
+            f"Namespace with name '{namespace_name}' not found."
+        )
+
+    worker = await transaction.get(models.Worker, worker_id)
+    if worker is None or worker.namespace_id != namespace.id:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
         )
     return ReadWorker(
         id=worker.id,
@@ -169,47 +179,75 @@ async def get_worker(
     )
 
 
-@litestar.post("/workers/{worker_id:int}/unregister")
+@litestar.post("/namespaces/{namespace_name:str}/workers/{worker_id:int}/unregister")
 async def unregister_worker(
+    namespace_name: str,
     worker_id: int,
     transaction: AsyncSession,
 ) -> None:
     """Explicitly unregister a worker from the server. In case the worker forgets to call this, the cleanup will take place after a timeout."""
+    namespace_query = select(models.Namespace).where(
+        models.Namespace.name == namespace_name
+    )
+    namespace = await transaction.scalar(namespace_query)
+    if namespace is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Namespace with name '{namespace_name}' not found."
+        )
+
     try:
         worker = await transaction.get(models.Worker, worker_id)
     except NoResultFound:
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found."
         )
-    assert worker is not None
+    if worker is None or worker.namespace_id != namespace.id:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
+        )
+    
     worker.status = models.WorkerStatus.FINISHED
 
     # TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.
-    query = select(m.Jobs).where(m.Jobs.worker_id == worker_id)
+    query = select(models.Job).where(models.Job.worker_id == worker_id)
     unfinished_jobs = await transaction.scalars(query).all()
     print(
         f"Worker {worker_id} is ending with {len(unfinished_jobs)} unfinished jobs..."
     )
     for job in unfinished_jobs:
         job.worker_id = None
-        job.status = m.JobStatus.PENDING
+        job.status = models.JobStatus.PENDING
 
     await transaction.commit()
 
 
-@litestar.put("/workers/{worker_id:int}/heartbeat")
+@litestar.put("/namespaces/{namespace_name:str}/workers/{worker_id:int}/heartbeat")
 async def heartbeat_worker(
+    namespace_name: str,
     worker_id: int,
     transaction: AsyncSession,
 ) -> None:
     """Update the worker's last heartbeat time to indicate that it is still alive."""
+    namespace_query = select(models.Namespace).where(
+        models.Namespace.name == namespace_name
+    )
+    namespace = await transaction.scalar(namespace_query)
+    if namespace is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Namespace with name '{namespace_name}' not found."
+        )
+
     try:
         worker = await transaction.get(models.Worker, worker_id)
     except NoResultFound:
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found."
         )
-    assert worker is not None
+    if worker is None or worker.namespace_id != namespace.id:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
+        )
+        
     worker.last_heartbeat = time.time()
     await transaction.commit()
 
@@ -294,14 +332,29 @@ async def _assign_job_to_worker(
         return job
 
 
-@litestar.post("/workers/{worker_id:int}/jobs/assign")
+@litestar.post("/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/assign")
 async def assign_job(
-    # data: Any,
+    namespace_name: str,
     worker_id: int,
     transaction: AsyncSession,
 ) -> list[ReadJob]:
     """Note that this currently returns either [] if no appropriate
     job available or a list of single job if any jobs are available."""
+    namespace_query = select(models.Namespace).where(
+        models.Namespace.name == namespace_name
+    )
+    namespace = await transaction.scalar(namespace_query)
+    if namespace is None:
+        raise litestar.exceptions.NotFoundException(
+            f"Namespace with name '{namespace_name}' not found."
+        )
+
+    worker = await transaction.get(models.Worker, worker_id)
+    if worker is None or worker.namespace_id != namespace.id:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
+        )
+        
     job = await _assign_job_to_worker(worker_id, transaction)
     if job is None:
         return []
@@ -349,17 +402,29 @@ class JobResultRequest(BaseModel):
     segment_level_metrics: list[PostSegmentMetric]
 
 
-@litestar.post("/workers/{worker_id:int}/jobs/{job_id:int}/report_result")
+@litestar.post("/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/{job_id:int}/report_result")
 async def report_job_result(
+    namespace_name: str,
     worker_id: int,
+    job_id: int,
     data: JobResultRequest,
     transaction: AsyncSession,
 ) -> None:
-    worker = await transaction.get(models.Worker, worker_id)
-    if worker is None:
+    namespace_query = select(models.Namespace).where(
+        models.Namespace.name == namespace_name
+    )
+    namespace = await transaction.scalar(namespace_query)
+    if namespace is None:
         raise litestar.exceptions.NotFoundException(
-            f"Worker with ID '{worker_id}' not found."
+            f"Namespace with name '{namespace_name}' not found."
         )
+
+    worker = await transaction.get(models.Worker, worker_id)
+    if worker is None or worker.namespace_id != namespace.id:
+        raise litestar.exceptions.NotFoundException(
+            f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
+        )
+        
     job_query = (
         select(models.Job)
         .options(
@@ -370,16 +435,16 @@ async def report_job_result(
                 models.TranslationRun.translations
             ),
         )
-        .where(models.Job.id == data.job_id)
+        .where(models.Job.id == job_id)
     )
     job = await transaction.scalar(job_query)
     if job is None:
         raise litestar.exceptions.NotFoundException(
-            f"Job with ID '{data.job_id}' not found."
+            f"Job with ID '{job_id}' not found."
         )
     if job.worker_id != worker_id:
         raise litestar.exceptions.HTTPException(
-            f"Job with ID '{data.job_id}' is not assigned to worker with ID '{worker_id}'.",
+            f"Job with ID '{job_id}' is not assigned to worker with ID '{worker_id}'.",
             status_code=litestar.status_codes.HTTP_400_BAD_REQUEST,
         )
 

@@ -15,17 +15,18 @@ from litestar.exceptions import ClientException, NotFoundException
 from litestar.response import Template
 from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT
 from litestar.template.config import TemplateConfig
+from litestar_saq import CronJob, QueueConfig, SAQConfig, SAQPlugin
 from litestar_vite import ViteConfig, VitePlugin
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import MetaData, select, text
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
-from litestar_saq import QueueConfig, SAQConfig, SAQPlugin, CronJob
 
-import server.tasks as tasks
 import server.models as m
 import server.plugins as plugins
+import server.routes.worker as worker_module  # Changed import
+import server.tasks as tasks
 from server.config import settings
 
 
@@ -317,23 +318,30 @@ async def _add_translation_run(
     )
 
 
-@post("/translations-runs/")
+@post("/namespaces/{namespace_name:str}/translations-runs/")
 async def add_translation_run(
+    namespace_name: str,
     data: TranslationRunPostData,
     transaction: AsyncSession,
 ) -> ReadTranslationRun:
     """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
+    # Update the namespace_name in the data to ensure it matches the URL parameter
+    data.namespace_name = namespace_name
     return await _add_translation_run(
         data=data,
         transaction=transaction,
     )
 
 
-@get("/translations-runs/")
+@get("/namespaces/{namespace_name:str}/translations-runs/")
 async def get_translation_runs(
+    namespace_name: str,
     transaction: AsyncSession,
 ) -> list[ReadTranslationRun]:
-    """Get all translation runs."""
+    """Get all translation runs for a specific namespace."""
+    # Get namespace by name
+    namespace = await get_namespace_by_name(namespace_name, transaction)
+
     query = (
         select(m.TranslationRun)
         .options(
@@ -341,6 +349,7 @@ async def get_translation_runs(
             selectinload(m.TranslationRun.segment_metrics),
             selectinload(m.TranslationRun.dataset_metrics),
         )
+        .where(m.TranslationRun.namespace_id == namespace.id)
         .order_by(m.TranslationRun.id.desc())
     )
     result = await transaction.execute(query)
@@ -354,9 +363,6 @@ async def get_translation_runs(
             namespace_id=run.namespace_id,
             namespace_name=run.namespace.name,
             config=run.config,
-            # segment_metrics=[
-            #     ReadSegmentMetric.model_validate(sm) for sm in run.segment_metrics
-            # ],
             segment_metrics=[],  # NOTE: Segment metrics are not included in translation_runs response
             dataset_metrics=[
                 ReadDatasetMetric.model_validate(dm) for dm in run.dataset_metrics
@@ -367,12 +373,16 @@ async def get_translation_runs(
     ]
 
 
-@get("/translations-runs/{run_id:int}")
+@get("/namespaces/{namespace_name:str}/translations-runs/{run_id:int}")
 async def get_translation_run(
+    namespace_name: str,
     run_id: int,
     transaction: AsyncSession,
 ) -> ReadTranslationRun:
-    """Get a translation run by ID."""
+    """Get a translation run by ID within a specific namespace."""
+    # Get namespace by name
+    namespace = await get_namespace_by_name(namespace_name, transaction)
+
     query = (
         select(m.TranslationRun)
         .options(
@@ -382,7 +392,9 @@ async def get_translation_run(
             selectinload(m.TranslationRun.dataset).selectinload(m.Dataset.segments),
             selectinload(m.TranslationRun.translations),
         )
-        .where(m.TranslationRun.id == run_id)
+        .where(
+            m.TranslationRun.id == run_id, m.TranslationRun.namespace_id == namespace.id
+        )
     )
     result = await transaction.execute(query)
     try:
@@ -412,8 +424,10 @@ async def get_translation_run(
             ],
             segments=segments,
         )
-    except NoResultFound as e:
-        raise NotFoundException(detail=f"Translation run {run_id} not found")
+    except NoResultFound:
+        raise NotFoundException(
+            detail=f"Translation run {run_id} not found in namespace '{namespace_name}'"
+        )
 
 
 class WebController(Controller):
@@ -444,7 +458,8 @@ async def drop_all_tables_if_requested(app: Litestar) -> None:
             metadata.reflect(engine)
             # Create a filtered list of tables excluding those we want to keep
             tables_to_drop = [
-                table for name, table in metadata.tables.items() 
+                table
+                for name, table in metadata.tables.items()
                 if name not in tables_to_keep
             ]
             # Drop only the filtered tables
@@ -505,7 +520,6 @@ async def seed_database_with_testing_data(app: Litestar):
                 print(f"Error creating default user: {e}", flush=True)
 
 
-
 template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates/"))
 vite_plugin = VitePlugin(
     config=ViteConfig(
@@ -514,22 +528,18 @@ vite_plugin = VitePlugin(
     )
 )
 
-# from server.routes.worker import worker_routes
-import server.routes.worker as worker_module  # Changed import
-
 api_v1_router = Router(
     "/api/v1",
     route_handlers=[
+        # Namespace-based routes
         add_translation_run,
-        get_translation_run,
         get_translation_runs,
+        get_translation_run,
+        # Worker routes
         *worker_module.worker_routes,
     ],
 )
 
-async def periodic_task(_):
-    import asyncio
-    asyncio.sleep(5)
 
 app = Litestar(
     [
@@ -540,26 +550,28 @@ app = Litestar(
     dependencies={"transaction": provide_transaction},
     plugins=[
         plugins.alchemy_plugin,
-        SAQPlugin(SAQConfig(
-            web_enabled=True,
-            use_server_lifespan=True,
-            queue_configs=[
-                QueueConfig(
-                    dsn=settings.saq_queue_dsn,
-                    tasks=[
-                        periodic_task,
-                    ],
-                    scheduled_tasks=[
-                        CronJob(
-                            function=tasks.cleanup_expired_workers_and_jobs_task,
-                            cron="* * * * *",
-                            timeout=600,
-                            ttl=200,                            
-                        )
-                    ]
-                ),
-            ]
-        )),
+        SAQPlugin(
+            SAQConfig(
+                web_enabled=True,
+                use_server_lifespan=True,
+                queue_configs=[
+                    QueueConfig(
+                        dsn=settings.saq_queue_dsn,
+                        tasks=[
+                            tasks.cleanup_expired_workers_and_jobs_task,
+                        ],
+                        scheduled_tasks=[
+                            CronJob(
+                                function=tasks.cleanup_expired_workers_and_jobs_task,
+                                cron="* * * * *",
+                                timeout=600,
+                                ttl=200,
+                            )
+                        ],
+                    ),
+                ],
+            )
+        ),
         vite_plugin,
     ],
     on_startup=[

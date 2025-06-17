@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import { fetchRuns } from '../../../runs';
+import { fetchRuns } from '../../../../../runs';
 
-export const Route = createFileRoute('/_auth/runs/')({
+export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
-  loader: () => fetchRuns(),
+  loader: ({ params }) => fetchRuns(params.namespaceId),
 })
 
 function RunsTable({ runs }) {
   const columnHelper = createColumnHelper();
+  const namespaceId = Route.useParams().namespaceId;
 
   // TODO: columns are dynamic and have to be configurable (based on available settings and metrics)
   const columns = [
@@ -16,8 +17,8 @@ function RunsTable({ runs }) {
       header: () => 'ID',
       cell: ({ getValue }) => (
         <Link
-          to="/runs/$runId"
-          params={{ runId: getValue() }}
+          to="/namespaces/$namespaceId/runs/$runId"
+          params={{ namespaceId: namespaceId, runId: getValue() }}
           className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
         >{getValue()}</Link>
       ),

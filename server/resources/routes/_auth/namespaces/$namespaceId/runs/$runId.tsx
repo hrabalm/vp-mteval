@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { fetchRun } from "../../../runs";
+import { fetchRun } from "../../../../../runs";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
-export const Route = createFileRoute('/_auth/runs/$runId')({
+export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
   component: RouteComponent,
-  loader: ({ params: { runId } }) => fetchRun(runId),
+  loader: ({ params }) => fetchRun(params.runId, params.namespaceId),
 })
 
 function RouteComponent() {
