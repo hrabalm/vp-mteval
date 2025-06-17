@@ -1,17 +1,14 @@
 import { ModeToggle } from '@/components/mode-toggle'
-import { createRootRoute, Link, Outlet, useMatches } from '@tanstack/react-router'
+import { createRootRoute, createRootRouteWithContext, Link, Outlet, useMatches } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { useState } from 'react'
+import type { AuthContext } from '../auth'
+import { useAuth } from '../auth'
 
 const appName = import.meta.env.VITE_APP_NAME || 'VP MTEval'
 
-// TODO: Implement
-const useAuth = () => {
-  // TODO
-  const [isAuthenticated, setIsAuthenticated] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
-
-  return { isAuthenticated, isAdmin }
+interface MyRouterContext {
+  auth: AuthContext
 }
 
 const NavLink = ({ to, children }: { to: string, children: React.ReactNode }) => (
@@ -171,9 +168,9 @@ const Breadcrumbs = () => {
   );
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => {
-    const { isAuthenticated, isAdmin } = useAuth()
+    const authContext = useAuth()
 
     return (
       <div className="flex h-screen dark:bg-slate-900">
@@ -184,8 +181,8 @@ export const Route = createRootRoute({
             <ModeToggle />
           </div>
           <nav className="flex-1 p-4 space-y-2">
-            {isAuthenticated
-              ? <AuthenticatedNavLinks isAdmin={isAdmin} />
+            {authContext.isAuthenticated
+              ? <AuthenticatedNavLinks isAdmin={authContext.isAdmin} />
               : <UnauthenticatedNavLinks />
             }
           </nav>
