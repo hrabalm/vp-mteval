@@ -238,24 +238,24 @@ async def create_segments_and_translations(
     transaction: AsyncSession,
 ) -> None:
     """Create segment and translation records in bulk."""
-    for segment in segments:
-        db_segment = m.Segment(
-            src=segment.src,
-            dataset_id=dataset_id,
-        )
-        transaction.add(db_segment)
+    # 1. Bulk create Segment objects
+    db_segments = [
+        m.Segment(src=segment.src, dataset_id=dataset_id)
+        for segment in segments
+    ]
+    transaction.add_all(db_segments)
+    await transaction.flush()  # Assigns IDs to db_segments
 
-        # We need to flush to get the segment ID
-        await transaction.flush()
-
-        db_translation = m.SegmentTranslation(
+    # 2. Bulk create SegmentTranslation objects
+    db_translations = [
+        m.SegmentTranslation(
             run_id=run_id,
             tgt=segment.tgt,
             segment=db_segment,
         )
-        transaction.add(db_translation)
-
-    # Final flush after adding all segments and translations
+        for segment, db_segment in zip(segments, db_segments)
+    ]
+    transaction.add_all(db_translations)
     await transaction.flush()
 
 
