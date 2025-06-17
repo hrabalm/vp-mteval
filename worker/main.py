@@ -52,12 +52,14 @@ class Segment(BaseModel):
 
 
 class WorkerExample(BaseModel):
+    job_id: int
     segments: list[Segment]
     src_lang: str
     tgt_lang: str
 
 
 class WorkerExampleResult(BaseModel):
+    job_id: int
     name: str
     segment_scores: list[float] | None
     dataset_score: float | None
@@ -115,6 +117,7 @@ class BLEUProcessor(MetricsProcessorProtocol):
         ]
         logging.debug(f"Segment scores: {segment_scores}")
         return WorkerExampleResult(
+            job_id=example.job_id,
             name=self.name,
             segment_scores=segment_scores,
             dataset_score=bleu_score.score,
@@ -319,6 +322,7 @@ def job_to_example(job):
     logging.debug(f"Processing job: {job}")
     logging.debug(f"Job segments: {job['segments']}")
     example = WorkerExample(
+        job_id=job["id"],
         segments=[
             Segment(
                 src=seg["src"],
@@ -389,7 +393,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 logging.info("Reporting job results...")
                 await report_job_results(
                     example_result=example_result,
-                    job_id=initial_jobs[0]["id"],
+                    job_id=example_result.job_id,
                     host=host,
                     token=token,
                     namespace_name=namespace,
