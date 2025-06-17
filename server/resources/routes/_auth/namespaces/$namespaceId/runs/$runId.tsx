@@ -75,12 +75,14 @@ function RouteComponent() {
   const run = Route.useLoaderData();
   return (
     <>
-      <Tabs defaultValue='details'>
+      <h1 className="text-2xl font-bold">Run: {run.id}</h1>
+      {/* TODO: add overview of the run */}
+      <Tabs defaultValue='segments'>
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="segments">Segments</TabsTrigger>
           <TabsTrigger value="raw">Raw Data</TabsTrigger>
         </TabsList>
-        <TabsContent value="details"><RunTable /></TabsContent>
+        <TabsContent value="segments"><RunTable /></TabsContent>
         <TabsContent value="raw"><pre className="mt-4">{JSON.stringify(run, null, 4)}</pre></TabsContent>
       </Tabs>
     </>

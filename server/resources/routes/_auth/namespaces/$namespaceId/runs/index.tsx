@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { fetchRuns } from '../../../../../runs';
+import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
@@ -98,13 +99,14 @@ function RouteComponent() {
         </Link>
       </div>
       
-      <RunsTable runs={runs} />
-      
-      {/* Optional: Show raw data in expandable section */}
-      <details className="mt-8 bg-white dark:bg-slate-800 p-4 rounded-lg">
-        <summary className="cursor-pointer font-medium">Raw Data</summary>
-        <pre className="mt-2 p-2 bg-slate-100 dark:bg-slate-900 rounded overflow-auto">{JSON.stringify(runs, null, 2)}</pre>
-      </details>
+      <Tabs defaultValue='list'>
+              <TabsList>
+                <TabsTrigger value="list">List</TabsTrigger>
+                <TabsTrigger value="raw">Raw Data</TabsTrigger>
+              </TabsList>
+              <TabsContent value="list"><RunsTable runs={runs} /></TabsContent>
+              <TabsContent value="raw"><pre className="mt-2 p-2 bg-slate-100 dark:bg-slate-900 rounded overflow-auto">{JSON.stringify(runs, null, 2)}</pre></TabsContent>
+            </Tabs>
     </div>
   );
 }
