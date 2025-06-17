@@ -37,7 +37,7 @@ def setup_logging(log_level: str):
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f"Invalid log level: {log_level}")
-    
+
     logging.basicConfig(
         level=numeric_level,
         format="%(asctime)s - %(levelname)s - %(message)s",
@@ -150,22 +150,28 @@ class Worker:
         self.thread.start()
 
 
-async def send_heartbeat(host, worker_id: int):
+async def send_heartbeat(host, worker_id: int, namespace_name: str):
     """Send a heartbeat to the server."""
     async with httpx.AsyncClient() as client:
-        response = await client.put(f"{host}/api/v1/workers/{worker_id}/heartbeat")
+        response = await client.put(
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/heartbeat"
+        )
         response.raise_for_status()
         return response.json()
 
 
 async def send_heartbeats(
-    interval_seconds: int, host: str, worker_id: int, is_fake: bool = False
+    interval_seconds: int,
+    host: str,
+    worker_id: int,
+    namespace_name: str,
+    is_fake: bool = False,
 ):
     """Periodically send a heartbeat."""
     while True:
         logging.info("Sending heartbeat...")
         if not is_fake:
-            await send_heartbeat(host, worker_id)
+            await send_heartbeat(host, worker_id, namespace_name)
         await anyio.sleep(interval_seconds)
 
 
@@ -191,15 +197,14 @@ async def register_worker(
     token: str,
     metric: str,
     metric_requires_references: bool,
-    namespace: str,
+    namespace_name: str,
     username: str | None,
 ) -> WorkerRegistrationResponse:
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{host}/api/v1/workers/register",
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/register",
             headers=create_auth_headers(token),
             json={
-                "namespace_name": namespace,
                 "metric": metric,
                 "metric_requires_references": metric_requires_references,
                 "username": username,
@@ -212,11 +217,12 @@ async def register_worker(
 async def unregister_worker(
     host: str,
     token: str,
+    namespace_name: str,
     worker_id: int,
 ):
     async with httpx.AsyncClient() as client:
         response = await client.delete(
-            f"{host}/api/v1/workers/{worker_id}",
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}",
             headers=create_auth_headers(token),
         )
         response.raise_for_status()
@@ -226,12 +232,13 @@ async def unregister_worker(
 async def assign_and_get_job(
     host: str,
     token: str,
+    namespace_name: str,
     worker_id: int,
 ) -> list[dict]:
     """Assign a job to the worker and return it."""
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{host}/api/v1/workers/{worker_id}/jobs/assign",
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/jobs/assign",
             headers=create_auth_headers(token),
         )
         response.raise_for_status()
@@ -239,12 +246,15 @@ async def assign_and_get_job(
         return data
 
 
-def start_heartbeat_task(tg, interval_seconds: int, host: str, worker_id: int):
+def start_heartbeat_task(
+    tg, interval_seconds: int, host: str, namespace_name: str, worker_id: int
+):
     tg.start_soon(
         partial(
             send_heartbeats,
             interval_seconds,
             host=host,
+            namespace_name=namespace_name,
             worker_id=worker_id,
         )
     )
@@ -276,11 +286,12 @@ async def report_job_results(
     job_id: int,
     host: str,
     token: str,
+    namespace_name: str,
     worker_id: int,
 ):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{host}/api/v1/workers/{worker_id}/jobs/{job_id}/report_result",
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/jobs/{job_id}/report_result",
             headers=create_auth_headers(token),
             json=JobResultRequest(
                 job_id=job_id,
@@ -326,7 +337,7 @@ def job_to_example(job):
 async def main(host, token, username, namespace, metric, mode, log_level):
     # Setup logging with the specified level
     setup_logging(log_level)
-    
+
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
     res = await register_worker(
@@ -334,20 +345,23 @@ async def main(host, token, username, namespace, metric, mode, log_level):
         token=token,
         metric=metric,
         metric_requires_references=BLEUProcessor.requires_references,
-        namespace=namespace,
+        namespace_name=namespace,
         username=username,
     )
     logging.info(f"Worker registered: {res}")
 
     async with anyio.create_task_group() as tg:
         # 2. Start the Worker subprocess and heartbeat task
-        start_heartbeat_task(tg, 5, host, worker_id=res.worker_id)  # FIXME
+        start_heartbeat_task(
+            tg, 5, host, namespace_name=namespace, worker_id=res.worker_id
+        )  # FIXME
 
         # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
         logging.info("Fetching a single initial task...")
         jobs = await assign_and_get_job(
             host=host,
             token=token,
+            namespace_name=namespace,
             worker_id=res.worker_id,
         )
         logging.debug(f"Fetched jobs: {jobs}")
@@ -378,6 +392,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                     job_id=initial_jobs[0]["id"],
                     host=host,
                     token=token,
+                    namespace_name=namespace,
                     worker_id=res.worker_id,
                 )
                 logging.info("Job results reported successfully.")
@@ -387,6 +402,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 jobs = await assign_and_get_job(
                     host=host,
                     token=token,
+                    namespace_name=namespace,
                     worker_id=res.worker_id,
                 )
                 if not jobs:
@@ -413,6 +429,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
     await unregister_worker(
         host=host,
         token=token,
+        namespace_name=namespace,
         worker_id=res.worker_id,
     )
     logging.info("Worker unregistered successfully.")

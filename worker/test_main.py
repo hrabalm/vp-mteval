@@ -101,6 +101,7 @@ async def test_main_mp():
                 main.send_heartbeats,
                 main.HEARTBEAT_INTERVAL_SECONDS,
                 host="",
+                namespace_name="default",
                 worker_id=1,
                 is_fake=True,
             )
@@ -156,6 +157,7 @@ async def test_main_threading():
                 main.send_heartbeats,
                 main.HEARTBEAT_INTERVAL_SECONDS,
                 host="",
+                namespace_name="default",
                 worker_id=1,
                 is_fake=True,
             )
