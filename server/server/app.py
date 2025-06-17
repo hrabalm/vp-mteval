@@ -194,6 +194,13 @@ class ReadTranslationRun(BaseModel):
     dataset_metrics: list[ReadDatasetMetric]
 
 
+class ReadNamespace(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 async def get_or_create_dataset(
     dataset_hash_value: str,
     namespace_id: int,
@@ -430,6 +437,20 @@ async def get_translation_run(
         )
 
 
+@get("/namespaces/")
+async def get_namespaces(
+    transaction: AsyncSession,
+) -> list[ReadNamespace]:
+    """Get all namespaces."""
+    query = select(m.Namespace)
+    result = await transaction.execute(query)
+    namespaces = result.scalars().all()
+    return [
+        ReadNamespace.model_validate(namespace)
+        for namespace in namespaces
+    ]
+
+
 class WebController(Controller):
     opt = {"exclude_from_auth": True}
     include_in_schema = False
@@ -535,6 +556,7 @@ api_v1_router = Router(
         add_translation_run,
         get_translation_runs,
         get_translation_run,
+        get_namespaces,
         # Worker routes
         *worker_module.worker_routes,
     ],
