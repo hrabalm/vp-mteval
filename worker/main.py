@@ -132,13 +132,21 @@ class Worker:
         self.metrics_processor = metrics_processor
 
     def _main_loop(self):
-        while True:
-            example = self.examples_queue.get()
-            if example is POISON_PILL:
-                self.result_queue.put(POISON_PILL)
-                break
-            result = self.metrics_processor.process_example(example)
-            self.result_queue.put(result)
+        try:
+            while True:
+                example = self.examples_queue.get()
+                if example is POISON_PILL:
+                    logging.info("Worker received POISON_PILL, shutting down...")
+                    self.result_queue.put(POISON_PILL)
+                    break
+                logging.info(f"Worker processing job {example.job_id}...")
+                result = self.metrics_processor.process_example(example)
+                logging.info(f"Worker finished processing job {example.job_id}")
+                self.result_queue.put(result)
+        except Exception as e:
+            logging.error(f"Error in worker process: {str(e)}")
+            # Make sure we communicate back to the main process that an error occurred
+            self.result_queue.put(POISON_PILL)
 
     def start(self):
         """Start the worker in a separate process."""
@@ -292,26 +300,35 @@ async def report_job_results(
     namespace_name: str,
     worker_id: int,
 ):
+    # Build metrics lists based on available data
+    dataset_level_metrics = []
+    if example_result.dataset_score is not None:
+        dataset_level_metrics.append(
+            PostDatasetMetric(
+                name=example_result.name,
+                higher_is_better=example_result.higher_is_better,
+                score=float(example_result.dataset_score),
+            )
+        )
+        
+    segment_level_metrics = []
+    if example_result.segment_scores is not None:
+        segment_level_metrics.append(
+            PostSegmentMetric(
+                name=example_result.name,
+                higher_is_better=example_result.higher_is_better,
+                scores=[float(score) for score in example_result.segment_scores],
+            ),
+        )
+        
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/jobs/{job_id}/report_result",
             headers=create_auth_headers(token),
             json=JobResultRequest(
                 job_id=job_id,
-                dataset_level_metrics=[
-                    PostDatasetMetric(
-                        name=example_result.name,
-                        higher_is_better=example_result.higher_is_better,
-                        score=example_result.dataset_score,
-                    )
-                ],
-                segment_level_metrics=[
-                    PostSegmentMetric(
-                        name=example_result.name,
-                        higher_is_better=example_result.higher_is_better,
-                        scores=[score for score in example_result.segment_scores],
-                    ),
-                ],
+                dataset_level_metrics=dataset_level_metrics,
+                segment_level_metrics=segment_level_metrics,
             ).model_dump(),
         )
         response.raise_for_status()
@@ -354,89 +371,109 @@ async def main(host, token, username, namespace, metric, mode, log_level):
     )
     logging.info(f"Worker registered: {res}")
 
-    async with anyio.create_task_group() as tg:
-        # 2. Start the Worker subprocess and heartbeat task
-        start_heartbeat_task(
-            tg, 5, host, namespace_name=namespace, worker_id=res.worker_id
-        )  # FIXME
+    worker = None
+    try:
+        async with anyio.create_task_group() as tg:
+            # 2. Start the Worker subprocess and heartbeat task
+            start_heartbeat_task(
+                tg, 5, host, namespace_name=namespace, worker_id=res.worker_id
+            )
 
-        # 3. Fetch initial NUM_FETCHED_TASKS tasks and add them to the queue
-        logging.info("Fetching a single initial task...")
-        jobs = await assign_and_get_job(
-            host=host,
-            token=token,
-            namespace_name=namespace,
-            worker_id=res.worker_id,
-        )
-        logging.debug(f"Fetched jobs: {jobs}")
-        logging.info("Fetched a single initial task...")
+            # 3. Fetch initial tasks
+            logging.info("Fetching initial tasks...")
+            jobs = await assign_and_get_job(
+                host=host,
+                token=token,
+                namespace_name=namespace,
+                worker_id=res.worker_id,
+            )
+            logging.debug(f"Fetched jobs: {jobs}")
 
-        initial_jobs = jobs
+            initial_jobs = jobs
 
-        if len(initial_jobs) > 0 or mode == "persistent":
+            if len(initial_jobs) == 0 and mode == "one-shot":
+                logging.info("No initial jobs and in one-shot mode. Exiting.")
+                return
+
             worker = Worker(metrics_processor=BLEUProcessor())
             worker.start()
+
+            jobs_in_flight = 0
             for job in initial_jobs:
                 example = job_to_example(job)
                 worker.examples_queue.put(example)
+                jobs_in_flight += 1
+            logging.info(f"Started with {jobs_in_flight} initial jobs.")
 
-        # 4. Every time a task is finished, push the results to the server and fetch another task. If not available, either wait (persistent mode) or emit POISON_PILL (single shot mode).
-        while True:
-            try:
-                # Get the result from the worker
-                example_result = await run_sync(worker.result_queue.get)
-                if example_result is POISON_PILL:
-                    logging.info("Received POISON_PILL, exiting...")
-                    break
-
-                # Report the result to the server
-                logging.info("Reporting job results...")
-                await report_job_results(
-                    example_result=example_result,
-                    job_id=example_result.job_id,
-                    host=host,
-                    token=token,
-                    namespace_name=namespace,
-                    worker_id=res.worker_id,
-                )
-                logging.info("Job results reported successfully.")
-
-                # Fetch a new job
-                logging.info("Fetching a new job...")
-                jobs = await assign_and_get_job(
-                    host=host,
-                    token=token,
-                    namespace_name=namespace,
-                    worker_id=res.worker_id,
-                )
-                if not jobs:
-                    logging.info("No more jobs available.")
-                    if mode == "one-shot":
-                        break  # Exit if in one-shot mode
+            # 4. Main processing loop
+            while True:
+                if mode == "persistent" and jobs_in_flight == 0:
+                    logging.info("Persistent mode: No jobs in flight, checking for new jobs.")
+                    new_jobs = await assign_and_get_job(
+                        host=host,
+                        token=token,
+                        namespace_name=namespace,
+                        worker_id=res.worker_id,
+                    )
+                    if new_jobs:
+                        logging.info(f"Found {len(new_jobs)} new jobs.")
+                        for job in new_jobs:
+                            example = job_to_example(job)
+                            worker.examples_queue.put(example)
+                            jobs_in_flight += 1
                     else:
-                        logging.info("Waiting for new jobs...")
+                        logging.info("No new jobs found, waiting.")
                         await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
                         continue
 
-                # Add the new job to the worker's queue
-                for job in jobs:
-                    example = job_to_example(job)
-                    worker.examples_queue.put(example)
+                if mode == "one-shot" and jobs_in_flight == 0:
+                    logging.info("One-shot mode: All jobs processed.")
+                    worker.examples_queue.put(POISON_PILL)
+                    break
 
+                try:
+                    # Wait for a result from the worker
+                    example_result = await run_sync(lambda: worker.result_queue.get(timeout=1))
+                    if example_result is POISON_PILL:
+                        logging.error("Worker sent unexpected POISON_PILL. Shutting down.")
+                        break
+
+                    jobs_in_flight -= 1
+                    logging.info(f"Result received for job {example_result.job_id}. Jobs in flight: {jobs_in_flight}")
+
+                    # Report the result to the server
+                    await report_job_results(
+                        example_result=example_result,
+                        job_id=example_result.job_id,
+                        host=host,
+                        token=token,
+                        namespace_name=namespace,
+                        worker_id=res.worker_id,
+                    )
+                    logging.info(f"Job {example_result.job_id} results reported successfully.")
+
+                except queue.Empty:
+                    logging.debug("Result queue empty, continuing to wait.")
+                    continue
+    finally:
+        if worker:
+            # Wait for the final POISON_PILL from the result queue to confirm shutdown
+            try:
+                final_pill = await run_sync(lambda: worker.result_queue.get(timeout=5))
+                if final_pill is not POISON_PILL:
+                    logging.warning("Expected POISON_PILL at the end, but got something else.")
             except queue.Empty:
-                logging.info("No results available, waiting...")
-                await anyio.sleep(HEARTBEAT_INTERVAL_SECONDS)
+                logging.warning("Timeout waiting for final POISON_PILL from worker.")
 
-    # 5. If we want to end, unregister the worker explicitly and exit.
-    # TODO: also call this on signal termination
-    logging.info("Unregistering worker...")
-    await unregister_worker(
-        host=host,
-        token=token,
-        namespace_name=namespace,
-        worker_id=res.worker_id,
-    )
-    logging.info("Worker unregistered successfully.")
+            # 5. If we want to end, unregister the worker explicitly and exit.
+            logging.info("Unregistering worker...")
+            await unregister_worker(
+                host=host,
+                token=token,
+                namespace_name=namespace,
+                worker_id=res.worker_id,
+            )
+            logging.info("Worker unregistered successfully.")
 
 
 @click.command()
