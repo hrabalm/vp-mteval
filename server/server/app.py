@@ -186,7 +186,6 @@ class ReadTranslationRun(BaseModel):
     id: int
     uuid: uuid_lib.UUID
     dataset_id: int
-    namespace_id: int
     namespace_name: str
     config: dict[str, Any]
     segments: list[ReadSegment] | None = None
@@ -320,7 +319,6 @@ async def _add_translation_run(
         id=translation_run.id,
         uuid=translation_run.uuid,
         dataset_id=dataset.id,
-        namespace_id=namespace.id,
         namespace_name=namespace.name,
         config=translation_run.config,
         segment_metrics=[],
@@ -370,9 +368,7 @@ async def get_translation_runs(
         ReadTranslationRun(
             id=run.id,
             uuid=run.uuid,
-            dataset_id=run.dataset_id,
-            namespace_id=run.namespace_id,
-            namespace_name=run.namespace.name,
+            dataset_id=run.dataset_id,            namespace_name=run.namespace.name,
             config=run.config,
             segment_metrics=[],  # NOTE: Segment metrics are not included in translation_runs response
             dataset_metrics=[
@@ -424,7 +420,6 @@ async def get_translation_run(
             id=result1.id,
             uuid=result1.uuid,
             dataset_id=result1.dataset_id,
-            namespace_id=result1.namespace_id,
             namespace_name=result1.namespace.name,
             config=result1.config,
             segment_metrics=[
