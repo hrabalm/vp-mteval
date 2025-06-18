@@ -35,39 +35,37 @@ function RunTable() {
   });
 
   return (
-    <>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
-          <thead>
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th key={header.id} className="border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-4 py-2 text-left font-semibold">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="border border-gray-300 dark:border-gray-700 px-4 py-2">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <div className="rounded-md border">
+      <table className="w-full table-fixed divide-y divide-border">
+        <thead className="bg-muted/50">
+          {table.getHeaderGroups().map(headerGroup => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map(header => (
+                <th key={header.id} className="w-1/3 px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody className="bg-background divide-y divide-border">
+          {table.getRowModel().rows.map(row => (
+            <tr key={row.id} className="hover:bg-muted/50">
+              {row.getVisibleCells().map(cell => (
+                <td key={cell.id} className="px-6 py-4 text-sm text-foreground break-words">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
