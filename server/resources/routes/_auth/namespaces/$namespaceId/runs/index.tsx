@@ -1,14 +1,10 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState } from '@tanstack/react-table';
 import { fetchRuns } from '../../../../../runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
-import DataTable from 'datatables.net-react';
-import DT from 'datatables.net-dt';
-import 'datatables.net-responsive-dt';
-import 'datatables.net-select-dt';
-import 'datatables.net-columncontrol-dt';
-import { useRef, useEffect } from 'react';
-
-DataTable.use(DT);
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
@@ -26,72 +22,120 @@ interface RunRow {
   [key: string]: any;
 }
 
+
 function RunsTable({ runs }: { runs: RunRow[] }) {
   const namespaceId = Route.useParams().namespaceId;
-  const navigate = useNavigate();
-  const tableRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
 
-  // Handle click events for navigation
-  useEffect(() => {
-    const handleClick = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'A' && target.hasAttribute('data-run-id')) {
-        e.preventDefault();
-        const runId = target.getAttribute('data-run-id');
-        if (runId) {
-          // Use TanStack Router's navigate for client-side navigation
-          navigate({
-            to: '/namespaces/$namespaceId/runs/$runId',
-            params: { namespaceId, runId }
-          });
-        }
-      }
-    };
+  const columnHelper = createColumnHelper<RunRow>();
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('click', handleClick);
-      return () => container.removeEventListener('click', handleClick);
-    }
-  }, [namespaceId, navigate]);
-
-  // Define columns for DataTables
   const columns = [
-    {
-      title: 'ID',
-      data: 'id',
-      render: function (data: string, type: string, row: RunRow) {
-        if (type === 'display') {
-          return `<a href="/namespaces/${namespaceId}/runs/${data}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline cursor-pointer" data-run-id="${data}">${data}</a>`;
-        }
-        return data;
-      },
-    },
-    { title: 'UUID', data: 'uuid' },
-    { title: 'Dataset ID', data: 'dataset_id' },
-    { title: 'Namespace ID', data: 'namespace_id' },
-    { title: 'Namespace Name', data: 'namespace_name' },
-    { title: 'Config', data: 'config' },
+    columnHelper.accessor('id', {
+      header: 'ID',
+      cell: ({ getValue }) => (
+        <Link
+          to="/namespaces/$namespaceId/runs/$runId"
+          params={{ namespaceId: namespaceId, runId: getValue() }}
+          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+        >
+          {getValue()}
+        </Link>
+      ),
+    }),
+    columnHelper.accessor('uuid', {
+      header: 'UUID',
+    }),
+    columnHelper.accessor('dataset_id', {
+      header: 'Dataset ID',
+    }),
+    columnHelper.accessor('namespace_id', {
+      header: 'Namespace ID',
+    }),
+    columnHelper.accessor('namespace_name', {
+      header: 'Namespace Name',
+    }),
+    columnHelper.accessor('config', {
+      header: 'Config',
+    }),
   ];
 
+  const table = useReactTable({
+    data: runs,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+    },
+  });
+
   return (
-    <div className="overflow-x-auto" ref={containerRef}>
-      <DataTable
-        ref={tableRef}
-        data={runs}
-        columns={columns}
-        className="display nowrap min-w-full"
-        options={{
-          responsive: true,
-          select: true,
-          paging: true,
-          searching: true,
-          info: true,
-          autoWidth: false,
-          destroy: true, // Allow reinitialization
-        }}
-      />
+    <div className="space-y-4">
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter runs..."
+          value={globalFilter ?? ''}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(String(event.target.value))}
+          className="max-w-sm"
+        />
+      </div>
+      <div className="rounded-md border">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none"
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                      </span>
+                      {{
+                        asc: ' 🔼',
+                        desc: ' 🔽',
+                      }[header.column.getIsSorted() as string] ?? null}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="bg-background divide-y divide-border">
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id} className="hover:bg-muted/50">
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex items-center justify-between space-x-2 py-4">
+        <div className="text-sm text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} of{' '}
+          {table.getCoreRowModel().rows.length} row(s) shown.
+        </div>
+      </div>
     </div>
   );
 }
