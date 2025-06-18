@@ -467,6 +467,7 @@ async def report_job_result(
                 higher_is_better=segment_metric.higher_is_better,
                 score=score,
                 segment_translation_id=job.run.translations[idx].id,
+                segment_idx=idx,
             )
             transaction.add(metric)
 

@@ -150,6 +150,7 @@ async def get_dataset_by_hash(
 
 
 class ReadSegment(BaseModel):
+    idx: int
     src: str
     tgt: str
     ref: Optional[str] = None
@@ -158,6 +159,7 @@ class ReadSegment(BaseModel):
 class ReadSegmentMetric(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    segment_idx: int
     name: str
     score: float
     higher_is_better: bool = True
@@ -245,27 +247,47 @@ async def create_segments_and_translations(
     transaction: AsyncSession,
 ) -> None:
     """Create segment and translation records in bulk."""
-    # 1. Bulk create Segment objects
-    db_segments = [
-        m.Segment(
-            idx=idx,
-            src=segment.src,
-            tgt=segment.ref,
-            dataset_id=dataset_id,
-        )
-        for idx, segment in enumerate(segments)
-    ]
-    transaction.add_all(db_segments)
-    await transaction.flush()  # Assigns IDs to db_segments
+    # If dataset already contains segments, we should fetch them
+    db_segments_query = await transaction.execute(
+        select(m.Segment)
+        .where(m.Segment.dataset_id == dataset_id)
+        .order_by(m.Segment.idx)
+    )
+    existing_db_segments = db_segments_query.scalars().all()
 
-    # 2. Bulk create SegmentTranslation objects
+    # Create a mapping of idx to existing segment objects
+    idx_to_segment = {segment.idx: segment for segment in existing_db_segments}
+
+    # Create new segments for indices not in the database
+    new_segments = []
+    for idx, segment in enumerate(segments):
+        if idx not in idx_to_segment:
+            new_segment = m.Segment(
+                idx=idx,
+                src=segment.src,
+                tgt=segment.ref,
+                dataset_id=dataset_id,
+            )
+            new_segments.append(new_segment)
+            idx_to_segment[idx] = new_segment
+
+    # Add new segments to the database
+    if new_segments:
+        transaction.add_all(new_segments)
+        await transaction.flush()  # Assigns IDs to new_segments
+
+    # Now create a properly aligned list of db_segments to match with input segments by idx
+    db_segments = [idx_to_segment[idx] for idx in range(len(segments))]
+
+    # Create translations for all segments in the input
     db_translations = [
         m.SegmentTranslation(
             run_id=run_id,
             tgt=segment.tgt,
             segment=db_segment,
+            segment_idx=idx,
         )
-        for segment, db_segment in zip(segments, db_segments)
+        for idx, (segment, db_segment) in enumerate(zip(segments, db_segments))
     ]
     transaction.add_all(db_translations)
     await transaction.flush()
@@ -414,10 +436,11 @@ async def get_translation_run(
     result = await transaction.execute(query)
     try:
         result1 = result.scalar_one()
-        dataset_segments = result1.dataset.segments
-        translation_segments = result1.translations
+        dataset_segments = sorted(result1.dataset.segments, key=lambda x: x.idx)
+        translation_segments = sorted(result1.translations, key=lambda x: x.segment.idx)
         segments = [
             ReadSegment(
+                idx=ds.idx,
                 src=ds.src,
                 tgt=ts.tgt,
                 ref=ds.tgt if ds.tgt is not None else None,

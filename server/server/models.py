@@ -117,6 +117,11 @@ class SegmentTranslation(Base):
         nullable=False,
     )
     segment: Mapped[Segment] = relationship("Segment", back_populates="translations")
+    segment_idx: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
+    )
     run: Mapped["TranslationRun"] = relationship(
         "TranslationRun",
         back_populates="translations",
@@ -155,13 +160,13 @@ class TranslationRun(Base):
         "SegmentTranslation",
         back_populates="run",
         cascade="all, delete-orphan",
-        order_by="SegmentTranslation.id",
+        order_by="SegmentTranslation.segment_idx",
     )
     segment_metrics: Mapped[list["SegmentMetric"]] = relationship(
         "SegmentMetric",
         back_populates="run",
         cascade="all, delete-orphan",
-        order_by="SegmentMetric.id",
+        order_by="SegmentMetric.segment_idx",
     )
     dataset_metrics: Mapped[list["DatasetMetric"]] = relationship(
         "DatasetMetric",
@@ -201,6 +206,11 @@ class SegmentMetric(Base):
     segment_translation_id: Mapped[int] = mapped_column(
         ForeignKey("segment_translations.id"),
         nullable=False,
+    )
+    segment_idx: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
     )
     run: Mapped[TranslationRun] = relationship(
         "TranslationRun",
