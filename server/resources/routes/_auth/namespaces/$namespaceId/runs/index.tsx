@@ -1,68 +1,108 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState } from '@tanstack/react-table';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef } from '@tanstack/react-table';
 import { fetchRuns } from '../../../../../runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
   loader: ({ params }) => fetchRuns(params.namespaceId),
 })
 
-// Define a type for a run row
-interface RunRow {
-  id: string;
-  uuid: string;
-  dataset_id: string;
-  namespace_id: string;
-  namespace_name: string;
-  config: string;
-  [key: string]: any;
+type Row = Record<string, any>; // unknown shape
+
+function preprocessRunsData(runs: Row[]) {
+  return runs.map(run => {
+    let processedRun: Row = { ...run };
+
+    // Delete namespace_name - it is not relevant here
+    delete processedRun.namespace_name;
+
+    // Run contains config object, flatten it to c:[element]
+    if (run.config && typeof run.config === 'object') {
+      Object.entries(run.config).forEach(([key, value]) => {
+        processedRun[`c:${key}`] = value;
+      });
+      delete processedRun.config;
+    }
+
+    // Run contains a list of dataset level metrics, flatten them to m:[element][↑ | ↓] (only the score is shown)
+    /* Example:
+    "dataset_metrics": [
+      {
+        "name": "BLEU",
+        "score": 100.00000000000004,
+        "higher_is_better": true,
+        "run_id": 178
+      }
+    ]
+    */
+
+    if (run.dataset_metrics && Array.isArray(run.dataset_metrics)) {
+      run.dataset_metrics.forEach((metric, index) => {
+        if (metric.name && metric.score !== undefined) {
+          const key = `m:${metric.name}${metric.higher_is_better ? '↑' : '↓'}`;
+          processedRun[key] = metric.score;
+        }
+      });
+      delete processedRun.dataset_metrics;
+    }
+
+
+    return processedRun;
+  });
 }
 
+function RunsTable({ runs }: { runs: Row[] }) {
+  const processedRuns = useMemo(() => preprocessRunsData(runs), [runs]);
+  console.log('Processed Runs:', processedRuns);
 
-function RunsTable({ runs }: { runs: RunRow[] }) {
   const namespaceId = Route.useParams().namespaceId;
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
-  const columnHelper = createColumnHelper<RunRow>();
+  const columnHelper = createColumnHelper<Row>();
 
-  const columns = [
-    columnHelper.accessor('id', {
-      header: 'ID',
-      cell: ({ getValue }) => (
-        <Link
-          to="/namespaces/$namespaceId/runs/$runId"
-          params={{ namespaceId: namespaceId, runId: getValue() }}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-        >
-          {getValue()}
-        </Link>
-      ),
-    }),
-    columnHelper.accessor('uuid', {
-      header: 'UUID',
-    }),
-    columnHelper.accessor('dataset_id', {
-      header: 'Dataset ID',
-    }),
-    columnHelper.accessor('namespace_id', {
-      header: 'Namespace ID',
-    }),
-    columnHelper.accessor('namespace_name', {
-      header: 'Namespace Name',
-    }),
-    columnHelper.accessor('config', {
-      header: 'Config',
-    }),
-  ];
+  const allKeys = useMemo(
+    () => Array.from(new Set(processedRuns.flatMap(Object.keys))),
+    [processedRuns]
+  )
+
+  const columns = useMemo<ColumnDef<Row>[]>(
+    () =>
+      allKeys.map((key) => ({
+        accessorKey: key,
+        header: key.charAt(0).toUpperCase() + key.slice(1),
+        cell: info => {
+          const value = info.getValue();
+          
+          // Create links for id and uuid columns
+          if ((key === 'id' || key === 'uuid') && value) {
+            return (
+              <Link
+                to="/namespaces/$namespaceId/runs/$runId"
+                params={{ 
+                  namespaceId,
+                  runId: info.row.original.id,
+                }}
+                className="text-blue-500 hover:underline"
+              >
+                {String(value)}
+              </Link>
+            );
+          }
+          
+          return String(value ?? '');
+        },
+      })),
+    [allKeys, namespaceId]
+  )
 
   const table = useReactTable({
-    data: runs,
+    data: processedRuns,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
