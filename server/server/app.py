@@ -248,11 +248,12 @@ async def create_segments_and_translations(
     # 1. Bulk create Segment objects
     db_segments = [
         m.Segment(
+            idx=idx,
             src=segment.src,
             tgt=segment.ref,
             dataset_id=dataset_id,
         )
-        for segment in segments
+        for idx, segment in enumerate(segments)
     ]
     transaction.add_all(db_segments)
     await transaction.flush()  # Assigns IDs to db_segments

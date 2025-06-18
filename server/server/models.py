@@ -38,6 +38,7 @@ class Segment(Base):
         ForeignKey("datasets.id"),
         nullable=False,
     )
+    idx: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     src: Mapped[str] = mapped_column(Text, nullable=False)
     tgt: Mapped[str] = mapped_column(Text, nullable=True)  # optional reference
 
@@ -79,6 +80,7 @@ class Dataset(Base):
         "Segment",
         back_populates="dataset",
         cascade="all, delete-orphan",
+        order_by="Segment.idx",
     )
     translation_runs: Mapped[list["TranslationRun"]] = relationship(
         "TranslationRun",
@@ -153,11 +155,13 @@ class TranslationRun(Base):
         "SegmentTranslation",
         back_populates="run",
         cascade="all, delete-orphan",
+        order_by="SegmentTranslation.id",
     )
     segment_metrics: Mapped[list["SegmentMetric"]] = relationship(
         "SegmentMetric",
         back_populates="run",
         cascade="all, delete-orphan",
+        order_by="SegmentMetric.id",
     )
     dataset_metrics: Mapped[list["DatasetMetric"]] = relationship(
         "DatasetMetric",
