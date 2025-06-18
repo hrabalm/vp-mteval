@@ -2,7 +2,7 @@ import server.models as models
 import server.plugins as plugins
 from server.config import settings
 import datetime
-from sqlalchemy import select, and_
+from sqlalchemy import select
 import logging
 
 logger = logging.getLogger("server.tasks")
@@ -30,3 +30,4 @@ async def cleanup_expired_workers_and_jobs_task(_):
     async with plugins.db_config.get_session() as session:
         async with session.begin():
             await _cleanup_expired_workers_and_jobs(session)
+

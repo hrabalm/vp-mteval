@@ -18,65 +18,17 @@ import litestar
 import litestar.exceptions
 import litestar.status_codes
 from pydantic import BaseModel
-from sqlalchemy import select, and_
-from sqlalchemy.orm import aliased, selectinload
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any, Optional
+from typing import Optional
 import time
 
 import server.models as models
+import server.services as services
 
 # region Worker Registration and Management
-
-
-async def find_runs_without_jobs(
-    transaction: AsyncSession, namespace_id: int, metric: str
-):
-    """Find translation runs that do not have associated jobs for the given namespace and metric."""
-    jobs = aliased(models.Job)
-
-    query = (
-        select(models.TranslationRun)
-        .outerjoin(
-            jobs,
-            and_(models.TranslationRun.id == jobs.run_id, jobs.metric == metric),
-        )
-        .filter(models.TranslationRun.namespace_id == namespace_id, jobs.id == None)
-    )
-
-    result = await transaction.execute(query)
-    return result.scalars().all()
-
-
-async def create_new_jobs(transaction: AsyncSession, worker: models.Worker):
-    """Create new jobs for translation runs that don't have associated jobs yet for this worker."""
-    # Find runs without jobs for this worker
-    runs_without_jobs = await find_runs_without_jobs(
-        transaction, worker.namespace_id, worker.metric
-    )
-
-    # Create a new job for each run
-    jobs = []
-    for run in runs_without_jobs:
-        job = models.Job(
-            namespace_id=worker.namespace_id,
-            user_id=worker.user_id,
-            run_id=run.id,
-            queue="default",  # Default queue, could be customized based on requirements
-            priority=1,  # Default priority
-            status=models.JobStatus.PENDING,
-            metric=worker.metric,
-            payload={},  # Empty payload initially
-        )
-        transaction.add(job)
-        jobs.append(job)
-
-    # Only commit if we actually created jobs
-    if jobs:
-        await transaction.flush()
-
-    return jobs
 
 
 class WorkerRegistrationData(BaseModel):
@@ -129,7 +81,7 @@ async def register_worker(
     # Create and assign jobs for the worker
     # note that they are not yet assigned to it yet, because
     # another worker doing the same metric might get to them first.
-    jobs = await create_new_jobs(transaction, worker)
+    jobs = await services.create_new_jobs(transaction, worker)
     await transaction.flush()
 
     return WorkerRegistrationResponse(
@@ -210,12 +162,12 @@ async def unregister_worker(
 
     # TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.
     query = select(models.Job).where(models.Job.worker_id == worker_id)
-    unfinished_jobs = await transaction.scalars(query).all()
+    unfinished_jobs = (await transaction.scalars(query)).all()
     print(
         f"Worker {worker_id} is ending with {len(unfinished_jobs)} unfinished jobs..."
     )
     for job in unfinished_jobs:
-        job.worker_id = None
+        job.worker_id = None  # type: ignore
         job.status = models.JobStatus.PENDING
 
     await transaction.commit()
@@ -304,13 +256,13 @@ async def _assign_job_to_worker(
         .where(
             models.Job.namespace_id == worker.namespace_id,
             models.Job.status == models.JobStatus.PENDING,
-            models.Job.worker_id == None,  # Not assigned to any worker
+            models.Job.worker_id.is_(None),  # Not assigned to any worker
             # Only add the reference requirement if the metric requires references
             *(
                 [
                     models.Job.run.has(
                         models.TranslationRun.dataset.has(
-                            models.Dataset.has_reference == True
+                            models.Dataset.has_reference
                         )
                     )
                 ]
@@ -376,7 +328,7 @@ async def assign_job(
             priority=job.priority,
             status=job.status,
             metric=job.metric,
-            payload=job.payload or {},
+            payload=job.payload,  # type: ignore
             segments=segments,
             source_lang=job.run.dataset.source_lang,
             target_lang=job.run.dataset.target_lang,
