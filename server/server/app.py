@@ -1,5 +1,4 @@
 import json
-import os
 import pathlib
 import uuid as uuid_lib  # we need to rename this to avoid conflict with uuid var in dataclasses
 from collections.abc import AsyncGenerator
@@ -188,6 +187,15 @@ class ReadTranslationRun(BaseModel):
     dataset_id: int
     namespace_name: str
     config: dict[str, Any]
+    dataset_metrics: list[ReadDatasetMetric]
+
+
+class ReadTranslationRunDetail(BaseModel):
+    id: int
+    uuid: uuid_lib.UUID
+    dataset_id: int
+    namespace_name: str
+    config: dict[str, Any]
     segments: list[ReadSegment] | None = None
     segment_metrics: list[ReadSegmentMetric]
     dataset_metrics: list[ReadDatasetMetric]
@@ -265,7 +273,7 @@ async def create_segments_and_translations(
 async def _add_translation_run(
     data: TranslationRunPostData,
     transaction: AsyncSession,
-) -> ReadTranslationRun:
+) -> ReadTranslationRunDetail:
     """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
 
     # Calculate the hash of the dataset
@@ -315,14 +323,14 @@ async def _add_translation_run(
         transaction=transaction,
     )
 
-    return ReadTranslationRun(
+    return ReadTranslationRunDetail(
         id=translation_run.id,
         uuid=translation_run.uuid,
         dataset_id=dataset.id,
         namespace_name=namespace.name,
         config=translation_run.config,
-        segment_metrics=[],
         dataset_metrics=[],
+        segment_metrics=[],
         segments=None,
     )
 
@@ -368,13 +376,12 @@ async def get_translation_runs(
         ReadTranslationRun(
             id=run.id,
             uuid=run.uuid,
-            dataset_id=run.dataset_id,            namespace_name=run.namespace.name,
+            dataset_id=run.dataset_id,
+            namespace_name=run.namespace.name,
             config=run.config,
-            segment_metrics=[],  # NOTE: Segment metrics are not included in translation_runs response
             dataset_metrics=[
                 ReadDatasetMetric.model_validate(dm) for dm in run.dataset_metrics
             ],
-            segments=None,
         )
         for run in runs
     ]
@@ -385,7 +392,7 @@ async def get_translation_run(
     namespace_name: str,
     run_id: int,
     transaction: AsyncSession,
-) -> ReadTranslationRun:
+) -> ReadTranslationRunDetail:
     """Get a translation run by ID within a specific namespace."""
     # Get namespace by name
     namespace = await get_namespace_by_name(namespace_name, transaction)
@@ -416,7 +423,7 @@ async def get_translation_run(
             )
             for ds, ts in zip(dataset_segments, translation_segments)
         ]
-        return ReadTranslationRun(
+        return ReadTranslationRunDetail(
             id=result1.id,
             uuid=result1.uuid,
             dataset_id=result1.dataset_id,
@@ -444,10 +451,7 @@ async def get_namespaces(
     query = select(m.Namespace)
     result = await transaction.execute(query)
     namespaces = result.scalars().all()
-    return [
-        ReadNamespace.model_validate(namespace)
-        for namespace in namespaces
-    ]
+    return [ReadNamespace.model_validate(namespace) for namespace in namespaces]
 
 
 class WebController(Controller):
