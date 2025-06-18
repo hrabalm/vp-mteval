@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { fetchRun } from "../../../../../runs";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
   component: RouteComponent,
@@ -11,7 +12,7 @@ export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId
 function RunTable() {
   const run = Route.useLoaderData();
 
-  const columnHelper = createColumnHelper();
+  const columnHelper = createColumnHelper<any>();
 
   const columns = [
     columnHelper.accessor('src', {
@@ -52,6 +53,48 @@ function RunTable() {
               ))}
             </tr>
           ))}
+          {/* Fuzzy search row */}
+          <tr className="bg-muted/20">
+            <td className="px-6 py-2">
+              <Input
+                placeholder="Fuzzy search in Source..."
+                className="w-full text-xs"
+              />
+            </td>
+            <td className="px-6 py-2">
+              <Input
+                placeholder="Fuzzy search in Target..."
+                className="w-full text-xs"
+              />
+            </td>
+            <td className="px-6 py-2">
+              <Input
+                placeholder="Fuzzy search in Reference..."
+                className="w-full text-xs"
+              />
+            </td>
+          </tr>
+          {/* Regexp search row */}
+          <tr className="bg-muted/10">
+            <td className="px-6 py-2">
+              <Input
+                placeholder="Regexp search in Source..."
+                className="w-full text-xs"
+              />
+            </td>
+            <td className="px-6 py-2">
+              <Input
+                placeholder="Regexp search in Target..."
+                className="w-full text-xs"
+              />
+            </td>
+            <td className="px-6 py-2">
+              <Input
+                placeholder="Regexp search in Reference..."
+                className="w-full text-xs"
+              />
+            </td>
+          </tr>
         </thead>
         <tbody className="bg-background divide-y divide-border">
           {table.getRowModel().rows.map(row => (
