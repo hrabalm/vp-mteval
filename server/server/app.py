@@ -247,47 +247,43 @@ async def create_segments_and_translations(
     transaction: AsyncSession,
 ) -> None:
     """Create segment and translation records in bulk."""
-    # If dataset already contains segments, we should fetch them
-    db_segments_query = await transaction.execute(
-        select(m.Segment)
-        .where(m.Segment.dataset_id == dataset_id)
-        .order_by(m.Segment.idx)
+    # Check if any segments exist for this dataset
+    segment_count_query = await transaction.execute(
+        select(m.Segment.id).where(m.Segment.dataset_id == dataset_id).limit(1)
     )
-    existing_db_segments = db_segments_query.scalars().all()
+    segments_exist = segment_count_query.scalar() is not None
 
-    # Create a mapping of idx to existing segment objects
-    idx_to_segment = {segment.idx: segment for segment in existing_db_segments}
-
-    # Create new segments for indices not in the database
-    new_segments = []
-    for idx, segment in enumerate(segments):
-        if idx not in idx_to_segment:
-            new_segment = m.Segment(
+    # If no segments exist, create them all
+    if not segments_exist:
+        db_segments = [
+            m.Segment(
                 idx=idx,
                 src=segment.src,
                 tgt=segment.ref,
                 dataset_id=dataset_id,
             )
-            new_segments.append(new_segment)
-            idx_to_segment[idx] = new_segment
+            for idx, segment in enumerate(segments)
+        ]
+        transaction.add_all(db_segments)
+        await transaction.flush()
 
-    # Add new segments to the database
-    if new_segments:
-        transaction.add_all(new_segments)
-        await transaction.flush()  # Assigns IDs to new_segments
+    # Now get all segments (either existing or newly created)
+    db_segments_query = await transaction.execute(
+        select(m.Segment)
+        .where(m.Segment.dataset_id == dataset_id)
+        .order_by(m.Segment.idx)
+    )
+    db_segments = db_segments_query.scalars().all()
 
-    # Now create a properly aligned list of db_segments to match with input segments by idx
-    db_segments = [idx_to_segment[idx] for idx in range(len(segments))]
-
-    # Create translations for all segments in the input
+    # Create translations for all segments
     db_translations = [
         m.SegmentTranslation(
             run_id=run_id,
             tgt=segment.tgt,
             segment=db_segment,
-            segment_idx=idx,
+            segment_idx=db_segment.idx,
         )
-        for idx, (segment, db_segment) in enumerate(zip(segments, db_segments))
+        for segment, db_segment in zip(segments, db_segments)
     ]
     transaction.add_all(db_translations)
     await transaction.flush()
