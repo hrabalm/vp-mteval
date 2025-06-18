@@ -1,3 +1,6 @@
+@import 'datatables.net-dt';
+@import 'datatables.net-columncontrol-dt';
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
