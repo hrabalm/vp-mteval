@@ -157,7 +157,7 @@ async def unregister_worker(
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
         )
-    
+
     worker.status = models.WorkerStatus.FINISHED
 
     # TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.
@@ -199,7 +199,7 @@ async def heartbeat_worker(
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
         )
-        
+
     worker.last_heartbeat = time.time()
     await transaction.commit()
 
@@ -261,9 +261,7 @@ async def _assign_job_to_worker(
             *(
                 [
                     models.Job.run.has(
-                        models.TranslationRun.dataset.has(
-                            models.Dataset.has_reference
-                        )
+                        models.TranslationRun.dataset.has(models.Dataset.has_reference)
                     )
                 ]
                 if worker.metric_requires_references
@@ -282,6 +280,8 @@ async def _assign_job_to_worker(
         job.worker_id = worker_id  # Assign the job to the worker
         job.status = models.JobStatus.RUNNING
         return job
+    else:
+        await services.create_new_jobs(transaction, worker)
 
 
 @litestar.post("/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/assign")
@@ -306,7 +306,7 @@ async def assign_job(
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
         )
-        
+
     job = await _assign_job_to_worker(worker_id, transaction)
     if job is None:
         return []
@@ -354,7 +354,9 @@ class JobResultRequest(BaseModel):
     segment_level_metrics: list[PostSegmentMetric]
 
 
-@litestar.post("/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/{job_id:int}/report_result")
+@litestar.post(
+    "/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/{job_id:int}/report_result"
+)
 async def report_job_result(
     namespace_name: str,
     worker_id: int,
@@ -376,7 +378,7 @@ async def report_job_result(
         raise litestar.exceptions.NotFoundException(
             f"Worker with ID '{worker_id}' not found in namespace '{namespace_name}'."
         )
-        
+
     job_query = (
         select(models.Job)
         .options(
@@ -409,7 +411,7 @@ async def report_job_result(
             score=dataset_metric.score,
         )
         transaction.add(metric)
-    
+
     # Save segment level metrics
     for segment_metric in data.segment_level_metrics:
         for idx, score in enumerate(segment_metric.scores):
@@ -422,6 +424,7 @@ async def report_job_result(
                 segment_idx=idx,
             )
             transaction.add(metric)
+
 
 # @litestar.get()
 # async def get_job(
