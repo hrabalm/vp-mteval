@@ -26,7 +26,7 @@ function RunTable() {
   });
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 30,
+    pageSize: 10,
   })
 
   // Refs for debouncing
@@ -287,7 +287,7 @@ function RunTable() {
             }}
             className="border rounded-md px-2 py-1 text-xs bg-background"
           >
-            {[10, 20, 30, 40, 50].map(pageSize => (
+            {[10, 25, 50, 100, 250, 500, 1000].map(pageSize => (
               <option key={pageSize} value={pageSize}>
                 Show {pageSize}
               </option>
