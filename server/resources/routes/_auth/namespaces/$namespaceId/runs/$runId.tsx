@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { fetchRun } from "../../../../../runs";
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState } from '@tanstack/react-table';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel } from '@tanstack/react-table';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { rankItem } from '@tanstack/match-sorter-utils';
@@ -24,6 +24,10 @@ function RunTable() {
     tgt: '',
     ref: ''
   });
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 30,
+  })
 
   // Refs for debouncing
   const fuzzyTimeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -96,10 +100,13 @@ function RunTable() {
     columns,
     state: {
       columnFilters,
+      pagination,
     },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onPaginationChange: setPagination,
   });
 
   const handleFuzzyFilterChange = useCallback((columnId: string, value: string) => {
@@ -215,6 +222,84 @@ function RunTable() {
           ))}
         </tbody>
       </table>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between px-6 py-4 bg-muted/20 border-t">
+        <div className="flex items-center gap-2">
+          <button
+            className="px-3 py-1 text-xs font-medium border rounded-md bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => table.firstPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<<'}
+          </button>
+          <button
+            className="px-3 py-1 text-xs font-medium border rounded-md bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<'}
+          </button>
+          <button
+            className="px-3 py-1 text-xs font-medium border rounded-md bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>'}
+          </button>
+          <button
+            className="px-3 py-1 text-xs font-medium border rounded-md bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => table.lastPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>>'}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            Page
+            <strong className="text-foreground">
+              {table.getState().pagination.pageIndex + 1} of{' '}
+              {table.getPageCount().toLocaleString()}
+            </strong>
+          </span>
+
+          <span className="flex items-center gap-2">
+            Go to page:
+            <input
+              type="number"
+              min="1"
+              max={table.getPageCount()}
+              defaultValue={table.getState().pagination.pageIndex + 1}
+              onChange={e => {
+                const page = e.target.value ? Number(e.target.value) - 1 : 0
+                table.setPageIndex(page)
+              }}
+              className="border rounded-md px-2 py-1 w-16 text-xs bg-background"
+            />
+          </span>
+
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={e => {
+              table.setPageSize(Number(e.target.value))
+            }}
+            className="border rounded-md px-2 py-1 text-xs bg-background"
+          >
+            {[10, 20, 30, 40, 50].map(pageSize => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="px-6 py-2 text-xs text-muted-foreground bg-muted/10 border-t">
+        Showing {table.getRowModel().rows.length.toLocaleString()} of{' '}
+        {table.getRowCount().toLocaleString()} Rows
+      </div>
     </div>
   );
 }
