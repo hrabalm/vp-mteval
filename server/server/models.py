@@ -71,6 +71,7 @@ class Dataset(Base):
         "DatasetName",
         back_populates="dataset",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",

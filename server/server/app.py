@@ -463,6 +463,73 @@ async def get_translation_run(
         )
 
 
+class ReadDataset(BaseModel):
+    id: int
+    names: list[str]
+    source_lang: str
+    target_lang: str
+    has_reference: bool
+
+
+@get("/namespaces/{namespace_name:str}/datasets/")
+async def get_datasets(
+    namespace_name: str,
+    transaction: AsyncSession,
+) -> list[ReadDataset]:
+    """Get all datasets within a specific namespace."""
+    # Get namespace by name
+    namespace = await get_namespace_by_name(namespace_name, transaction)
+
+    query = (
+        select(m.Dataset)
+        .where(m.Dataset.namespace_id == namespace.id)
+        .order_by(m.Dataset.id.desc())
+    )
+    result = await transaction.execute(query)
+    datasets = result.scalars().all()
+    return [
+        ReadDataset(
+            id=dataset.id,
+            names=[name.name for name in dataset.names],
+            source_lang=dataset.source_lang,
+            target_lang=dataset.target_lang,
+            has_reference=dataset.has_reference,
+        )
+        for dataset in datasets
+    ]
+
+
+@get("/namespaces/{namespace_name:str}/datasets/{dataset_id:int}")
+async def get_dataset_by_id(
+    namespace_name: str,
+    dataset_id: int,
+    transaction: AsyncSession,
+) -> ReadDataset:
+    """Get a dataset by ID within a specific namespace."""
+    # Get namespace by name
+    namespace = await get_namespace_by_name(namespace_name, transaction)
+
+    query = (
+        select(m.Dataset)
+        .where(m.Dataset.id == dataset_id, m.Dataset.namespace_id == namespace.id)
+        .options(selectinload(m.Dataset.segments))
+    )
+    result = await transaction.execute(query)
+    try:
+        dataset = result.scalar_one()
+        return ReadDataset(
+            id=dataset.id,
+            names=[name.name for name in dataset.names],
+            source_lang=dataset.source_lang,
+            target_lang=dataset.target_lang,
+            has_reference=dataset.has_reference,
+        )
+    except NoResultFound as e:
+        raise NotFoundException(
+            detail=f"Dataset {dataset_id} not found in namespace '{namespace_name}'"
+        ) from e
+
+
 @get("/namespaces/")
 async def get_namespaces(
     transaction: AsyncSession,
@@ -580,6 +647,8 @@ api_v1_router = Router(
         get_translation_runs,
         get_translation_run,
         get_namespaces,
+        get_datasets,
+        get_dataset_by_id,
         # Worker routes
         *worker_module.worker_routes,
     ],
