@@ -5,7 +5,7 @@ description = "Default template for PDM package"
 authors = [
     {name = "Miroslav Hrabal", email = "mhn@email.cz"},
 ]
-dependencies = ["litestar[attrs,brotli,pydantic,sqlalchemy,standard,structlog,jwt]>=2.14.0", "ruff>=0.9.10", "python-iso639>=2025.2.18", "structlog>=25.3.0", "starlette-admin-litestar-plugin>=0.3.1", "psycopg[binary,pool]>=3.2.7", "json-canonical>=2.0.0", "litestar-vite>=0.13.2", "nodeenv>=1.9.1", "typed-settings>=24.6.0", "litestar-saq>=0.5.3"]
+dependencies = ["litestar[attrs,brotli,pydantic,sqlalchemy,standard,structlog,jwt]>=2.14.0", "ruff>=0.9.10", "python-iso639>=2025.2.18", "structlog>=25.3.0", "starlette-admin-litestar-plugin>=0.3.1", "psycopg[binary,pool]>=3.2.7", "json-canonical>=2.0.0", "litestar-vite>=0.13.2", "nodeenv>=1.9.1", "typed-settings>=24.6.0", "litestar-saq>=0.5.3", "regex>=2024.11.6"]
 requires-python = ">=3.13"
 readme = "README.md"
 license = {text = "MIT"}
