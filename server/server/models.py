@@ -13,6 +13,7 @@ from sqlalchemy import (
     Float,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class Base(BigIntAuditBase):
@@ -123,6 +124,34 @@ class SegmentTranslation(Base):
         "SegmentMetric",
         back_populates="segment_translation",
         cascade="all, delete-orphan",
+    )
+    segment_ngrams: Mapped[list["SegmentTranslationNGrams"]] = relationship(
+        "SegmentTranslationNGrams",
+        back_populates="segment_translation",
+        cascade="all, delete-orphan",
+    )
+
+
+class SegmentTranslationNGrams(Base):
+    __tablename__ = "segment_translation_ngrams"
+    run_id: Mapped[int] = mapped_column(
+        ForeignKey("translation_runs.id"),
+        nullable=False,
+        index=True,
+    )
+    segment_translation_id: Mapped[int] = mapped_column(
+        ForeignKey("segment_translations.id"),
+        primary_key=True,
+    )
+    tokenizer: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    ngrams: Mapped[str] = mapped_column(JSONB, nullable=False)
+    ngrams_ref: Mapped[str] = mapped_column(JSONB, nullable=False)
+    n: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    count: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    segment_translation: Mapped[SegmentTranslation] = relationship(
+        "SegmentTranslation",
+        back_populates="segment_ngrams",
     )
 
 
