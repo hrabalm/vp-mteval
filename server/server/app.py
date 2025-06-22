@@ -7,7 +7,9 @@ from typing import Any, Optional, cast
 
 import iso639
 from advanced_alchemy.config import AsyncSessionConfig, EngineConfig
+import litestar
 from litestar import Controller, Litestar, Router, get, post
+import litestar.background_tasks
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.contrib.sqlalchemy.plugins import SQLAlchemyAsyncConfig, SQLAlchemyPlugin
 from litestar.exceptions import ClientException, NotFoundException
@@ -22,6 +24,7 @@ from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import selectinload
 
+import server.events as events
 import server.models as m
 import server.plugins as plugins
 import server.routes.worker as worker_module  # Changed import
@@ -291,56 +294,59 @@ async def create_segments_and_translations(
 
 async def _add_translation_run(
     data: TranslationRunPostData,
-    transaction: AsyncSession,
+    db_session: AsyncSession,
+    app: Litestar,
 ) -> ReadTranslationRunDetail:
     """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
+    async with db_session.begin():
+        # Calculate the hash of the dataset
+        dataset_hash_value = dataset_hash(
+            data.segments, data.dataset_source_lang, data.dataset_target_lang
+        )
 
-    # Calculate the hash of the dataset
-    dataset_hash_value = dataset_hash(
-        data.segments, data.dataset_source_lang, data.dataset_target_lang
-    )
+        # Get or create namespace
+        if data.namespace_name == "default":
+            namespace = await get_or_create_default_namespace(db_session)
+        else:
+            namespace = await get_namespace_by_name(data.namespace_name, db_session)
 
-    # Get or create namespace
-    if data.namespace_name == "default":
-        namespace = await get_or_create_default_namespace(transaction)
-    else:
-        namespace = await get_namespace_by_name(data.namespace_name, transaction)
+        # check if the dataset has references
+        has_reference = False
+        for segment in data.segments:
+            if segment.ref is not None:
+                has_reference = True
+                break
 
-    # check if the dataset has references
-    has_reference = False
-    for segment in data.segments:
-        if segment.ref is not None:
-            has_reference = True
-            break
+        # Get or create dataset
+        dataset = await get_or_create_dataset(
+            dataset_hash_value=dataset_hash_value,
+            namespace_id=namespace.id,
+            dataset_name=data.dataset_name,
+            source_lang=data.dataset_source_lang,
+            target_lang=data.dataset_target_lang,
+            transaction=db_session,
+            has_reference=has_reference,
+        )
 
-    # Get or create dataset
-    dataset = await get_or_create_dataset(
-        dataset_hash_value=dataset_hash_value,
-        namespace_id=namespace.id,
-        dataset_name=data.dataset_name,
-        source_lang=data.dataset_source_lang,
-        target_lang=data.dataset_target_lang,
-        transaction=transaction,
-        has_reference=has_reference,
-    )
+        # Create translation run
+        translation_run = m.TranslationRun(
+            dataset_id=dataset.id,
+            namespace=namespace,
+            uuid=data.uuid,
+            config=data.config,
+        )
+        db_session.add(translation_run)
+        await db_session.flush()
 
-    # Create translation run
-    translation_run = m.TranslationRun(
-        dataset_id=dataset.id,
-        namespace=namespace,
-        uuid=data.uuid,
-        config=data.config,
-    )
-    transaction.add(translation_run)
-    await transaction.flush()
+        # Create segments and translations
+        await create_segments_and_translations(
+            segments=data.segments,
+            dataset_id=dataset.id,
+            run_id=translation_run.id,
+            transaction=db_session,
+        )
 
-    # Create segments and translations
-    await create_segments_and_translations(
-        segments=data.segments,
-        dataset_id=dataset.id,
-        run_id=translation_run.id,
-        transaction=transaction,
-    )
+    app.emit(events.RUN_CREATED, events.RunCreatedData(run_id=translation_run.id))
 
     return ReadTranslationRunDetail(
         id=translation_run.id,
@@ -358,14 +364,19 @@ async def _add_translation_run(
 async def add_translation_run(
     namespace_name: str,
     data: TranslationRunPostData,
-    transaction: AsyncSession,
-) -> ReadTranslationRun:
+    db_session: AsyncSession,
+    request: litestar.Request,
+) -> litestar.Response[ReadTranslationRunDetail]:
     """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
     # Update the namespace_name in the data to ensure it matches the URL parameter
     data.namespace_name = namespace_name
-    return await _add_translation_run(
+    run = await _add_translation_run(
         data=data,
-        transaction=transaction,
+        db_session=db_session,
+        app=request.app,
+    )
+    return litestar.Response(
+        run,
     )
 
 
@@ -599,36 +610,34 @@ async def seed_database_with_testing_data(app: Litestar):
     print("Seeding database with initial data...", flush=True)
 
     async with AsyncSession(app.state.db_engine, expire_on_commit=False) as session:
-        async with session.begin():
-            data_path = (
-                pathlib.Path(__file__).parent.parent / "data/translation_runs.json"
+        data_path = pathlib.Path(__file__).parent.parent / "data/translation_runs.json"
+        translation_runs = json.loads(open(data_path).read())
+        for run in translation_runs:
+            await _add_translation_run(
+                data=TranslationRunPostData(
+                    **run,
+                ),
+                db_session=session,
+                app=app,
             )
-            translation_runs = json.loads(open(data_path).read())
-            for run in translation_runs:
-                await _add_translation_run(
-                    data=TranslationRunPostData(
-                        **run,
-                    ),
-                    transaction=session,
-                )
 
-            # Create default namespace if it doesn't exist
-            try:
-                await get_or_create_default_namespace(session)
-            except IntegrityError as e:
-                print(f"Error creating default namespace: {e}", flush=True)
+        # Create default namespace if it doesn't exist
+        try:
+            await get_or_create_default_namespace(session)
+        except IntegrityError as e:
+            print(f"Error creating default namespace: {e}", flush=True)
 
-            # Create default user if it doesn't exist
-            try:
-                default_user = m.User(
-                    id=1,
-                    username="default",
-                    email="test@ufal",
-                    password_hash="xxxx",
-                )
-                session.add(default_user)
-            except IntegrityError as e:
-                print(f"Error creating default user: {e}", flush=True)
+        # Create default user if it doesn't exist
+        try:
+            default_user = m.User(
+                id=1,
+                username="default",
+                email="test@ufal",
+                password_hash="xxxx",
+            )
+            session.add(default_user)
+        except IntegrityError as e:
+            print(f"Error creating default user: {e}", flush=True)
 
 
 template_config = TemplateConfig(engine=JinjaTemplateEngine(directory="templates/"))
@@ -694,4 +703,5 @@ app = Litestar(
         seed_database_with_testing_data,
     ],
     template_config=template_config,
+    listeners=events.listeners,
 )

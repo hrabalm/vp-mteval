@@ -146,3 +146,26 @@ class ConfirmedNGramsFinder:
             for _ in range(times):
                 result.append(ngram)
         return result
+
+
+if __name__ == "__main__":
+    # Example usage
+    normalizer = MTEvalNormalizer()
+    tokenizer = Tokenizer(case_sensitive=False)
+    ngramizer = NGramizer(tokenizer)
+
+    sentence = "Hello, world! This is a test."
+    normalized_sentence = normalizer.normalize(sentence)
+    print("Normalized:", normalized_sentence)
+
+    ngrams = ngramizer.get_ngrams(normalized_sentence)
+    print("N-grams:", ngrams)
+
+    finder = ConfirmedNGramsFinder()
+    confirmed = finder.get_confirmed_ngrams(ngrams, ngrams)  # Example with same ngrams
+    print("Confirmed N-grams:", confirmed)
+
+    unconfirmed = finder.get_unconfirmed_ngrams(
+        ngrams, ngrams
+    )  # Example with same ngrams
+    print("Unconfirmed N-grams:", unconfirmed)  # Should be empty in this case

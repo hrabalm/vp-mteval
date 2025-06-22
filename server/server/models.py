@@ -109,7 +109,11 @@ class SegmentTranslation(Base):
         ForeignKey("segments.id"),
         nullable=False,
     )
-    segment: Mapped[Segment] = relationship("Segment", back_populates="translations")
+    segment: Mapped[Segment] = relationship(
+        "Segment",
+        back_populates="translations",
+        lazy="selectin",
+    )
     segment_idx: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
@@ -147,11 +151,11 @@ class SegmentTranslationNGrams(Base):
     ngrams: Mapped[str] = mapped_column(JSONB, nullable=False)
     ngrams_ref: Mapped[str] = mapped_column(JSONB, nullable=False)
     n: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    count: Mapped[int] = mapped_column(Integer, nullable=False)
 
     segment_translation: Mapped[SegmentTranslation] = relationship(
         "SegmentTranslation",
         back_populates="segment_ngrams",
+        lazy="selectin",
     )
 
 
