@@ -367,7 +367,11 @@ async def add_translation_run(
     db_session: AsyncSession,
     request: litestar.Request,
 ) -> litestar.Response[ReadTranslationRunDetail]:
-    """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
+    """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist.
+
+    Note that we use db_session as a dependency directly
+    to commit the transaction before emitting the event.
+    """
     # Update the namespace_name in the data to ensure it matches the URL parameter
     data.namespace_name = namespace_name
     run = await _add_translation_run(
