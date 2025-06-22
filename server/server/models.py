@@ -21,15 +21,6 @@ class Base(BigIntAuditBase):
     __abstract__ = True
 
 
-# TODO:
-# - How do I store metrics data?:
-#   - Sentence level / Document level / special (n-grams)
-#   - I need a mechanism to store arbitrary JSON data for all segments, documents or datasets
-#   - Add creation date and last update date to Base?
-
-# Documents
-
-
 class Segment(Base):
     __tablename__ = "segments"
     __table_args__ = ()
@@ -332,12 +323,6 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
-
-
-# TODO: jobs
-# - we need to support queues (at least CPU and GPU)
-# - we might want to support priorities - low/default/high
-# - user and namespace (so that the job runner can choose to filter jobs by it)
 
 
 class WorkerStatus(enum.Enum):
