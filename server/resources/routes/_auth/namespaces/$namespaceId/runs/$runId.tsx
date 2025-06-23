@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { rankItem } from '@tanstack/match-sorter-utils';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
   component: RouteComponent,
@@ -33,6 +34,9 @@ function RunTable() {
     pageIndex: 0,
     pageSize: 10,
   })
+
+  const [searchEnabled, setSearchEnabled] = useState(false);
+  const [caseSensitiveRE, setCaseSensitiveRE] = useState(true);
 
   // Refs for debouncing
   const fuzzyTimeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -69,7 +73,8 @@ function RunTable() {
     // Apply regexp filter if present
     if (regexpValue) {
       try {
-        const regex = new RegExp(regexpValue, 'i');
+        const flags = (caseSensitiveRE ? '' : 'i');
+        const regex = new RegExp(regexpValue, flags);
         matches = matches && regex.test(cellValue);
       } catch (e) {
         // If regexp is invalid, don't filter
@@ -144,6 +149,20 @@ function RunTable() {
 
   return (
     <div className="rounded-md border">
+      <Button variant="outline" onClick={() => setSearchEnabled(!searchEnabled)}>
+        {searchEnabled ? 'Hide Search' : 'Show Search'}
+      </Button>
+      <div className={`flex items-center gap-4 ${searchEnabled ? '' : 'collapse'}`}>
+        <label className="flex items-center gap-2 text-xs">
+          <input
+            type="checkbox"
+            checked={caseSensitiveRE}
+            onChange={(e) => setCaseSensitiveRE(e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Case sensitive regexp
+        </label>
+      </div>
       <table className="w-full table-fixed divide-y divide-border">
         <thead className="bg-muted/50">
           {table.getHeaderGroups().map(headerGroup => (
@@ -161,7 +180,7 @@ function RunTable() {
             </tr>
           ))}
           {/* Fuzzy search row */}
-          <tr className="bg-muted/20">
+          <tr className={`bg-muted/20 transition-all duration-200 ${searchEnabled ? '' : 'collapse'}`}>
             <td className="px-6 py-2">
               <Input
                 placeholder="Fuzzy search in Source..."
@@ -188,7 +207,7 @@ function RunTable() {
             </td>
           </tr>
           {/* Regexp search row */}
-          <tr className="bg-muted/10">
+          <tr className={`bg-muted/20 transition-all duration-200 ${searchEnabled ? '' : 'collapse'}`}>
             <td className="px-6 py-2">
               <Input
                 placeholder="Regexp search in Source..."
