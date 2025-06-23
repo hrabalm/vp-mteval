@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional
 
 import litestar
@@ -15,6 +16,8 @@ import server.events as events
 import server.models as models
 import server.routes.worker as worker_module  # Changed import
 import server.utils as utils
+
+logger = logging.getLogger(__name__)
 
 
 class SegmentPostData(BaseModel):
@@ -456,6 +459,85 @@ class ReadDataset(BaseModel):
     has_reference: bool
 
 
+class NGramResult(BaseModel):
+    n: int
+    tokenizer: str
+    ngrams: str
+    count_ref: int
+    count_tgt: int
+    confirmed_size: int
+    unconfirmed_size: int
+
+
+class ReadTranslationRunNGrams(BaseModel):
+    confirmed: list[NGramResult]
+    unconfirmed: list[NGramResult]
+
+
+@get("/namespaces/{namespace_name:str}/translations-runs/{run_id:int}/ngrams")
+async def get_translation_run_ngrams(
+    namespace_name: str,
+    run_id: int,
+    transaction: AsyncSession,
+) -> ReadTranslationRunNGrams:
+    """Get ngrams for a translation run by ID within a specific namespace."""
+    import server.ngrams_sql as ngrams_sql
+
+    # Get a list of tokenizers
+    tokenizers_query = (
+        select(models.SegmentTranslationNGrams.tokenizer)
+        .where(models.SegmentTranslationNGrams.run_id == run_id)
+        .distinct()
+    )
+    tokenizers_result = await transaction.execute(tokenizers_query)
+    tokenizers = [row[0] for row in tokenizers_result]
+    logger.info(f"Tokenizers for run {run_id}: {tokenizers}")
+
+    confirmed_ngrams = []
+    unconfirmed_ngrams = []
+    for tokenizer in tokenizers:
+        ngrams = await ngrams_sql.get_confirmed_unconfirmed_ngrams(
+            transaction,
+            run_id,
+            tokenizer,
+        )
+        # print(ngrams)
+        for n in sorted(ngrams.keys()):
+            confirmed_ngrams.extend(
+                [
+                    NGramResult(
+                        n=n,
+                        tokenizer=tokenizer,
+                        ngrams=ngram_obj["ngram"],
+                        count_ref=ngram_obj["count_ref"],
+                        count_tgt=ngram_obj["count_tgt"],
+                        confirmed_size=ngram_obj["confirmed_size"],
+                        unconfirmed_size=ngram_obj["unconfirmed_size"],
+                    )
+                    for ngram_obj in ngrams[n]["confirmed"]
+                ]
+            )
+            unconfirmed_ngrams.extend(
+                [
+                    NGramResult(
+                        n=n,
+                        tokenizer=tokenizer,
+                        ngrams=ngram_obj["ngram"],
+                        count_ref=ngram_obj["count_ref"],
+                        count_tgt=ngram_obj["count_tgt"],
+                        confirmed_size=ngram_obj["confirmed_size"],
+                        unconfirmed_size=ngram_obj["unconfirmed_size"],
+                    )
+                    for ngram_obj in ngrams[n]["unconfirmed"]
+                ]
+            )
+
+    return ReadTranslationRunNGrams(
+        confirmed=confirmed_ngrams,
+        unconfirmed=unconfirmed_ngrams,
+    )
+
+
 @get("/namespaces/{namespace_name:str}/datasets/")
 async def get_datasets(
     namespace_name: str,
@@ -541,6 +623,7 @@ routes = [
     add_translation_run,
     get_translation_runs,
     get_translation_run,
+    get_translation_run_ngrams,
     get_namespaces,
     get_datasets,
     get_dataset_by_id,
