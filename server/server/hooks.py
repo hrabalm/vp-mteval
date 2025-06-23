@@ -1,4 +1,5 @@
 import json
+import logging
 import pathlib
 
 from litestar import Litestar
@@ -10,13 +11,15 @@ import server.models as models
 import server.routes as routes
 from server.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 async def seed_database_with_testing_data(app: Litestar):
     """Seed database with initial data if configured."""
     if settings.seed_database_on_startup is False:
         return
 
-    print("Seeding database with initial data...", flush=True)
+    logger.info("Seeding database with initial data...")
 
     async with AsyncSession(app.state.db_engine, expire_on_commit=False) as session:
         data_path = pathlib.Path(__file__).parent.parent / "data/translation_runs.json"
@@ -34,10 +37,11 @@ async def seed_database_with_testing_data(app: Litestar):
         try:
             await routes.get_or_create_default_namespace(session)
         except IntegrityError as e:
-            print(f"Error creating default namespace: {e}", flush=True)
+            logger.error(f"Error creating default namespace: {e}")
 
         # Create default user if it doesn't exist
         try:
+            logger.info("Creating default user...")
             default_user = models.User(
                 id=1,
                 username="default",
@@ -45,15 +49,16 @@ async def seed_database_with_testing_data(app: Litestar):
                 password_hash="xxxx",
             )
             session.add(default_user)
+            await session.commit()
         except IntegrityError as e:
-            print(f"Error creating default user: {e}", flush=True)
+            logger.error(f"Error creating default user: {e}")
 
 
 async def drop_all_tables_if_requested(app: Litestar) -> None:
     """On startup callback to drop all tables (for testing)
     when configured to do so."""
     if settings.drop_database_on_startup:
-        print("Dropping all tables...", flush=True)
+        logger.info("Dropping all tables...")
         metadata = MetaData()
 
         # We keep tables managed by plugins such as SAQ
