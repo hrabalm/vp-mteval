@@ -143,7 +143,7 @@ class ReadTranslationRun(BaseModel):
 class ReadTranslationRunDetail(BaseModel):
     id: int
     uuid: str
-    dataset_id: int
+    dataset: "ReadDataset"
     namespace_name: str
     config: dict[str, Any]
     segments: list[ReadSegment] | None = None
@@ -298,7 +298,13 @@ async def _add_translation_run(
     return ReadTranslationRunDetail(
         id=translation_run.id,
         uuid=str(translation_run.uuid),
-        dataset_id=dataset.id,
+        dataset=ReadDataset(
+            id=dataset.id,
+            names=[data.dataset_name],
+            source_lang=dataset.source_lang,
+            target_lang=dataset.target_lang,
+            has_reference=dataset.has_reference,
+        ),
         namespace_name=namespace.name,
         config=translation_run.config,
         dataset_metrics=[],
@@ -387,6 +393,9 @@ async def get_translation_run(
             selectinload(models.TranslationRun.dataset).selectinload(
                 models.Dataset.segments
             ),
+            selectinload(models.TranslationRun.dataset).selectinload(
+                models.Dataset.names
+            ),
             selectinload(models.TranslationRun.translations),
         )
         .where(
@@ -434,7 +443,13 @@ async def get_translation_run(
         return ReadTranslationRunDetail(
             id=result1.id,
             uuid=str(result1.uuid),
-            dataset_id=result1.dataset_id,
+            dataset=ReadDataset(
+                id=result1.dataset.id,
+                names=[name.name for name in result1.dataset.names],
+                source_lang=result1.dataset.source_lang,
+                target_lang=result1.dataset.target_lang,
+                has_reference=result1.dataset.has_reference,
+            ),
             namespace_name=result1.namespace.name,
             config=result1.config,
             segment_metrics=[
@@ -452,6 +467,8 @@ async def get_translation_run(
 
 
 class ReadDataset(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     names: list[str]
     source_lang: str
