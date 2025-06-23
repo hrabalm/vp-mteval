@@ -2,7 +2,6 @@ import enum
 
 from advanced_alchemy.base import BigIntAuditBase
 from sqlalchemy import (
-    JSON,
     Boolean,
     Enum,
     ForeignKey,
@@ -148,8 +147,8 @@ class SegmentTranslationNGrams(Base):
         primary_key=True,
     )
     tokenizer: Mapped[str] = mapped_column(Text, nullable=False, index=True)
-    ngrams: Mapped[str] = mapped_column(JSONB, nullable=False)
-    ngrams_ref: Mapped[str] = mapped_column(JSONB, nullable=False)
+    ngrams: Mapped[list] = mapped_column(JSONB, nullable=False)
+    ngrams_ref: Mapped[list] = mapped_column(JSONB, nullable=False)
     n: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 
     segment_translation: Mapped[SegmentTranslation] = relationship(
@@ -206,7 +205,7 @@ class TranslationRun(Base):
     namespace: Mapped["Namespace"] = relationship(
         "Namespace",
     )
-    config: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
+    config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
 
 # Metric results
@@ -273,7 +272,7 @@ class GenericMetric(Base):
         ForeignKey("translation_runs.id"),
         nullable=False,
     )
-    payload: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     run: Mapped["TranslationRun"] = relationship("TranslationRun")
 
@@ -434,7 +433,7 @@ class Job(Base):
     status: Mapped[JobStatus] = mapped_column(
         Enum(JobStatus), nullable=False, index=True
     )
-    payload: Mapped[JSON] = mapped_column(JSON, nullable=False, default=dict)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     metric: Mapped[str] = mapped_column(
         # This string should uniquely identify the type of the metric
         Text,
