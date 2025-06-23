@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMemo, useState } from 'react';
+import VirtualizedJSON from '@/components/virtualized-json';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
@@ -78,13 +79,13 @@ function RunsTable({ runs }: { runs: Row[] }) {
         header: key.charAt(0).toUpperCase() + key.slice(1),
         cell: info => {
           const value = info.getValue();
-          
+
           // Create links for id and uuid columns
           if ((key === 'id' || key === 'uuid') && value) {
             return (
               <Link
                 to="/namespaces/$namespaceId/runs/$runId"
-                params={{ 
+                params={{
                   namespaceId,
                   runId: info.row.original.id,
                 }}
@@ -94,7 +95,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
               </Link>
             );
           }
-          
+
           return String(value ?? '');
         },
       })),
@@ -203,7 +204,7 @@ function RouteComponent() {
           <TabsTrigger value="raw">Raw Data</TabsTrigger>
         </TabsList>
         <TabsContent value="list"><RunsTable runs={runs} /></TabsContent>
-        <TabsContent value="raw"><pre className="mt-2 p-2 bg-slate-100 dark:bg-slate-900 rounded overflow-auto">{JSON.stringify(runs, null, 2)}</pre></TabsContent>
+        <TabsContent value="raw"><VirtualizedJSON json={runs} /></TabsContent>
       </Tabs>
     </div>
   );

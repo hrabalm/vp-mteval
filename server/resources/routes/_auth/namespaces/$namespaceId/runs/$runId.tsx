@@ -1,18 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { fetchRun } from "../../../../../runs";
+import { fetchRun, fetchRunNGrams } from "../../../../../runs";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel } from '@tanstack/react-table';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { rankItem } from '@tanstack/match-sorter-utils';
 import { useState, useCallback, useRef, useMemo } from 'react';
+import VirtualizedJSON from '@/components/virtualized-json';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
   component: RouteComponent,
-  loader: ({ params }) => fetchRun(params.runId, params.namespaceId),
+  loader: async ({ params }) => {
+    const run = await fetchRun(params.runId, params.namespaceId);
+    const n_grams = await fetchRunNGrams(params.runId, params.namespaceId);
+    return { run, n_grams };
+  },
 })
 
 function RunTable() {
-  const run = Route.useLoaderData();
+  const { run } = Route.useLoaderData();
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [fuzzyFilters, setFuzzyFilters] = useState({
     src: '',
@@ -304,8 +309,62 @@ function RunTable() {
   );
 }
 
+function NGramsTable({ n, type, data }: { n: number, type: 'confirmed' | 'unconfirmed', data: any[] }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th className="px-4 py-2">{n}-gram</th>
+          <th className="px-4 py-2 text-right">Confirmed - Unconfirmed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((item, index) => (
+          <tr key={index}>
+            <td className="px-4 py-2">{item.ngrams}</td>
+            <td className="px-4 py-2 text-right">{item.confirmed_size} - {item.unconfirmed_size} = {item.confirmed_size - item.unconfirmed_size}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function NGrams({ type }: { type: 'confirmed' | 'unconfirmed' }) {
+  const { n_grams } = Route.useLoaderData();
+  const selected = type === 'confirmed' ? n_grams.confirmed : n_grams.unconfirmed;
+  const n_grams_by_n = selected.reduce((acc: Record<number, any[]>, ngram: any) => {
+    const n = ngram.n;
+    if (!acc[n]) {
+      acc[n] = [];
+    }
+    acc[n].push(ngram);
+    return acc;
+  }, {});
+  return (
+    <div className="rounded-md border p-4">
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="rounded-md border p-4">
+          <NGramsTable n={1} type={type} data={n_grams_by_n[1] || []} />
+        </div>
+        <div className="rounded-md border p-4">
+          <NGramsTable n={2} type={type} data={n_grams_by_n[2] || []} />
+        </div>
+        <div className="rounded-md border p-4">
+          <NGramsTable n={3} type={type} data={n_grams_by_n[3] || []} />
+        </div>
+        <div className="rounded-md border p-4">
+          <NGramsTable n={4} type={type} data={n_grams_by_n[4] || []} />
+        </div>
+      </div>
+      <pre className="bg-muted/50 p-4 rounded-md">{JSON.stringify(selected, null, 2)}</pre>
+    </div>
+  );
+}
+
 function RouteComponent() {
-  const run = Route.useLoaderData();
+  const { run } = Route.useLoaderData();
+  console.log(JSON.stringify(run, null, 2));
   return (
     <>
       <h1 className="text-2xl font-bold">Run: {run.id}</h1>
@@ -313,12 +372,27 @@ function RouteComponent() {
       <Tabs defaultValue='segments'>
         <TabsList>
           <TabsTrigger value="segments">Segments</TabsTrigger>
+          {run.dataset.has_reference &&
+            <>
+              <TabsTrigger value="confirmed-ngrams">Confirmed n-grams</TabsTrigger>
+              <TabsTrigger value="unconfirmed-ngrams">Unconfirmed n-grams</TabsTrigger>
+            </>
+          }
           <TabsTrigger value="raw">Raw Data</TabsTrigger>
         </TabsList>
         <TabsContent value="segments"><RunTable /></TabsContent>
-        <TabsContent value="raw"><pre className="mt-4">{JSON.stringify(run, null, 4)}</pre></TabsContent>
+        {run.dataset.has_reference &&
+          <>
+            <TabsContent value="confirmed-ngrams">
+              <NGrams type="confirmed" />
+            </TabsContent>
+            <TabsContent value="unconfirmed-ngrams">
+              <NGrams type="unconfirmed" />
+            </TabsContent>
+          </>
+        }
+        <TabsContent value="raw"><VirtualizedJSON json={run} /></TabsContent>
       </Tabs>
     </>
   );
 }
-
