@@ -7,6 +7,18 @@ import { rankItem } from '@tanstack/match-sorter-utils';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import ColumnSelector from '@/components/column-selector';
+
+const prettyColumnNames = {
+  src: 'Source',
+  tgt: 'Target',
+  ref: 'Reference',
+}
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
   component: RouteComponent,
@@ -16,6 +28,23 @@ export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId
     return { run, n_grams };
   },
 })
+
+function NGramsRender({ ngrams }: { ngrams: string[] }) {
+  return <span>{ngrams.join(' | ')}</span>
+}
+
+function FiltersPopover({ allColumns, selectedColumns, onSelectionChange }) {
+  return <Popover>
+    <PopoverTrigger asChild><Button variant="outline">Filters</Button></PopoverTrigger>
+    <PopoverContent className="w-full">
+      <ColumnSelector
+        allColumns={allColumns}
+        selectedColumns={selectedColumns}
+        onSelectionChange={onSelectionChange}
+      />
+    </PopoverContent>
+  </Popover>
+}
 
 function RunTable() {
   const { run } = Route.useLoaderData();
@@ -37,6 +66,7 @@ function RunTable() {
 
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [caseSensitiveRE, setCaseSensitiveRE] = useState(true);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(['src', 'tgt', 'ref']);
 
   // Refs for debouncing
   const fuzzyTimeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -87,23 +117,18 @@ function RunTable() {
 
   const columnHelper = createColumnHelper<any>();
 
-  const columns = useMemo(() => [
-    columnHelper.accessor('src', {
-      header: () => 'Source',
-      cell: info => info.getValue(),
+  const columns = useMemo(() => selectedColumns.map(columnId => {
+    return columnHelper.accessor(columnId, {
+      header: () => prettyColumnNames[columnId] || columnId,
+      cell: (info) => {
+        if (['tgt_ngrams', 'ref_ngrams'].includes(columnId)) {
+          return <NGramsRender ngrams={info.getValue()['1,v1_case'] || []} />;
+        }
+        return info.getValue();
+      },
       filterFn: customFilterFn,
-    }),
-    columnHelper.accessor('tgt', {
-      header: () => 'Target',
-      cell: info => info.getValue(),
-      filterFn: customFilterFn,
-    }),
-    columnHelper.accessor('ref', {
-      header: () => 'Reference',
-      cell: info => info.getValue() ?? 'N/A',
-      filterFn: customFilterFn,
-    }),
-  ], [customFilterFn]);
+    });
+  }), [customFilterFn, selectedColumns]);
 
   const table = useReactTable({
     data: run.segments,
@@ -152,6 +177,11 @@ function RunTable() {
       <Button variant="outline" onClick={() => setSearchEnabled(!searchEnabled)}>
         {searchEnabled ? 'Hide Search' : 'Show Search'}
       </Button>
+      <FiltersPopover
+        allColumns={['src', 'tgt', 'ref', ...Object.keys(run.segments[0] || {})]}
+        selectedColumns={selectedColumns}
+        onSelectionChange={setSelectedColumns}
+      />
       <div className={`flex items-center gap-4 ${searchEnabled ? '' : 'collapse'}`}>
         <label className="flex items-center gap-2 text-xs">
           <input
