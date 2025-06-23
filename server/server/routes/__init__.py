@@ -134,7 +134,7 @@ class ReadGenericMetric(BaseModel):
 class ReadTranslationRun(BaseModel):
     id: int
     uuid: str
-    dataset_id: int
+    dataset: "ReadDataset"
     namespace_name: str
     config: dict[str, Any]
     dataset_metrics: list[ReadDatasetMetric]
@@ -352,6 +352,9 @@ async def get_translation_runs(
             selectinload(models.TranslationRun.namespace),
             selectinload(models.TranslationRun.segment_metrics),
             selectinload(models.TranslationRun.dataset_metrics),
+            selectinload(models.TranslationRun.dataset).selectinload(
+                models.Dataset.names
+            ),
         )
         .where(models.TranslationRun.namespace_id == namespace.id)
         .order_by(models.TranslationRun.id.desc())
@@ -363,7 +366,13 @@ async def get_translation_runs(
         ReadTranslationRun(
             id=run.id,
             uuid=str(run.uuid),
-            dataset_id=run.dataset_id,
+            dataset=ReadDataset(
+                id=run.dataset.id,
+                names=[name.name for name in run.dataset.names],
+                source_lang=run.dataset.source_lang,
+                target_lang=run.dataset.target_lang,
+                has_reference=run.dataset.has_reference,
+            ),
             namespace_name=run.namespace.name,
             config=run.config,
             dataset_metrics=[
