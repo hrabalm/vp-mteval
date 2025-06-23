@@ -97,6 +97,8 @@ class ReadSegment(BaseModel):
     src: str
     tgt: str
     ref: Optional[str] = None
+    tgt_ngrams: dict[tuple[int, str], list[str]] | None = None
+    ref_ngrams: dict[tuple[int, str], list[str]] | None = None
 
 
 class ReadSegmentMetric(BaseModel):
@@ -394,12 +396,35 @@ async def get_translation_run(
         result1 = result.scalar_one()
         dataset_segments = sorted(result1.dataset.segments, key=lambda x: x.idx)
         translation_segments = sorted(result1.translations, key=lambda x: x.segment.idx)
+
+        def _process_ngrams(
+            ngrams: list,
+        ) -> tuple[dict[tuple[int, str], list[str]], dict[tuple[int, str], list[str]]]:
+            from collections import defaultdict
+
+            tgt = defaultdict(list)
+            ref = defaultdict(list)
+
+            for ngram in ngrams:
+                n = ngram.n
+                tokenizer = ngram.tokenizer
+                key = (n, tokenizer)
+
+                assert key not in tgt, f"Duplicate ngram key found: {key}"
+                assert key not in ref, f"Duplicate ngram key found: {key}"
+                tgt[key] = ngram.ngrams
+                ref[key] = ngram.ngrams_ref
+
+            return tgt, ref
+
         segments = [
             ReadSegment(
                 idx=ds.idx,
                 src=ds.src,
                 tgt=ts.tgt,
                 ref=ds.tgt if ds.tgt is not None else None,
+                tgt_ngrams=_process_ngrams(ts.segment_ngrams)[1],
+                ref_ngrams=_process_ngrams(ts.segment_ngrams)[0],
             )
             for ds, ts in zip(dataset_segments, translation_segments)
         ]

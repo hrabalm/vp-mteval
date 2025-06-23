@@ -132,6 +132,7 @@ class SegmentTranslation(Base):
         "SegmentTranslationNGrams",
         back_populates="segment_translation",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
 
@@ -147,8 +148,8 @@ class SegmentTranslationNGrams(Base):
         primary_key=True,
     )
     tokenizer: Mapped[str] = mapped_column(Text, nullable=False, index=True)
-    ngrams: Mapped[list] = mapped_column(JSONB, nullable=False)
-    ngrams_ref: Mapped[list] = mapped_column(JSONB, nullable=False)
+    ngrams: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    ngrams_ref: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
     n: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 
     segment_translation: Mapped[SegmentTranslation] = relationship(
