@@ -1,4 +1,4 @@
-import uuid as uuid_lib  # we need to rename this to avoid conflict with uuid var in dataclasses
+import json
 from typing import Any, Optional
 
 import litestar
@@ -33,7 +33,7 @@ class TranslationRunPostData(BaseModel):
     dataset_source_lang: str
     dataset_target_lang: str
     segments: list[SegmentPostData]
-    uuid: Optional[uuid_lib.UUID] = None
+    uuid: Optional[str] = None
     config: dict[str, Any] = {}
 
 
@@ -129,7 +129,7 @@ class ReadGenericMetric(BaseModel):
 
 class ReadTranslationRun(BaseModel):
     id: int
-    uuid: uuid_lib.UUID
+    uuid: str
     dataset_id: int
     namespace_name: str
     config: dict[str, Any]
@@ -138,7 +138,7 @@ class ReadTranslationRun(BaseModel):
 
 class ReadTranslationRunDetail(BaseModel):
     id: int
-    uuid: uuid_lib.UUID
+    uuid: str
     dataset_id: int
     namespace_name: str
     config: dict[str, Any]
@@ -293,7 +293,7 @@ async def _add_translation_run(
 
     return ReadTranslationRunDetail(
         id=translation_run.id,
-        uuid=translation_run.uuid,
+        uuid=str(translation_run.uuid),
         dataset_id=dataset.id,
         namespace_name=namespace.name,
         config=translation_run.config,
@@ -352,7 +352,7 @@ async def get_translation_runs(
     return [
         ReadTranslationRun(
             id=run.id,
-            uuid=run.uuid,
+            uuid=str(run.uuid),
             dataset_id=run.dataset_id,
             namespace_name=run.namespace.name,
             config=run.config,
@@ -406,7 +406,7 @@ async def get_translation_run(
         ]
         return ReadTranslationRunDetail(
             id=result1.id,
-            uuid=result1.uuid,
+            uuid=str(result1.uuid),
             dataset_id=result1.dataset_id,
             namespace_name=result1.namespace.name,
             config=result1.config,
