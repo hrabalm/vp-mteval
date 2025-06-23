@@ -94,6 +94,9 @@ function RunsTable({ runs }: { runs: Row[] }) {
                 {String(value)}
               </Link>
             );
+          } else if ((key === 'dataset') && value) {
+            // FIXME: should be flattened instead
+            return value.names;
           }
 
           return String(value ?? '');

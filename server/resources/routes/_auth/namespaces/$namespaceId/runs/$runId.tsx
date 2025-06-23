@@ -13,6 +13,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import ColumnSelector from '@/components/column-selector';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 const prettyColumnNames = {
   src: 'Source',
@@ -44,6 +52,103 @@ function FiltersPopover({ allColumns, selectedColumns, onSelectionChange }) {
       />
     </PopoverContent>
   </Popover>
+}
+
+function flattenObject(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      if (typeof obj[key] === 'object' && !Array.isArray(obj[key]) && obj[key] !== null) {
+        const flatObject = flattenObject(obj[key]);
+        for (const flatKey in flatObject) {
+          if (flatObject.hasOwnProperty(flatKey)) {
+            result[`${key}.${flatKey}`] = flatObject[flatKey];
+          }
+        }
+      } else {
+        result[key] = obj[key];
+      }
+    }
+  }
+  return result;
+}
+
+function OverviewTable({ run, cellFormatters = {}, defaultCellFormatter = (value: any) => <div className="font-medium">{value}</div> }: {
+  run: Record<string, any>,
+  cellFormatters?: Record<string, (value: any) => React.JSX.Element>,
+  defaultCellFormatter?: (value: any) => React.JSX.Element
+}) {
+  const flat_run = flattenObject(run);
+  const data = Object.entries(flat_run).filter(([key, value]) => (
+    // if value is an array, return false
+    !Array.isArray(value)
+  )).map(([key, value]) => ({ key: key, value: value }));
+  console.log("DATA: ");
+  console.log(JSON.stringify(data, null, 2));
+  const columns = ["key", "value"].map(
+    key => ({
+      accessorKey: key,
+      header: () => prettyColumnNames[key] || key,
+      cell: ({ row }: { row: any }) => {
+        const value = row.getValue(key);
+        const formatter = cellFormatters[key] || defaultCellFormatter;
+        return formatter(value);
+      }
+    })
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                  </TableHead>
+                )
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-24 text-center">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  )
 }
 
 function RunTable() {
@@ -420,6 +525,7 @@ function RouteComponent() {
       {/* TODO: add overview of the run */}
       <Tabs defaultValue='segments'>
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="segments">Segments</TabsTrigger>
           {run.dataset.has_reference &&
             <>
@@ -429,6 +535,7 @@ function RouteComponent() {
           }
           <TabsTrigger value="raw">Raw Data</TabsTrigger>
         </TabsList>
+        <TabsContent value="overview"><OverviewTable run={run} /></TabsContent>
         <TabsContent value="segments"><RunTable /></TabsContent>
         {run.dataset.has_reference &&
           <>
