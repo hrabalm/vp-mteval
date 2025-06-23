@@ -168,7 +168,7 @@ function RunTable() {
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <th key={header.id} className="w-1/3 px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th key={header.id} className="w-1/3 px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -181,7 +181,7 @@ function RunTable() {
           ))}
           {/* Fuzzy search row */}
           <tr className={`bg-muted/20 transition-all duration-200 ${searchEnabled ? '' : 'collapse'}`}>
-            <td className="px-6 py-2">
+            <td className="px-3 py-2">
               <Input
                 placeholder="Fuzzy search in Source..."
                 className="w-full text-xs"
@@ -189,7 +189,7 @@ function RunTable() {
                 onChange={(e) => handleFuzzyFilterChange('src', e.target.value)}
               />
             </td>
-            <td className="px-6 py-2">
+            <td className="px-3 py-2">
               <Input
                 placeholder="Fuzzy search in Target..."
                 className="w-full text-xs"
@@ -197,7 +197,7 @@ function RunTable() {
                 onChange={(e) => handleFuzzyFilterChange('tgt', e.target.value)}
               />
             </td>
-            <td className="px-6 py-2">
+            <td className="px-3 py-2">
               <Input
                 placeholder="Fuzzy search in Reference..."
                 className="w-full text-xs"
@@ -208,7 +208,7 @@ function RunTable() {
           </tr>
           {/* Regexp search row */}
           <tr className={`bg-muted/20 transition-all duration-200 ${searchEnabled ? '' : 'collapse'}`}>
-            <td className="px-6 py-2">
+            <td className="px-3 py-2">
               <Input
                 placeholder="Regexp search in Source..."
                 className="w-full text-xs"
@@ -216,7 +216,7 @@ function RunTable() {
                 onChange={(e) => handleRegexpFilterChange('src', e.target.value)}
               />
             </td>
-            <td className="px-6 py-2">
+            <td className="px-3 py-2">
               <Input
                 placeholder="Regexp search in Target..."
                 className="w-full text-xs"
@@ -224,7 +224,7 @@ function RunTable() {
                 onChange={(e) => handleRegexpFilterChange('tgt', e.target.value)}
               />
             </td>
-            <td className="px-6 py-2">
+            <td className="px-3 py-2">
               <Input
                 placeholder="Regexp search in Reference..."
                 className="w-full text-xs"
@@ -238,7 +238,7 @@ function RunTable() {
           {table.getRowModel().rows.map(row => (
             <tr key={row.id} className="hover:bg-muted/50">
               {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="px-6 py-4 text-sm text-foreground break-words">
+                <td key={cell.id} className="px-3 py-2 text-sm text-foreground break-words">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
@@ -248,7 +248,7 @@ function RunTable() {
       </table>
 
       {/* Pagination Controls */}
-      <div className="flex items-center justify-between px-6 py-4 bg-muted/20 border-t">
+      <div className="flex items-center justify-between px-3 py-4 bg-muted/20 border-t">
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-1 text-xs font-medium border rounded-md bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
@@ -320,7 +320,7 @@ function RunTable() {
         </div>
       </div>
 
-      <div className="px-6 py-2 text-xs text-muted-foreground bg-muted/10 border-t">
+      <div className="px-3 py-2 text-xs text-muted-foreground bg-muted/10 border-t">
         Showing {table.getRowModel().rows.length.toLocaleString()} of{' '}
         {table.getRowCount().toLocaleString()} Rows
       </div>
