@@ -7,15 +7,11 @@ queue.
 Ideally, I want to prefetch.
 """
 
-# TODO: how do I handle metrics that need references?
-#           - I could just give out min or None
-#           - or explicitly ignore
 # TODO: logging levels per click option
 # TODO: loading external python metric definition
 # TODO: catch status error exceptions or remove them
 
 import multiprocessing
-from typing import Literal, Protocol, ClassVar
 import queue
 import logging
 
@@ -26,6 +22,7 @@ from pydantic import BaseModel
 import httpx
 from functools import partial
 
+import processors
 import processors.protocols
 
 # Sentinel value to signal the worker to exit
@@ -45,52 +42,6 @@ def setup_logging(log_level: str):
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-
-
-class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
-    def __init__(self):
-        import sacrebleu
-
-        # FIXME: setup tokenizer correctly for CJK languages
-        self.bleu = sacrebleu.BLEU()
-        # We need to use effective_order=True for sentences.
-        self.bleu_sentence = sacrebleu.BLEU(
-            effective_order=True,
-        )
-
-    name: ClassVar[str] = "BLEU"
-    requires_references: ClassVar[bool] = True
-    higher_is_better: ClassVar[bool] = True
-
-    def process_example(
-        self, example: processors.protocols.WorkerExample
-    ) -> processors.protocols.WorkerExampleResult:
-        # assert all(x.ref for x in example.segments)  # FIXME: enable
-        hypotheses = [seg.tgt for seg in example.segments]
-        references = [seg.ref for seg in example.segments]
-        references = [
-            seg.ref if seg.ref else "" for seg in example.segments
-        ]  # FIXME: remove
-        # Note: we support only BLEU with a single reference
-        # setting trg_lang to "zh", "ja" or "ko" should be sufficient
-        # as long as 13a is okay for all other considered languages.
-        bleu_score = self.bleu.corpus_score(
-            hypotheses=hypotheses,
-            references=[references],
-        )
-        # score_full = bleu_score.format()  # human-readable detailed format
-        segment_scores = [
-            self.bleu_sentence.sentence_score(hypo, [ref]).score
-            for hypo, ref in zip(hypotheses, references)
-        ]
-        logging.debug(f"Segment scores: {segment_scores}")
-        return processors.protocols.WorkerExampleResult(
-            job_id=example.job_id,
-            name=self.name,
-            segment_scores=segment_scores,
-            dataset_score=bleu_score.score,
-            higher_is_better=self.higher_is_better,
-        )
 
 
 class Worker:
@@ -333,11 +284,12 @@ async def main(host, token, username, namespace, metric, mode, log_level):
 
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
+    processor = processors.get_processor_factory(metric)
     res = await register_worker(
         host=host,
         token=token,
         metric=metric,
-        metric_requires_references=BLEUProcessor.requires_references,
+        metric_requires_references=processor.requires_references,
         namespace_name=namespace,
         username=username,
     )
@@ -367,7 +319,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 logging.info("No initial jobs and in one-shot mode. Exiting.")
                 return
 
-            worker = Worker(metrics_processor=BLEUProcessor())
+            worker = Worker(metrics_processor=processor())
             worker.start()
 
             jobs_in_flight = 0
@@ -472,7 +424,12 @@ async def main(host, token, username, namespace, metric, mode, log_level):
     default="default",
     show_default=True,
 )
-@click.option("--metric", type=str, required=True, help="Metric to be used")
+@click.option(
+    "--metric",
+    type=click.Choice([name for name in processors.processors_by_name.keys()]),
+    required=True,
+    help="Metric to be used",
+)
 @click.option(
     "--mode",
     type=click.Choice(["persistent", "one-shot"]),
