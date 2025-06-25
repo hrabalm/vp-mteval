@@ -26,6 +26,8 @@ from pydantic import BaseModel
 import httpx
 from functools import partial
 
+import processors.protocols
+
 # Sentinel value to signal the worker to exit
 POISON_PILL = None
 HEARTBEAT_INTERVAL_SECONDS = 5
@@ -45,43 +47,7 @@ def setup_logging(log_level: str):
     )
 
 
-class Segment(BaseModel):
-    src: str
-    tgt: str
-    ref: str | None = None
-
-
-class WorkerExample(BaseModel):
-    job_id: int
-    segments: list[Segment]
-    src_lang: str
-    tgt_lang: str
-
-
-class WorkerExampleResult(BaseModel):
-    job_id: int
-    name: str
-    segment_scores: list[float] | None
-    dataset_score: float | None
-    higher_is_better: bool
-
-
-class WorkerRegistrationResponse(BaseModel):
-    worker_id: int
-    num_jobs: int
-
-
-class MetricsProcessorProtocol(Protocol):
-    """Synchronous worker that continually processes examples from a queue."""
-
-    name: ClassVar[str]
-    requires_references: ClassVar[bool]
-    higher_is_better: ClassVar[bool] = True
-
-    def process_example(self, example: WorkerExample) -> WorkerExampleResult: ...
-
-
-class BLEUProcessor(MetricsProcessorProtocol):
+class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
     def __init__(self):
         import sacrebleu
 
@@ -96,7 +62,9 @@ class BLEUProcessor(MetricsProcessorProtocol):
     requires_references: ClassVar[bool] = True
     higher_is_better: ClassVar[bool] = True
 
-    def process_example(self, example: WorkerExample) -> WorkerExampleResult:
+    def process_example(
+        self, example: processors.protocols.WorkerExample
+    ) -> processors.protocols.WorkerExampleResult:
         # assert all(x.ref for x in example.segments)  # FIXME: enable
         hypotheses = [seg.tgt for seg in example.segments]
         references = [seg.ref for seg in example.segments]
@@ -116,7 +84,7 @@ class BLEUProcessor(MetricsProcessorProtocol):
             for hypo, ref in zip(hypotheses, references)
         ]
         logging.debug(f"Segment scores: {segment_scores}")
-        return WorkerExampleResult(
+        return processors.protocols.WorkerExampleResult(
             job_id=example.job_id,
             name=self.name,
             segment_scores=segment_scores,
@@ -126,7 +94,9 @@ class BLEUProcessor(MetricsProcessorProtocol):
 
 
 class Worker:
-    def __init__(self, metrics_processor: MetricsProcessorProtocol):
+    def __init__(
+        self, metrics_processor: processors.protocols.MetricsProcessorProtocol
+    ):
         self.examples_queue = multiprocessing.Queue()
         self.result_queue = multiprocessing.Queue()
         self.metrics_processor = metrics_processor
@@ -210,7 +180,7 @@ async def register_worker(
     metric_requires_references: bool,
     namespace_name: str,
     username: str | None,
-) -> WorkerRegistrationResponse:
+) -> processors.protocols.WorkerRegistrationResponse:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/register",
@@ -222,7 +192,9 @@ async def register_worker(
             },
         )
         response.raise_for_status()
-        return WorkerRegistrationResponse.model_validate(response.json())
+        return processors.protocols.WorkerRegistrationResponse.model_validate(
+            response.json()
+        )
 
 
 async def unregister_worker(
@@ -293,7 +265,7 @@ class JobResultRequest(BaseModel):
 
 
 async def report_job_results(
-    example_result: WorkerExampleResult,
+    example_result: processors.protocols.WorkerExampleResult,
     job_id: int,
     host: str,
     token: str,
@@ -310,7 +282,7 @@ async def report_job_results(
                 score=float(example_result.dataset_score),
             )
         )
-        
+
     segment_level_metrics = []
     if example_result.segment_scores is not None:
         segment_level_metrics.append(
@@ -320,7 +292,7 @@ async def report_job_results(
                 scores=[float(score) for score in example_result.segment_scores],
             ),
         )
-        
+
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/jobs/{job_id}/report_result",
@@ -338,10 +310,10 @@ async def report_job_results(
 def job_to_example(job):
     logging.debug(f"Processing job: {job}")
     logging.debug(f"Job segments: {job['segments']}")
-    example = WorkerExample(
+    example = processors.protocols.WorkerExample(
         job_id=job["id"],
         segments=[
-            Segment(
+            processors.protocols.Segment(
                 src=seg["src"],
                 tgt=seg["tgt"],
                 ref=seg.get("ref"),
@@ -408,7 +380,9 @@ async def main(host, token, username, namespace, metric, mode, log_level):
             # 4. Main processing loop
             while True:
                 if mode == "persistent" and jobs_in_flight == 0:
-                    logging.info("Persistent mode: No jobs in flight, checking for new jobs.")
+                    logging.info(
+                        "Persistent mode: No jobs in flight, checking for new jobs."
+                    )
                     new_jobs = await assign_and_get_job(
                         host=host,
                         token=token,
@@ -433,13 +407,19 @@ async def main(host, token, username, namespace, metric, mode, log_level):
 
                 try:
                     # Wait for a result from the worker
-                    example_result = await run_sync(lambda: worker.result_queue.get(timeout=1))
+                    example_result = await run_sync(
+                        lambda: worker.result_queue.get(timeout=1)
+                    )
                     if example_result is POISON_PILL:
-                        logging.error("Worker sent unexpected POISON_PILL. Shutting down.")
+                        logging.error(
+                            "Worker sent unexpected POISON_PILL. Shutting down."
+                        )
                         break
 
                     jobs_in_flight -= 1
-                    logging.info(f"Result received for job {example_result.job_id}. Jobs in flight: {jobs_in_flight}")
+                    logging.info(
+                        f"Result received for job {example_result.job_id}. Jobs in flight: {jobs_in_flight}"
+                    )
 
                     # Report the result to the server
                     await report_job_results(
@@ -450,7 +430,9 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                         namespace_name=namespace,
                         worker_id=res.worker_id,
                     )
-                    logging.info(f"Job {example_result.job_id} results reported successfully.")
+                    logging.info(
+                        f"Job {example_result.job_id} results reported successfully."
+                    )
 
                 except queue.Empty:
                     logging.debug("Result queue empty, continuing to wait.")
@@ -461,7 +443,9 @@ async def main(host, token, username, namespace, metric, mode, log_level):
             try:
                 final_pill = await run_sync(lambda: worker.result_queue.get(timeout=5))
                 if final_pill is not POISON_PILL:
-                    logging.warning("Expected POISON_PILL at the end, but got something else.")
+                    logging.warning(
+                        "Expected POISON_PILL at the end, but got something else."
+                    )
             except queue.Empty:
                 logging.warning("Timeout waiting for final POISON_PILL from worker.")
 
