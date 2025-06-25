@@ -6,6 +6,7 @@ from litestar import Controller, Litestar, Router, get, post
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.response import Template
 from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT
+from litestar_saq import TaskQueues
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound
@@ -16,6 +17,7 @@ import server.events as events
 import server.models as models
 import server.routes.worker as worker_module  # Changed import
 import server.utils as utils
+import server.tasks as tasks
 
 logger = logging.getLogger(__name__)
 
@@ -293,7 +295,10 @@ async def _add_translation_run(
             transaction=db_session,
         )
 
-    app.emit(events.RUN_CREATED, events.RunCreatedData(run_id=translation_run.id))
+    app.emit(
+        events.RUN_CREATED,
+        data=tasks.RunCreatedData(run_id=translation_run.id),
+    )
 
     return ReadTranslationRunDetail(
         id=translation_run.id,

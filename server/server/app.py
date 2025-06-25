@@ -54,7 +54,15 @@ app = Litestar(
                 web_enabled=True,
                 use_server_lifespan=True,
                 queue_configs=[
+                    QueueConfig(  # n-grams computation
+                        name="ngrams",
+                        dsn=settings.saq_queue_dsn,
+                        tasks=[
+                            tasks.compute_ngrams_on_run_created,
+                        ],
+                    ),
                     QueueConfig(
+                        name="default",
                         dsn=settings.saq_queue_dsn,
                         tasks=[
                             tasks.cleanup_expired_workers_and_jobs_task,
