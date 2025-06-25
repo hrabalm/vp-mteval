@@ -4,6 +4,14 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { useState } from 'react'
 import type { AuthContext } from '../auth'
 import { useAuth } from '../auth'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 const appName = import.meta.env.VITE_APP_NAME || 'VP MTEval'
 
@@ -139,32 +147,42 @@ const Breadcrumbs = () => {
   console.log('Breadcrumbs:', JSON.stringify(breadcrumbItems));
 
   return (
-    <div className="flex items-center space-x-2 mb-4 text-sm">
-      <Link
-        to="/"
-        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-      >
-        Home
-      </Link>
-      {breadcrumbItems.map((item, index) => (
-        <div key={item.key} className="flex items-center space-x-2">
-          <span className="text-gray-500 dark:text-gray-400">/</span>
-          {index === breadcrumbItems.length - 1 ? (
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-              {item.label}
-            </span>
-          ) : (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
             <Link
-              to={item.to}
-              params={item.params}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              to="/"
             >
-              {item.label}
+              Home
             </Link>
-          )}
-        </div>
-      ))}
-    </div>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        {breadcrumbItems.map((item, index) => (
+          <>
+            <BreadcrumbSeparator />
+            {index === breadcrumbItems.length - 1 ? (
+              <BreadcrumbItem>
+                <BreadcrumbPage>
+                  {item.label}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            ) : (
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link
+                    to={item.to}
+                    params={item.params}
+                  >
+                    {item.label}
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            )}
+          </>
+        ))}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
 
