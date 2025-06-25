@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 
 from litestar import Litestar
+from litestar.config.compression import CompressionConfig
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.exceptions import ClientException
 from litestar.status_codes import HTTP_409_CONFLICT
@@ -11,10 +12,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import server.events as events
+import server.hooks as hooks
 import server.plugins as plugins
 import server.routes as routes
 import server.tasks as tasks
-import server.hooks as hooks
 from server.config import settings
 
 
@@ -47,6 +48,7 @@ app = Litestar(
     ],
     debug=True,
     dependencies={"transaction": provide_transaction},
+    compression_config=CompressionConfig(backend="brotli", brotli_gzip_fallback=True),
     plugins=[
         plugins.alchemy_plugin,
         SAQPlugin(
