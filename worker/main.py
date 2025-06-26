@@ -82,11 +82,12 @@ class Worker:
         self.thread.start()
 
 
-async def send_heartbeat(host, worker_id: int, namespace_name: str):
+async def send_heartbeat(host, worker_id: int, namespace_name: str, token: str):
     """Send a heartbeat to the server."""
     async with httpx.AsyncClient() as client:
         response = await client.put(
-            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/heartbeat"
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/heartbeat",
+            headers=create_auth_headers(token),
         )
         response.raise_for_status()
         return response.json()
@@ -97,13 +98,14 @@ async def send_heartbeats(
     host: str,
     worker_id: int,
     namespace_name: str,
+    token: str,
     is_fake: bool = False,
 ):
     """Periodically send a heartbeat."""
     while True:
         logging.info("Sending heartbeat...")
         if not is_fake:
-            await send_heartbeat(host, worker_id, namespace_name)
+            await send_heartbeat(host, worker_id, namespace_name, token)
         await anyio.sleep(interval_seconds)
 
 
@@ -181,7 +183,12 @@ async def assign_and_get_job(
 
 
 def start_heartbeat_task(
-    tg, interval_seconds: int, host: str, namespace_name: str, worker_id: int
+    tg,
+    interval_seconds: int,
+    host: str,
+    namespace_name: str,
+    worker_id: int,
+    token: str,
 ):
     tg.start_soon(
         partial(
@@ -190,6 +197,7 @@ def start_heartbeat_task(
             host=host,
             namespace_name=namespace_name,
             worker_id=worker_id,
+            token=token,
         )
     )
 
@@ -300,7 +308,12 @@ async def main(host, token, username, namespace, metric, mode, log_level):
         async with anyio.create_task_group() as tg:
             # 2. Start the Worker subprocess and heartbeat task
             start_heartbeat_task(
-                tg, 5, host, namespace_name=namespace, worker_id=res.worker_id
+                tg,
+                5,
+                host,
+                namespace_name=namespace,
+                worker_id=res.worker_id,
+                token=token,
             )
 
             # 3. Fetch initial tasks

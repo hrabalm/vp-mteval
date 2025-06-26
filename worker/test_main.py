@@ -1,8 +1,11 @@
-import pytest
-import main
-import anyio
-from anyio.to_thread import run_sync
 from functools import partial
+
+import anyio
+import main
+import pytest
+from anyio.to_thread import run_sync
+from processors.bleu import BLEUProcessor
+from processors.protocols import Segment, WorkerExample, WorkerExampleResult
 
 pytestmark = pytest.mark.anyio
 
@@ -12,18 +15,17 @@ def anyio_backend():
     return "asyncio"
 
 
-EXAMPLE_PERFECT_TRANSLATION = main.WorkerExample(
+EXAMPLE_PERFECT_TRANSLATION = WorkerExample(
+    job_id=0,
     segments=[
-        main.Segment(src="Hello", tgt="Bonjour", ref="Bonjour"),
-        main.Segment(src="World", tgt="Monde", ref="Monde"),
-        main.Segment(
-            src="This is a test", tgt="Ceci est un test", ref="Ceci est un test"
-        ),
-        main.Segment(src="Goodbye", tgt="Au revoir", ref="Au revoir"),
-        main.Segment(src="See you later", tgt="À plus tard", ref="À plus tard"),
-        main.Segment(src="Have a nice day", tgt="Bonne journée", ref="Bonne journée"),
-        main.Segment(src="Thank you", tgt="Merci", ref="Merci"),
-        main.Segment(
+        Segment(src="Hello", tgt="Bonjour", ref="Bonjour"),
+        Segment(src="World", tgt="Monde", ref="Monde"),
+        Segment(src="This is a test", tgt="Ceci est un test", ref="Ceci est un test"),
+        Segment(src="Goodbye", tgt="Au revoir", ref="Au revoir"),
+        Segment(src="See you later", tgt="À plus tard", ref="À plus tard"),
+        Segment(src="Have a nice day", tgt="Bonne journée", ref="Bonne journée"),
+        Segment(src="Thank you", tgt="Merci", ref="Merci"),
+        Segment(
             src="I love programming", tgt="J'aime programmer", ref="J'aime programmer"
         ),
     ],
@@ -32,18 +34,17 @@ EXAMPLE_PERFECT_TRANSLATION = main.WorkerExample(
 )
 
 
-EXAMPLE_IMPERFECT_TRANSLATION = main.WorkerExample(
+EXAMPLE_IMPERFECT_TRANSLATION = WorkerExample(
+    job_id=0,
     segments=[
-        main.Segment(src="Hello", tgt="", ref="Bonjour"),  # intentionally wrong example
-        main.Segment(src="World", tgt="Monde", ref="Monde"),
-        main.Segment(
-            src="This is a test", tgt="Ceci est un test", ref="Ceci est un test"
-        ),
-        main.Segment(src="Goodbye", tgt="Au revoir", ref="Au revoir"),
-        main.Segment(src="See you later", tgt="À plus tard", ref="À plus tard"),
-        main.Segment(src="Have a nice day", tgt="Bonne journée", ref="Bonne journée"),
-        main.Segment(src="Thank you", tgt="Merci", ref="Merci"),
-        main.Segment(
+        Segment(src="Hello", tgt="", ref="Bonjour"),  # intentionally wrong example
+        Segment(src="World", tgt="Monde", ref="Monde"),
+        Segment(src="This is a test", tgt="Ceci est un test", ref="Ceci est un test"),
+        Segment(src="Goodbye", tgt="Au revoir", ref="Au revoir"),
+        Segment(src="See you later", tgt="À plus tard", ref="À plus tard"),
+        Segment(src="Have a nice day", tgt="Bonne journée", ref="Bonne journée"),
+        Segment(src="Thank you", tgt="Merci", ref="Merci"),
+        Segment(
             src="I love programming", tgt="J'aime programmer", ref="J'aime programmer"
         ),
     ],
@@ -53,7 +54,7 @@ EXAMPLE_IMPERFECT_TRANSLATION = main.WorkerExample(
 
 
 def test_bleu_processor_perfect():
-    bleu_processor = main.BLEUProcessor()
+    bleu_processor = BLEUProcessor()
     result = bleu_processor.process_example(EXAMPLE_PERFECT_TRANSLATION)
     assert result.dataset_score == pytest.approx(100.0), (
         "Dataset should have perfect BLEU score"
@@ -68,7 +69,7 @@ def test_bleu_processor_perfect():
 
 
 def test_bleu_processor_imperfect():
-    bleu_processor = main.BLEUProcessor()
+    bleu_processor = BLEUProcessor()
     result = bleu_processor.process_example(EXAMPLE_IMPERFECT_TRANSLATION)
     assert result.dataset_score, "BLEU should return dataset level scores"
     assert result.dataset_score < 100.0, "Dataset should not have perfect BLEU score"
@@ -85,7 +86,7 @@ def test_bleu_processor_imperfect():
 async def test_main_mp():
     import queue
 
-    bleu_processor = main.BLEUProcessor()
+    bleu_processor = BLEUProcessor()
     worker_instance = main.Worker(metrics_processor=bleu_processor)
 
     print(f"Starting worker with {bleu_processor.name} processor...")
@@ -104,6 +105,7 @@ async def test_main_mp():
                 namespace_name="default",
                 worker_id=1,
                 is_fake=True,
+                token="",
             )
         )
 
@@ -141,7 +143,7 @@ async def test_main_mp():
 async def test_main_threading():
     import queue
 
-    bleu_processor = main.BLEUProcessor()
+    bleu_processor = BLEUProcessor()
     worker_instance = main.Worker(metrics_processor=bleu_processor)
 
     print(f"Starting worker with {bleu_processor.name} processor...")
@@ -160,6 +162,7 @@ async def test_main_threading():
                 namespace_name="default",
                 worker_id=1,
                 is_fake=True,
+                token="",
             )
         )
 
