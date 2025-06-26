@@ -1,4 +1,5 @@
 import * as React from 'react';
+import api from './api';
 
 // adapted from TanStack Router official example
 
@@ -7,54 +8,83 @@ async function sleep(ms: number) {
 }
 
 export interface AuthContext {
-    isAuthenticated: boolean;
-    login: (username: string, password: string) => Promise<void>;
-    logout: () => void;
-    isAdmin: boolean;
-    user: string | null;
+  isAuthenticated: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+  isAdmin: boolean;
+  user: string | null;
+  token: string | null;
 }
 
 
 const AuthContext = React.createContext<AuthContext | null>(null)
 
-const key = 'vpmteval.auth.user'
+const userKey = 'vpmteval.auth.user'
+const tokenKey = 'vpmteval.auth.token'
 
 function getStoredUser() {
-  return localStorage.getItem(key)
+  return localStorage.getItem(userKey)
 }
 
 function setStoredUser(user: string | null) {
   if (user) {
-    localStorage.setItem(key, user)
+    localStorage.setItem(userKey, user)
   } else {
-    localStorage.removeItem(key)
+    localStorage.removeItem(userKey)
   }
+}
+
+function getStoredToken() {
+  return localStorage.getItem(tokenKey)
+}
+
+function setStoredToken(token: string | null) {
+  if (token) {
+    localStorage.setItem(tokenKey, token)
+  } else {
+    localStorage.removeItem(tokenKey)
+  }
+}
+
+async function loginPost(username: string, password: string) {
+  const res = await api.post('api/login', { username, password })
+    .then((r) => r.data)
+    .catch((err) => {
+      if (err.status === 401) {
+        throw new Error('Invalid username or password')
+      }
+    })
+  return res;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<string | null>(getStoredUser())
+  const [token, setToken] = React.useState<string | null>(getStoredToken())
   const isAuthenticated = !!user
 
   const logout = React.useCallback(async () => {
-    await sleep(250)
-
     setStoredUser(null)
     setUser(null)
+    setStoredToken(null)
+    setToken(null)
   }, [])
 
-  const login = React.useCallback(async (username: string) => {
-    await sleep(500)
-
+  const login = React.useCallback(async (username: string, password: string) => {
+    const res = await loginPost(username, password)
+    console.log(res)
     setStoredUser(username)
     setUser(username)
+    setStoredToken(res.api_key)
+    setToken(res.api_key)
   }, [])
 
   React.useEffect(() => {
     setUser(getStoredUser())
+    setToken(getStoredToken())
   }, [])
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, token }}>
       {children}
     </AuthContext.Provider>
   )
