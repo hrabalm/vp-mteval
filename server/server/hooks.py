@@ -45,8 +45,8 @@ async def seed_database_with_testing_data(app: Litestar):
             default_user = models.User(
                 id=1,
                 username="default",
-                email="test@ufal",
                 password_hash="xxxx",
+                api_key="test_user_key",
             )
             session.add(default_user)
             await session.commit()

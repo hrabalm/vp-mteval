@@ -4,6 +4,7 @@ from litestar import Litestar
 from litestar.config.compression import CompressionConfig
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.exceptions import ClientException
+from litestar.middleware import DefineMiddleware
 from litestar.status_codes import HTTP_409_CONFLICT
 from litestar.template.config import TemplateConfig
 from litestar_saq import CronJob, QueueConfig, SAQConfig, SAQPlugin
@@ -11,6 +12,7 @@ from litestar_vite import ViteConfig, VitePlugin
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import server.auth as auth
 import server.events as events
 import server.hooks as hooks
 import server.plugins as plugins
@@ -39,7 +41,10 @@ vite_plugin = VitePlugin(
         is_react=True,
     )
 )
-
+auth_middleware = DefineMiddleware(
+    auth.CustomAuthenticationMiddleware,
+    exclude="schema",
+)
 
 app = Litestar(
     [
@@ -90,4 +95,7 @@ app = Litestar(
     ],
     template_config=template_config,
     listeners=events.listeners,
+    middleware=[
+        auth_middleware,
+    ],
 )

@@ -342,8 +342,14 @@ class User(Base):
     __tablename__ = "users"
 
     username: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    email: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    api_key: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        index=True,
+        unique=True,
+    )
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     namespaces: Mapped[list["Namespace"]] = relationship(
         "Namespace",
