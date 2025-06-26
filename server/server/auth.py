@@ -10,6 +10,7 @@ from litestar.middleware import (
     AuthenticationResult,
 )
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import server.models as models
 import server.plugins as plugins
@@ -27,6 +28,17 @@ async def verify_password(plain_password: str, hashed_password: str) -> bool:
     return await asyncio.get_running_loop().run_in_executor(
         None, pwd_context.verify, plain_password, hashed_password
     )
+
+
+async def authenticate_user(transaction: "AsyncSession", username: str, password: str):
+    query = select(models.User).where(models.User.username == username)
+    result = await transaction.execute(query)
+    user = result.scalars().first()
+    if not user:
+        return None
+    if not await verify_password(password, user.password_hash):
+        return None
+    return user
 
 
 class User(pydantic.BaseModel):

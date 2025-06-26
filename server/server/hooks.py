@@ -7,6 +7,7 @@ from sqlalchemy import MetaData, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import server.auth as auth
 import server.models as models
 import server.routes as routes
 from server.config import settings
@@ -41,12 +42,13 @@ async def seed_database_with_testing_data(app: Litestar):
 
         # Create default user if it doesn't exist
         try:
-            logger.info("Creating default user...")
+            logger.info("Creating test user...")
             default_user = models.User(
                 id=1,
-                username="default",
-                password_hash="xxxx",
+                username="test",
+                password_hash=await auth.get_password_hash("test"),
                 api_key="test_user_key",
+                is_admin=True,
             )
             session.add(default_user)
             await session.commit()

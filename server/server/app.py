@@ -17,6 +17,7 @@ import server.events as events
 import server.hooks as hooks
 import server.plugins as plugins
 import server.routes as routes
+import server.routes.auth as auth_routes
 import server.tasks as tasks
 from server.config import settings
 
@@ -43,13 +44,15 @@ vite_plugin = VitePlugin(
 )
 auth_middleware = DefineMiddleware(
     auth.CustomAuthenticationMiddleware,
-    exclude="schema",
+    exclude=["/schema", "/api/login"],
 )
 
 app = Litestar(
     [
         routes.api_v1_router,
         routes.WebController,
+        # auth routes
+        *auth_routes.routes,
     ],
     debug=True,
     dependencies={"transaction": provide_transaction},
