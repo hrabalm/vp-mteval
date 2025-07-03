@@ -12,8 +12,9 @@ class Settings:
 
     # Show SQLAlchemy SQL queries in the logs for debugging purposes.
     database_echo: bool = False
+    debug: bool = False
 
-    worker_expiration_seconds: int = 60    
+    worker_expiration_seconds: int = 60
 
 
 settings = ts.load(Settings, appname="server")

@@ -19,6 +19,7 @@ services:
       SERVER_DROP_DATABASE_ON_STARTUP: "true" # drop the database on startup
       SERVER_SEED_DATABASE_ON_STARTUP: "true" # seed the database on startup
       SERVER_DATABASE_ECHO: "false" # enable database echo
+      SERVER_DEBUG: "true"
       VITE_HOT_RELOAD: "true" # enable hot reload
       VITE_DEV_MODE: "true" # enable dev mode
       VITE_API_BASE_URL: "http://localhost:8000"
@@ -29,7 +30,6 @@ volumes:
   db_data:
   node_modules:
   app_user:
-
 
 networks:
   mynetwork:

@@ -54,7 +54,7 @@ app = Litestar(
         # auth routes
         *auth_routes.routes,
     ],
-    debug=True,
+    debug=settings.debug,
     dependencies={"transaction": provide_transaction},
     compression_config=CompressionConfig(backend="brotli", brotli_gzip_fallback=True),
     plugins=[
