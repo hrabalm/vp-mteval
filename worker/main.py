@@ -374,6 +374,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 if mode == "one-shot" and jobs_in_flight == 0:
                     logging.info("One-shot mode: All jobs processed.")
                     worker.examples_queue.put(POISON_PILL)
+                    state = {"finished": True}
                     break
 
                 try:
