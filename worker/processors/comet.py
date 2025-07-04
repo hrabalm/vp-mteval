@@ -41,6 +41,13 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                 break
             except Exception as e:
                 logger.warning(f"Batch size {bs} failed: {e}")
+                import torch
+                import time
+                import gc
+
+                gc.collect()
+                torch.cuda.empty_cache()
+                time.sleep(1)
 
         if model_output is None:
             raise RuntimeError("Failed to compute model output with any batch size.")
