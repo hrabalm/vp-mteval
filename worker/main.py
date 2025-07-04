@@ -99,10 +99,11 @@ async def send_heartbeats(
     worker_id: int,
     namespace_name: str,
     token: str,
+    state: dict,
     is_fake: bool = False,
 ):
     """Periodically send a heartbeat."""
-    while True:
+    while not state.get("finished", False):
         logging.info("Sending heartbeat...")
         if not is_fake:
             await send_heartbeat(host, worker_id, namespace_name, token)
@@ -189,6 +190,7 @@ def start_heartbeat_task(
     namespace_name: str,
     worker_id: int,
     token: str,
+    state: dict,
 ):
     tg.start_soon(
         partial(
@@ -198,6 +200,7 @@ def start_heartbeat_task(
             namespace_name=namespace_name,
             worker_id=worker_id,
             token=token,
+            state=state,
         )
     )
 
@@ -303,6 +306,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
     )
     logging.info(f"Worker registered: {res}")
 
+    state = {"finished": False}
     worker = None
     try:
         async with anyio.create_task_group() as tg:
@@ -314,6 +318,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 namespace_name=namespace,
                 worker_id=res.worker_id,
                 token=token,
+                state=state,
             )
 
             # 3. Fetch initial tasks
@@ -330,6 +335,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
 
             if len(initial_jobs) == 0 and mode == "one-shot":
                 logging.info("No initial jobs and in one-shot mode. Exiting.")
+                state["finished"] = True
                 return
 
             worker = Worker(metrics_processor=processor())
