@@ -354,7 +354,7 @@ async def add_translation_run(
     )
     return litestar.Response(
         run,
-        status=HTTP_201_CREATED if is_new_run else HTTP_200_OK,
+        status_code=HTTP_201_CREATED if is_new_run else HTTP_200_OK,
     )
 
 
