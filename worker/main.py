@@ -71,6 +71,7 @@ class Worker:
 
     def start(self):
         """Start the worker in a separate process."""
+        multiprocessing.set_start_method("spawn", force=True)
         self.process = multiprocessing.Process(target=self._main_loop)
         self.process.start()
 
