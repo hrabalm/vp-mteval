@@ -278,8 +278,8 @@ def get_dataset_and_data_collator(
     """
     examples = [
         {
-            "src": example["src"].strip(),
-            "tgt": example["tgt"].strip(),
+            "src": src.strip(),
+            "tgt": tgt.strip(),
         }
         for src, tgt in zip(sources, hypotheses)
     ]
