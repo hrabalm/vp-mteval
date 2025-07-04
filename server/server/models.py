@@ -10,6 +10,7 @@ from sqlalchemy import (
     Uuid,
     func,
     Float,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -208,6 +209,10 @@ class TranslationRun(Base):
         "Namespace",
     )
     config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+
+    __table_args__ = (
+        UniqueConstraint("namespace_id", "uuid", name="uix_namespace_uuid"),
+    )
 
 
 # Metric results
