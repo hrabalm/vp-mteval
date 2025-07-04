@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_NAME_OR_PATH = "google/metricx-24-hybrid-xl-v2p6-bfloat16"
 TOKENIZER = "google/mt5-xl"
-MAX_INPUT_LENGTH = 1024
+MAX_INPUT_LENGTH = 1536
 
 
 class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
