@@ -1,10 +1,12 @@
 import processors.protocols
 import processors.bleu
 import processors.chrf
+import processors.comet
 
 processors_by_name = {
     "BLEU": processors.bleu.BLEUProcessor,
     "chrF2": processors.chrf.CHRF2Processor,
+    "CometKiwi22": processors.comet.CometKiwiProcessor,
 }
 
 
