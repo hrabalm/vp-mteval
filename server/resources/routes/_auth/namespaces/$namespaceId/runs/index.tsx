@@ -73,11 +73,27 @@ function RunsTable({ runs }: { runs: Row[] }) {
     [processedRuns]
   )
 
+  const regexpFilterFn = (row: any, columnId: string, value: string) => {
+    if (!value) return true; // No filter applied, show all rows
+    const cellValue = row.getValue(columnId);
+    if (cellValue == null) return false;
+
+    try {
+      const regex = new RegExp(value, 'i'); // Case-insensitive regex
+      // return regex.test(String(cellValue));
+      return regex.test(JSON.stringify(cellValue));  // FIXME
+    } catch (error) {
+      // Invalid regex, fallback to string includes
+      return String(cellValue).toLowerCase().includes(value.toLowerCase());
+    }
+  };
+
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
       allKeys.map((key) => ({
         accessorKey: key,
         header: key.charAt(0).toUpperCase() + key.slice(1),
+        filterFn: regexpFilterFn,
         cell: info => {
           const value = info.getValue();
 
@@ -115,6 +131,9 @@ function RunsTable({ runs }: { runs: Row[] }) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    filterFns: {
+      regexp: regexpFilterFn,
+    },
     state: {
       sorting,
       columnFilters,
@@ -161,6 +180,17 @@ function RunsTable({ runs }: { runs: Row[] }) {
                 ))}
               </tr>
             ))}
+            <tr>
+              {table.getHeaderGroups()[0].headers.map((header) => (
+                <td key={header.id} className="px-3 py-2">
+                  <Input
+                    placeholder="Regex..."
+                    className="w-full text-xs"
+                    value={(header.column.getFilterValue() as string) ?? ''}
+                    onChange={(e) => header.column.setFilterValue(e.target.value)}
+                  />
+                </td>))}
+            </tr>
           </thead>
           <tbody className="bg-background divide-y divide-border">
             {table.getRowModel().rows.map((row) => (
