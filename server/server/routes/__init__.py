@@ -5,11 +5,11 @@ import litestar
 from litestar import Controller, Litestar, Router, get, post
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.response import Template
-from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT
+from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT, HTTP_201_CREATED
 from litestar_saq import TaskQueues
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
-from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -245,7 +245,7 @@ async def _add_translation_run(
     data: TranslationRunPostData,
     db_session: AsyncSession,
     app: Litestar,
-) -> ReadTranslationRunDetail:
+) -> tuple[ReadTranslationRunDetail, bool]:
     """Add a translation run and associated segments to the database. Also creates the dataset and namespace if they don't exist."""
     async with db_session.begin():
         # Calculate the hash of the dataset
@@ -277,28 +277,43 @@ async def _add_translation_run(
             has_reference=has_reference,
         )
 
-        # Create translation run
-        translation_run = models.TranslationRun(
-            dataset_id=dataset.id,
-            namespace=namespace,
-            uuid=data.uuid,
-            config=data.config,
-        )
-        db_session.add(translation_run)
-        await db_session.flush()
+        try:
+            # Create translation run
+            translation_run = models.TranslationRun(
+                dataset_id=dataset.id,
+                namespace=namespace,
+                uuid=data.uuid,
+                config=data.config,
+            )
+            db_session.add(translation_run)
+            await db_session.flush()
 
-        # Create segments and translations
-        await create_segments_and_translations(
-            segments=data.segments,
-            dataset_id=dataset.id,
-            run_id=translation_run.id,
-            transaction=db_session,
-        )
+            # Create segments and translations
+            await create_segments_and_translations(
+                segments=data.segments,
+                dataset_id=dataset.id,
+                run_id=translation_run.id,
+                transaction=db_session,
+            )
+            is_new_run = True
+        except IntegrityError as e:
+            # UUID already exists - fetch the existing run
+            await db_session.rollback()
 
-    app.emit(
-        events.RUN_CREATED,
-        data=tasks.RunCreatedData(run_id=translation_run.id),
-    )
+            query = select(models.TranslationRun).where(
+                models.TranslationRun.uuid == data.uuid,
+                models.TranslationRun.namespace_id == namespace.id,
+            )
+            result = await db_session.execute(query)
+            translation_run = result.scalar_one()
+            is_new_run = False
+
+    # Only emit the event for truly new runs
+    if is_new_run:
+        app.emit(
+            events.RUN_CREATED,
+            data=tasks.RunCreatedData(run_id=translation_run.id),
+        )
 
     return ReadTranslationRunDetail(
         id=translation_run.id,
@@ -315,7 +330,7 @@ async def _add_translation_run(
         dataset_metrics=[],
         segment_metrics=[],
         segments=None,
-    )
+    ), is_new_run
 
 
 @post("/namespaces/{namespace_name:str}/translations-runs/")
@@ -332,13 +347,14 @@ async def add_translation_run(
     """
     # Update the namespace_name in the data to ensure it matches the URL parameter
     data.namespace_name = namespace_name
-    run = await _add_translation_run(
+    run, is_new_run = await _add_translation_run(
         data=data,
         db_session=db_session,
         app=request.app,
     )
     return litestar.Response(
         run,
+        status_code=HTTP_201_CREATED if is_new_run else HTTP_200_OK,
     )
 
 

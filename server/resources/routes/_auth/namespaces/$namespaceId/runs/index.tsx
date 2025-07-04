@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef } from '@tanstack/react-table';
 import { fetchRuns } from '../../../../../runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMemo, useState } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
+import RefreshBar from '@/components/refresh-bar';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
@@ -72,11 +73,27 @@ function RunsTable({ runs }: { runs: Row[] }) {
     [processedRuns]
   )
 
+  const regexpFilterFn = (row: any, columnId: string, value: string) => {
+    if (!value) return true; // No filter applied, show all rows
+    const cellValue = row.getValue(columnId);
+    if (cellValue == null) return false;
+
+    try {
+      const regex = new RegExp(value, 'i'); // Case-insensitive regex
+      // return regex.test(String(cellValue));
+      return regex.test(JSON.stringify(cellValue));  // FIXME
+    } catch (error) {
+      // Invalid regex, fallback to string includes
+      return String(cellValue).toLowerCase().includes(value.toLowerCase());
+    }
+  };
+
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
       allKeys.map((key) => ({
         accessorKey: key,
         header: key.charAt(0).toUpperCase() + key.slice(1),
+        filterFn: regexpFilterFn,
         cell: info => {
           const value = info.getValue();
 
@@ -114,6 +131,9 @@ function RunsTable({ runs }: { runs: Row[] }) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    filterFns: {
+      regexp: regexpFilterFn,
+    },
     state: {
       sorting,
       columnFilters,
@@ -160,6 +180,17 @@ function RunsTable({ runs }: { runs: Row[] }) {
                 ))}
               </tr>
             ))}
+            <tr>
+              {table.getHeaderGroups()[0].headers.map((header) => (
+                <td key={header.id} className="px-3 py-2">
+                  <Input
+                    placeholder="Regex..."
+                    className="w-full text-xs"
+                    value={(header.column.getFilterValue() as string) ?? ''}
+                    onChange={(e) => header.column.setFilterValue(e.target.value)}
+                  />
+                </td>))}
+            </tr>
           </thead>
           <tbody className="bg-background divide-y divide-border">
             {table.getRowModel().rows.map((row) => (
@@ -185,6 +216,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
 }
 
 function RouteComponent() {
+  const router = useRouter();
   const runs = Route.useLoaderData();
   const { namespaceId } = Route.useParams();
 
@@ -192,13 +224,17 @@ function RouteComponent() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Runs for Namespace: {namespaceId}</h1>
-        <Link
-          to="/namespaces/$namespaceId"
-          params={{ namespaceId }}
-          className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-md"
-        >
-          Back to Namespace
-        </Link>
+        <div className="flex space-x-4">
+
+          <RefreshBar onRefresh={() => router.invalidate()} isRefreshing={false} />
+          <Link
+            to="/namespaces/$namespaceId"
+            params={{ namespaceId }}
+            className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-md"
+          >
+            Back to Namespace
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue='list'>
