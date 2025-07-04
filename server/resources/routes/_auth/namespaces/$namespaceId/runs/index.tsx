@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef } from '@tanstack/react-table';
 import { fetchRuns } from '../../../../../runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useMemo, useState } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
+import RefreshBar from '@/components/refresh-bar';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/')({
   component: RouteComponent,
@@ -185,6 +186,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
 }
 
 function RouteComponent() {
+  const router = useRouter();
   const runs = Route.useLoaderData();
   const { namespaceId } = Route.useParams();
 
@@ -192,13 +194,17 @@ function RouteComponent() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Runs for Namespace: {namespaceId}</h1>
-        <Link
-          to="/namespaces/$namespaceId"
-          params={{ namespaceId }}
-          className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-md"
-        >
-          Back to Namespace
-        </Link>
+        <div className="flex space-x-4">
+
+          <RefreshBar onRefresh={() => router.invalidate()} isRefreshing={false} />
+          <Link
+            to="/namespaces/$namespaceId"
+            params={{ namespaceId }}
+            className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-md"
+          >
+            Back to Namespace
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue='list'>
