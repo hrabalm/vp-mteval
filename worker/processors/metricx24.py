@@ -1,26 +1,31 @@
-from typing import ClassVar
 import logging
+from typing import ClassVar
 
 import processors.protocols
-
 
 logger = logging.getLogger(__name__)
 
 MODEL_NAME_OR_PATH = "google/metricx-24-hybrid-xl-v2p6-bfloat16"
 TOKENIZER = "google/mt5-xl"
 MAX_INPUT_LENGTH = 1536
+MAX_BATCH_SIZE = 32
 
 
 class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
     def __init__(self):
         try:
-            from processors.metricx24_impl import predict
+            from processors.metricx24_impl import Model
         except ImportError as e:
             raise ImportError(
                 f"unbabel-comet>=2.0 is required for {MetricX24Processor.name} metric."
             )
 
-        self.predict = predict
+        self.model = Model(
+            model_name_or_path=MODEL_NAME_OR_PATH,
+            tokenizer=TOKENIZER,
+            batch_size=MAX_BATCH_SIZE,
+            max_input_length=MAX_INPUT_LENGTH,
+        )
 
     name: ClassVar[str] = "MetricX24[noref]"
     requires_references: ClassVar[bool] = False
@@ -36,13 +41,9 @@ class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
         for bs in [32, 16, 8, 4, 2, 1]:
             try:
                 # Try to use the model with the given batch size
-                segment_scores = self.predict(
+                segment_scores = self.model.predict(
                     sources,
                     hypotheses,
-                    MODEL_NAME_OR_PATH,
-                    TOKENIZER,
-                    MAX_INPUT_LENGTH,
-                    batch_size=bs,
                 )
             except Exception as e:
                 logger.warning(f"Batch size {bs} failed: {e}")

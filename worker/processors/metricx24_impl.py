@@ -1,4 +1,3 @@
-#!/lnet/work/home-students-external/hrabal/miniforge3/envs/3.11forge/bin/python
 # coding=utf-8
 # Copyright 2024 Google LLC
 #
@@ -23,15 +22,13 @@ See: https://github.com/google-research/metricx
      https://github.com/google-research/metricx/issues/2
 """
 
-import sys
 import copy
 import dataclasses
-import json
 import os
+import tempfile
 import warnings
 from typing import Optional, Tuple, Union
 
-import click
 import torch
 import transformers
 import transformers.modeling_outputs
@@ -215,45 +212,60 @@ class MT5ForRegression(MT5PreTrainedModel):
         )
 
 
-def predict(
-    sources, hypotheses, model_name_or_path, tokenizer, max_input_length, batch_size
-):
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        per_device_batch_size = batch_size // torch.cuda.device_count()
-    else:
-        device = torch.device("cpu")
-        per_device_batch_size = batch_size
+class Model:
+    def __init__(
+        self,
+        model_name_or_path,
+        tokenizer,
+        batch_size,
+        max_input_length,
+    ):
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            self.per_device_batch_size = batch_size // torch.cuda.device_count()
+        else:
+            self.device = torch.device("cpu")
+            self.per_device_batch_size = batch_size
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer)
 
-    model = MT5ForRegression.from_pretrained(model_name_or_path, torch_dtype="auto")
+        self.model = MT5ForRegression.from_pretrained(
+            model_name_or_path, torch_dtype="auto"
+        )
 
-    model.to(device)
-    model.eval()
+        self.max_input_length = max_input_length
 
-    ds, data_collator = get_dataset_and_data_collator(
+        self.model.to(self.device)
+        self.model.eval()
+
+    def predict(
+        self,
         sources,
         hypotheses,
-        tokenizer,
-        max_input_length,
-        device,
-    )
+    ):
+        ds, data_collator = get_dataset_and_data_collator(
+            sources,
+            hypotheses,
+            self.tokenizer,
+            self.max_input_length,
+            self.device,
+        )
 
-    training_args = transformers.TrainingArguments(
-        # output_dir=os.path.dirname(args.output_file),
-        per_device_eval_batch_size=per_device_batch_size,
-        dataloader_pin_memory=False,
-    )
-    trainer = transformers.Trainer(
-        model=model,
-        args=training_args,
-        data_collator=data_collator,
-    )
-    predictions, _, _ = trainer.predict(test_dataset=ds["test"])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            training_args = transformers.TrainingArguments(
+                output_dir=tmpdir,
+                per_device_eval_batch_size=self.per_device_batch_size,
+                dataloader_pin_memory=False,
+            )
+            trainer = transformers.Trainer(
+                model=self.model,
+                args=training_args,
+                data_collator=data_collator,
+            )
+            predictions, _, _ = trainer.predict(test_dataset=ds["test"])
 
-    scores = [float(p) for p in predictions]
-    return scores
+        scores = [float(p) for p in predictions]
+        return scores
 
 
 def get_dataset_and_data_collator(
