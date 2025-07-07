@@ -32,6 +32,7 @@ import processors.protocols
 POISON_PILL = None
 HEARTBEAT_INTERVAL_SECONDS = 5
 NUM_FETCHED_TASKS = 2
+HTTP_TIMEOUT = 60  # seconds, for HTTP requests
 
 
 def setup_logging(log_level: str):
@@ -87,7 +88,7 @@ class Worker:
 
 async def send_heartbeat(host, worker_id: int, namespace_name: str, token: str):
     """Send a heartbeat to the server."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         response = await client.put(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/heartbeat",
             headers=create_auth_headers(token),
@@ -138,7 +139,7 @@ async def register_worker(
     namespace_name: str,
     username: str | None,
 ) -> processors.protocols.WorkerRegistrationResponse:
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/register",
             headers=create_auth_headers(token),
@@ -160,7 +161,7 @@ async def unregister_worker(
     namespace_name: str,
     worker_id: int,
 ):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/unregister",
             headers=create_auth_headers(token),
@@ -176,7 +177,7 @@ async def assign_and_get_job(
     worker_id: int,
 ) -> list[dict]:
     """Assign a job to the worker and return it."""
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/jobs/assign",
             headers=create_auth_headers(token),
@@ -258,7 +259,7 @@ async def report_job_results(
             ),
         )
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/jobs/{job_id}/report_result",
             headers=create_auth_headers(token),
@@ -443,6 +444,7 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 worker_id=res.worker_id,
             )
             logging.info("Worker unregistered successfully.")
+            state["finished"] = True
 
 
 @click.command()
