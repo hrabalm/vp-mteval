@@ -5,8 +5,10 @@ import typed_settings as ts
 class Settings:
     """Server app configuration."""
 
-    saq_queue_dsn: str | None = None
-    database_connection_string: str | None = None
+    saq_queue_dsn: str | None = "postgresql://user:password@placeholder/dbname"
+    database_connection_string: str | None = (
+        "postgresql://user:password@placeholder/dbname"
+    )
     drop_database_on_startup: bool = False
     seed_database_on_startup: bool = False
 
