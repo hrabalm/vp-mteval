@@ -107,10 +107,12 @@ class SegmentTranslation(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
+        index=True,
     )
     segment_id: Mapped[int] = mapped_column(
         ForeignKey("segments.id"),
         nullable=False,
+        index=True,
     )
     segment: Mapped[Segment] = relationship(
         "Segment",
@@ -245,10 +247,12 @@ class SegmentMetric(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
+        index=True,
     )
     segment_translation_id: Mapped[int] = mapped_column(
         ForeignKey("segment_translations.id"),
         nullable=False,
+        index=True,
     )
     segment_idx: Mapped[int] = mapped_column(
         Integer,
@@ -275,6 +279,7 @@ class DatasetMetric(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
+        index=True,
     )
 
     score: Mapped[float] = mapped_column(nullable=False)
@@ -290,6 +295,7 @@ class GenericMetric(Base):
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
+        index=True,
     )
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
@@ -439,18 +445,22 @@ class Job(Base):
     namespace_id: Mapped[int] = mapped_column(
         ForeignKey("namespaces.id"),
         nullable=False,
+        index=True,
     )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
         nullable=False,
+        index=True,
     )
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
         nullable=False,
+        index=True,
     )
     worker_id: Mapped[int] = mapped_column(
         ForeignKey("workers.id"),
         nullable=True,  # Nullable if the job is not yet assigned to a worker
+        index=True,
     )
 
     queue: Mapped[str] = mapped_column(Text, nullable=False, index=True)
