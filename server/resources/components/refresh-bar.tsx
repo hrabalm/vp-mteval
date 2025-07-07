@@ -1,5 +1,6 @@
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Button } from "./ui/button";
 import React, { useState, useEffect } from "react";
 export default function RefreshBar(
     props: {
@@ -34,6 +35,7 @@ export default function RefreshBar(
                 aria-label="Toggle refresh"
             />
             <Label>Auto-refresh</Label>
+            <Button onClick={onRefresh}>Refresh</Button>
         </div>
     )
 }
