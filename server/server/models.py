@@ -103,6 +103,9 @@ class DatasetName(Base):
 
 class SegmentTranslation(Base):
     __tablename__ = "segment_translations"
+    __table_args__ = (
+        Index("ix_st_run_id_segment_idx", "run_id", "segment_idx"),
+    )
     tgt: Mapped[str] = mapped_column(Text, nullable=False)
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
@@ -236,6 +239,9 @@ class TranslationRun(Base):
 
 class SegmentMetric(Base):
     __tablename__ = "segment_metrics"
+    __table_args__ = (
+        Index("ix_sm_run_id_segment_idx", "run_id", "segment_idx"),
+    )
 
     name: Mapped[str] = mapped_column(
         Text,
