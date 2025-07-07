@@ -30,15 +30,15 @@ function DatasetsTable({ }) {
       header: () => "Names",
       cell: info => {
         const value = info.getValue();
+        const datasetId = info.row.original.id;
 
         return (
           <>
             <Link
               to="/namespaces/$namespaceId/datasets/$datasetId"
-              params={{ namespaceId: namespaceId, datasetId: 0 }}
+              params={{ namespaceId: namespaceId, datasetId: datasetId }}
               className="text-blue-500 hover:underline"
             >{value.join(" | ")}</Link>
-            {/* {JSON.stringify(value)} */}
           </>
         )
       }

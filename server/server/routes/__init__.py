@@ -362,6 +362,7 @@ async def add_translation_run(
 async def get_translation_runs(
     namespace_name: str,
     transaction: AsyncSession,
+    dataset_id: int | None = None,
 ) -> list[ReadTranslationRun]:
     """Get all translation runs for a specific namespace."""
     # Get namespace by name
@@ -380,6 +381,8 @@ async def get_translation_runs(
         .where(models.TranslationRun.namespace_id == namespace.id)
         .order_by(models.TranslationRun.id.desc())
     )
+    if dataset_id is not None:
+        query = query.where(models.TranslationRun.dataset_id == dataset_id)
     result = await transaction.execute(query)
     runs = result.scalars().all()
 
@@ -409,7 +412,6 @@ async def get_translation_run(
     namespace_name: str,
     run_id: int,
     transaction: AsyncSession,
-    dataset_id: int | None = None,
 ) -> ReadTranslationRunDetail:
     """Get a translation run by ID within a specific namespace."""
     # Get namespace by name
@@ -434,8 +436,6 @@ async def get_translation_run(
             models.TranslationRun.namespace_id == namespace.id,
         )
     )
-    if dataset_id is not None:
-        query = query.where(models.TranslationRun.dataset_id == dataset_id)
     result = await transaction.execute(query)
     try:
         result1 = result.scalar_one()
