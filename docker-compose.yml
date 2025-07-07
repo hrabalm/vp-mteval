@@ -52,7 +52,7 @@ services:
   pgadmin4:
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-mteval@mteval}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-mteval@mteval.hrabal.eu}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-mteval}
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     volumes:
