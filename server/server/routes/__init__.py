@@ -438,8 +438,8 @@ async def get_translation_run(
     result = await transaction.execute(query)
     try:
         result1 = result.scalar_one()
-        dataset_segments = sorted(result1.dataset.segments, key=lambda x: x.idx)
-        translation_segments = sorted(result1.translations, key=lambda x: x.segment.idx)
+        dataset_segments = result1.dataset.segments
+        translation_segments = result1.translations
 
         def _process_ngrams(
             ngrams: list,
