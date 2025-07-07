@@ -410,6 +410,12 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                     )
 
                 except queue.Empty:
+                    if not worker.process.is_alive():
+                        logging.error(
+                            "Worker process has terminated unexpectedly. Exiting."
+                        )
+                        state["finished"] = True
+                        break
                     logging.debug("Result queue empty, continuing to wait.")
                     continue
     finally:
