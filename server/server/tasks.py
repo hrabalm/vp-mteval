@@ -22,9 +22,13 @@ async def _cleanup_expired_workers_and_jobs(transaction):
     expiration_timestamp = expiration_datetime.timestamp()
 
     # select expired workers
-    query = select(models.Worker).filter(
-        models.Worker.last_heartbeat < expiration_timestamp,
-        models.Worker.status == models.WorkerStatus.WORKING,
+    query = (
+        select(models.Worker)
+        .with_for_update(skip_locked=True)
+        .filter(
+            models.Worker.last_heartbeat < expiration_timestamp,
+            models.Worker.status == models.WorkerStatus.WORKING,
+        )
     )
     result = await transaction.execute(query)
     expired_workers = result.scalars().all()
@@ -41,9 +45,13 @@ async def _cleanup_expired_workers_and_jobs(transaction):
         logger.debug(f"Marked worker {worker.id} as TIMED_OUT")
 
     # fail jobs assigned to expired workers
-    job_query = select(models.Job).filter(
-        models.Job.worker_id.in_(expired_worker_ids),
-        models.Job.status == models.JobStatus.RUNNING,
+    job_query = (
+        select(models.Job)
+        .with_for_update(skip_locked=True)
+        .filter(
+            models.Job.worker_id.in_(expired_worker_ids),
+            models.Job.status == models.JobStatus.RUNNING,
+        )
     )
     job_result = await transaction.execute(job_query)
     expired_jobs = job_result.scalars().all()

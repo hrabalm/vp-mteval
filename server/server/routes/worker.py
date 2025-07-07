@@ -382,6 +382,7 @@ async def report_job_result(
 
     job_query = (
         select(models.Job)
+        .with_for_update(skip_locked=True)
         .options(
             selectinload(models.Job.run)
             .selectinload(models.TranslationRun.dataset)
