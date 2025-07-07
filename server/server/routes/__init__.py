@@ -372,7 +372,6 @@ async def get_translation_runs(
         select(models.TranslationRun)
         .options(
             selectinload(models.TranslationRun.namespace),
-            selectinload(models.TranslationRun.segment_metrics),
             selectinload(models.TranslationRun.dataset_metrics),
             selectinload(models.TranslationRun.dataset).selectinload(
                 models.Dataset.names
