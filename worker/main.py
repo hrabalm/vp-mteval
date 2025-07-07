@@ -161,8 +161,8 @@ async def unregister_worker(
     worker_id: int,
 ):
     async with httpx.AsyncClient() as client:
-        response = await client.delete(
-            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}",
+        response = await client.post(
+            f"{host}/api/v1/namespaces/{namespace_name}/workers/{worker_id}/unregister",
             headers=create_auth_headers(token),
         )
         response.raise_for_status()
