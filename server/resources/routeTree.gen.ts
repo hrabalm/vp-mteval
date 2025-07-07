@@ -24,7 +24,8 @@ import { Route as AuthNamespacesNamespaceIdRunsRouteImport } from './routes/_aut
 import { Route as AuthNamespacesNamespaceIdRunsIndexImport } from './routes/_auth/namespaces/$namespaceId/runs/index'
 import { Route as AuthNamespacesNamespaceIdDatasetsIndexImport } from './routes/_auth/namespaces/$namespaceId/datasets/index'
 import { Route as AuthNamespacesNamespaceIdRunsRunIdImport } from './routes/_auth/namespaces/$namespaceId/runs/$runId'
-import { Route as AuthNamespacesNamespaceIdDatasetsDatasetIdImport } from './routes/_auth/namespaces/$namespaceId/datasets/$datasetId'
+import { Route as AuthNamespacesNamespaceIdDatasetsDatasetIdIndexImport } from './routes/_auth/namespaces/$namespaceId/datasets/$datasetId/index'
+import { Route as AuthNamespacesNamespaceIdDatasetsDatasetIdCompareImport } from './routes/_auth/namespaces/$namespaceId/datasets/$datasetId/compare'
 
 // Create/Update Routes
 
@@ -110,10 +111,17 @@ const AuthNamespacesNamespaceIdRunsRunIdRoute =
     getParentRoute: () => AuthNamespacesNamespaceIdRunsRouteRoute,
   } as any)
 
-const AuthNamespacesNamespaceIdDatasetsDatasetIdRoute =
-  AuthNamespacesNamespaceIdDatasetsDatasetIdImport.update({
-    id: '/$namespaceId/datasets/$datasetId',
-    path: '/$namespaceId/datasets/$datasetId',
+const AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute =
+  AuthNamespacesNamespaceIdDatasetsDatasetIdIndexImport.update({
+    id: '/$namespaceId/datasets/$datasetId/',
+    path: '/$namespaceId/datasets/$datasetId/',
+    getParentRoute: () => AuthNamespacesRouteRoute,
+  } as any)
+
+const AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute =
+  AuthNamespacesNamespaceIdDatasetsDatasetIdCompareImport.update({
+    id: '/$namespaceId/datasets/$datasetId/compare',
+    path: '/$namespaceId/datasets/$datasetId/compare',
     getParentRoute: () => AuthNamespacesRouteRoute,
   } as any)
 
@@ -191,13 +199,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthNamespacesNamespaceIdIndexImport
       parentRoute: typeof AuthNamespacesRouteImport
     }
-    '/_auth/namespaces/$namespaceId/datasets/$datasetId': {
-      id: '/_auth/namespaces/$namespaceId/datasets/$datasetId'
-      path: '/$namespaceId/datasets/$datasetId'
-      fullPath: '/namespaces/$namespaceId/datasets/$datasetId'
-      preLoaderRoute: typeof AuthNamespacesNamespaceIdDatasetsDatasetIdImport
-      parentRoute: typeof AuthNamespacesRouteImport
-    }
     '/_auth/namespaces/$namespaceId/runs/$runId': {
       id: '/_auth/namespaces/$namespaceId/runs/$runId'
       path: '/$runId'
@@ -218,6 +219,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/namespaces/$namespaceId/runs/'
       preLoaderRoute: typeof AuthNamespacesNamespaceIdRunsIndexImport
       parentRoute: typeof AuthNamespacesNamespaceIdRunsRouteImport
+    }
+    '/_auth/namespaces/$namespaceId/datasets/$datasetId/compare': {
+      id: '/_auth/namespaces/$namespaceId/datasets/$datasetId/compare'
+      path: '/$namespaceId/datasets/$datasetId/compare'
+      fullPath: '/namespaces/$namespaceId/datasets/$datasetId/compare'
+      preLoaderRoute: typeof AuthNamespacesNamespaceIdDatasetsDatasetIdCompareImport
+      parentRoute: typeof AuthNamespacesRouteImport
+    }
+    '/_auth/namespaces/$namespaceId/datasets/$datasetId/': {
+      id: '/_auth/namespaces/$namespaceId/datasets/$datasetId/'
+      path: '/$namespaceId/datasets/$datasetId'
+      fullPath: '/namespaces/$namespaceId/datasets/$datasetId'
+      preLoaderRoute: typeof AuthNamespacesNamespaceIdDatasetsDatasetIdIndexImport
+      parentRoute: typeof AuthNamespacesRouteImport
     }
   }
 }
@@ -246,8 +261,9 @@ interface AuthNamespacesRouteRouteChildren {
   AuthNamespacesIndexRoute: typeof AuthNamespacesIndexRoute
   AuthNamespacesNamespaceIdRunsRouteRoute: typeof AuthNamespacesNamespaceIdRunsRouteRouteWithChildren
   AuthNamespacesNamespaceIdIndexRoute: typeof AuthNamespacesNamespaceIdIndexRoute
-  AuthNamespacesNamespaceIdDatasetsDatasetIdRoute: typeof AuthNamespacesNamespaceIdDatasetsDatasetIdRoute
   AuthNamespacesNamespaceIdDatasetsIndexRoute: typeof AuthNamespacesNamespaceIdDatasetsIndexRoute
+  AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute: typeof AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute
+  AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute: typeof AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute
 }
 
 const AuthNamespacesRouteRouteChildren: AuthNamespacesRouteRouteChildren = {
@@ -255,10 +271,12 @@ const AuthNamespacesRouteRouteChildren: AuthNamespacesRouteRouteChildren = {
   AuthNamespacesNamespaceIdRunsRouteRoute:
     AuthNamespacesNamespaceIdRunsRouteRouteWithChildren,
   AuthNamespacesNamespaceIdIndexRoute: AuthNamespacesNamespaceIdIndexRoute,
-  AuthNamespacesNamespaceIdDatasetsDatasetIdRoute:
-    AuthNamespacesNamespaceIdDatasetsDatasetIdRoute,
   AuthNamespacesNamespaceIdDatasetsIndexRoute:
     AuthNamespacesNamespaceIdDatasetsIndexRoute,
+  AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute:
+    AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute,
+  AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute:
+    AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute,
 }
 
 const AuthNamespacesRouteRouteWithChildren =
@@ -291,10 +309,11 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthUsersIndexRoute
   '/namespaces/$namespaceId/runs': typeof AuthNamespacesNamespaceIdRunsRouteRouteWithChildren
   '/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdIndexRoute
-  '/namespaces/$namespaceId/datasets/$datasetId': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdRoute
   '/namespaces/$namespaceId/runs/$runId': typeof AuthNamespacesNamespaceIdRunsRunIdRoute
   '/namespaces/$namespaceId/datasets': typeof AuthNamespacesNamespaceIdDatasetsIndexRoute
   '/namespaces/$namespaceId/runs/': typeof AuthNamespacesNamespaceIdRunsIndexRoute
+  '/namespaces/$namespaceId/datasets/$datasetId/compare': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute
+  '/namespaces/$namespaceId/datasets/$datasetId': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -306,10 +325,11 @@ export interface FileRoutesByTo {
   '/namespaces': typeof AuthNamespacesIndexRoute
   '/users': typeof AuthUsersIndexRoute
   '/namespaces/$namespaceId': typeof AuthNamespacesNamespaceIdIndexRoute
-  '/namespaces/$namespaceId/datasets/$datasetId': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdRoute
   '/namespaces/$namespaceId/runs/$runId': typeof AuthNamespacesNamespaceIdRunsRunIdRoute
   '/namespaces/$namespaceId/datasets': typeof AuthNamespacesNamespaceIdDatasetsIndexRoute
   '/namespaces/$namespaceId/runs': typeof AuthNamespacesNamespaceIdRunsIndexRoute
+  '/namespaces/$namespaceId/datasets/$datasetId/compare': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute
+  '/namespaces/$namespaceId/datasets/$datasetId': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute
 }
 
 export interface FileRoutesById {
@@ -324,10 +344,11 @@ export interface FileRoutesById {
   '/_auth/users/': typeof AuthUsersIndexRoute
   '/_auth/namespaces/$namespaceId/runs': typeof AuthNamespacesNamespaceIdRunsRouteRouteWithChildren
   '/_auth/namespaces/$namespaceId/': typeof AuthNamespacesNamespaceIdIndexRoute
-  '/_auth/namespaces/$namespaceId/datasets/$datasetId': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdRoute
   '/_auth/namespaces/$namespaceId/runs/$runId': typeof AuthNamespacesNamespaceIdRunsRunIdRoute
   '/_auth/namespaces/$namespaceId/datasets/': typeof AuthNamespacesNamespaceIdDatasetsIndexRoute
   '/_auth/namespaces/$namespaceId/runs/': typeof AuthNamespacesNamespaceIdRunsIndexRoute
+  '/_auth/namespaces/$namespaceId/datasets/$datasetId/compare': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdCompareRoute
+  '/_auth/namespaces/$namespaceId/datasets/$datasetId/': typeof AuthNamespacesNamespaceIdDatasetsDatasetIdIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -343,10 +364,11 @@ export interface FileRouteTypes {
     | '/users'
     | '/namespaces/$namespaceId/runs'
     | '/namespaces/$namespaceId'
-    | '/namespaces/$namespaceId/datasets/$datasetId'
     | '/namespaces/$namespaceId/runs/$runId'
     | '/namespaces/$namespaceId/datasets'
     | '/namespaces/$namespaceId/runs/'
+    | '/namespaces/$namespaceId/datasets/$datasetId/compare'
+    | '/namespaces/$namespaceId/datasets/$datasetId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -357,10 +379,11 @@ export interface FileRouteTypes {
     | '/namespaces'
     | '/users'
     | '/namespaces/$namespaceId'
-    | '/namespaces/$namespaceId/datasets/$datasetId'
     | '/namespaces/$namespaceId/runs/$runId'
     | '/namespaces/$namespaceId/datasets'
     | '/namespaces/$namespaceId/runs'
+    | '/namespaces/$namespaceId/datasets/$datasetId/compare'
+    | '/namespaces/$namespaceId/datasets/$datasetId'
   id:
     | '__root__'
     | '/'
@@ -373,10 +396,11 @@ export interface FileRouteTypes {
     | '/_auth/users/'
     | '/_auth/namespaces/$namespaceId/runs'
     | '/_auth/namespaces/$namespaceId/'
-    | '/_auth/namespaces/$namespaceId/datasets/$datasetId'
     | '/_auth/namespaces/$namespaceId/runs/$runId'
     | '/_auth/namespaces/$namespaceId/datasets/'
     | '/_auth/namespaces/$namespaceId/runs/'
+    | '/_auth/namespaces/$namespaceId/datasets/$datasetId/compare'
+    | '/_auth/namespaces/$namespaceId/datasets/$datasetId/'
   fileRoutesById: FileRoutesById
 }
 
@@ -434,8 +458,9 @@ export const routeTree = rootRoute
         "/_auth/namespaces/",
         "/_auth/namespaces/$namespaceId/runs",
         "/_auth/namespaces/$namespaceId/",
-        "/_auth/namespaces/$namespaceId/datasets/$datasetId",
-        "/_auth/namespaces/$namespaceId/datasets/"
+        "/_auth/namespaces/$namespaceId/datasets/",
+        "/_auth/namespaces/$namespaceId/datasets/$datasetId/compare",
+        "/_auth/namespaces/$namespaceId/datasets/$datasetId/"
       ]
     },
     "/_auth/users/$userId": {
@@ -462,10 +487,6 @@ export const routeTree = rootRoute
       "filePath": "_auth/namespaces/$namespaceId/index.tsx",
       "parent": "/_auth/namespaces"
     },
-    "/_auth/namespaces/$namespaceId/datasets/$datasetId": {
-      "filePath": "_auth/namespaces/$namespaceId/datasets/$datasetId.tsx",
-      "parent": "/_auth/namespaces"
-    },
     "/_auth/namespaces/$namespaceId/runs/$runId": {
       "filePath": "_auth/namespaces/$namespaceId/runs/$runId.tsx",
       "parent": "/_auth/namespaces/$namespaceId/runs"
@@ -477,6 +498,14 @@ export const routeTree = rootRoute
     "/_auth/namespaces/$namespaceId/runs/": {
       "filePath": "_auth/namespaces/$namespaceId/runs/index.tsx",
       "parent": "/_auth/namespaces/$namespaceId/runs"
+    },
+    "/_auth/namespaces/$namespaceId/datasets/$datasetId/compare": {
+      "filePath": "_auth/namespaces/$namespaceId/datasets/$datasetId/compare.tsx",
+      "parent": "/_auth/namespaces"
+    },
+    "/_auth/namespaces/$namespaceId/datasets/$datasetId/": {
+      "filePath": "_auth/namespaces/$namespaceId/datasets/$datasetId/index.tsx",
+      "parent": "/_auth/namespaces"
     }
   }
 }

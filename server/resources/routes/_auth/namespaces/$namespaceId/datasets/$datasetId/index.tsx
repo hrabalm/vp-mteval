@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId')({
+export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/')({
   component: RouteComponent,
 })
 
