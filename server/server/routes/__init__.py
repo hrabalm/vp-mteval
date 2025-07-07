@@ -409,6 +409,7 @@ async def get_translation_run(
     namespace_name: str,
     run_id: int,
     transaction: AsyncSession,
+    dataset_id: int | None = None,
 ) -> ReadTranslationRunDetail:
     """Get a translation run by ID within a specific namespace."""
     # Get namespace by name
@@ -433,6 +434,8 @@ async def get_translation_run(
             models.TranslationRun.namespace_id == namespace.id,
         )
     )
+    if dataset_id is not None:
+        query = query.where(models.TranslationRun.dataset_id == dataset_id)
     result = await transaction.execute(query)
     try:
         result1 = result.scalar_one()

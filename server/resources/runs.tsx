@@ -27,8 +27,12 @@ export const fetchRunNGrams = async (runId: string, namespaceId: string) => {
     return run;
 }
 
-export const fetchRuns = async (namespaceId: string) => {
+export const fetchRuns = async (namespaceId: string, datasetId: string | undefined = undefined) => {
     return api
-        .get(`api/v1/namespaces/${namespaceId}/translations-runs/`)
+        .get(`api/v1/namespaces/${namespaceId}/translations-runs/`, {
+            params: {
+                dataset_id: datasetId,
+            },
+        })
         .then((r) => r.data)
 }

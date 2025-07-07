@@ -10,7 +10,7 @@ import RefreshBar from '@/components/refresh-bar';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/')({
   component: RouteComponent,
-  loader: ({ params }) => fetchRuns(params.namespaceId),
+  loader: ({ params }) => fetchRuns(params.namespaceId, params.datasetId),
 })
 
 type Row = Record<string, any>; // unknown shape
@@ -61,7 +61,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
   const processedRuns = useMemo(() => preprocessRunsData(runs), [runs]);
   console.log('Processed Runs:', processedRuns);
 
-  const namespaceId = Route.useParams().namespaceId;
+  const { namespaceId, datasetId } = Route.useParams();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -101,9 +101,10 @@ function RunsTable({ runs }: { runs: Row[] }) {
           if ((key === 'id' || key === 'uuid') && value) {
             return (
               <Link
-                to="/namespaces/$namespaceId/runs/$runId"
+                to="/namespaces/$namespaceId/datasets/$datasetId/runs/$runId"
                 params={{
                   namespaceId,
+                  datasetId,
                   runId: info.row.original.id,
                 }}
                 className="text-blue-500 hover:underline"
