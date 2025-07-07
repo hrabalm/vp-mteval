@@ -418,6 +418,10 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                         break
                     logging.debug("Result queue empty, continuing to wait.")
                     continue
+                except httpx.HTTPStatusError as e:
+                    logging.error(f"HTTP error occurred: {e}, skipping this job")
+                    continue
+
     finally:
         if worker:
             # Wait for the final POISON_PILL from the result queue to confirm shutdown
