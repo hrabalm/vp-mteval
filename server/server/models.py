@@ -11,6 +11,8 @@ from sqlalchemy import (
     func,
     Float,
     UniqueConstraint,
+    Index,
+    desc,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -166,10 +168,12 @@ class TranslationRun(Base):
     dataset_id: Mapped[int] = mapped_column(
         ForeignKey("datasets.id"),
         nullable=False,
+        index=True,
     )
     namespace_id: Mapped[int] = mapped_column(
         ForeignKey("namespaces.id"),
         nullable=False,
+        index=True,
     )
     uuid: Mapped[Uuid] = mapped_column(
         Uuid,
@@ -212,6 +216,14 @@ class TranslationRun(Base):
 
     __table_args__ = (
         UniqueConstraint("namespace_id", "uuid", name="uix_namespace_uuid"),
+        # new composite index: filters by namespace_id + dataset_id
+        # and provides rows in id DESC order, eliminating the separate sort
+        Index(
+            "ix_tr_ns_ds_id_desc",
+            "namespace_id",
+            "dataset_id",
+            desc("id"),
+        ),
     )
 
 
