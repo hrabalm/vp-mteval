@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { fetchRun, fetchRunNGrams } from "../../../../../runs";
+import { fetchRun, fetchRunNGrams } from "@/runs";
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel } from '@tanstack/react-table';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ const prettyColumnNames = {
   ref: 'Reference',
 }
 
-export const Route = createFileRoute('/_auth/namespaces/$namespaceId/runs/$runId')({
+export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/$runId')({
   component: RouteComponent,
   loader: async ({ params }) => {
     const run = await fetchRun(params.runId, params.namespaceId);
