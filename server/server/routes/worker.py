@@ -245,6 +245,7 @@ async def _assign_job_to_worker(
 
     job_query = (
         select(models.Job)
+        .with_for_update(skip_locked=True)  # lock to prevent race condition
         .options(
             selectinload(models.Job.run)
             .selectinload(models.TranslationRun.dataset)
