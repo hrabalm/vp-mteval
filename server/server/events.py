@@ -21,7 +21,9 @@ async def compute_ngrams_on_run_created(
     await queue.connect()
     print(queue.info())
 
-    await queue.enqueue("compute_ngrams_on_run_created", data=data.model_dump_json())
+    await queue.enqueue(
+        "compute_ngrams_on_run_created", data=data.model_dump_json(), timeout=5 * 60
+    )
 
 
 listeners = [compute_ngrams_on_run_created]
