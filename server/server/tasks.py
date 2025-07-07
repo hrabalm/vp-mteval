@@ -29,9 +29,21 @@ async def _cleanup_expired_workers_and_jobs(transaction):
     result = await transaction.execute(query)
     expired_workers = result.scalars().all()
     if expired_workers:
+        expired_worker_ids = [worker.id for worker in expired_workers]
         # deactivate expired workers
         for worker in expired_workers:
             worker.status = models.WorkerStatus.TIMED_OUT
+
+        # fail jobs assigned to expired workers
+        job_query = select(models.Job).filter(
+            models.Job.worker_id.in_(expired_worker_ids),
+            models.Job.status == models.JobStatus.RUNNING,
+        )
+        job_result = await transaction.execute(job_query)
+        expired_jobs = job_result.scalars().all()
+        for job in expired_jobs:
+            job.status = models.JobStatus.PENDING
+            job.worker_id = None  # Unassign the job from the expired worker
         await transaction.flush()
 
 
