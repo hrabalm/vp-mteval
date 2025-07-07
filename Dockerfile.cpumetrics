@@ -1,0 +1,11 @@
+FROM ghcr.io/astral-sh/uv:debian
+
+WORKDIR /app
+COPY ./worker /app/
+
+RUN apt-get update && apt-get install -y protobuf-compiler libprotobuf-dev gcc g++ make build-essential supervisor && rm -rf /var/lib/apt/lists/*
+RUN uv sync --group cpu
+
+COPY cpumetrics.supervisord.conf /etc/supervisor/conf.d/
+
+CMD ["/usr/bin/supervisord"]

@@ -23,10 +23,37 @@ services:
       - db
     networks:
       - mynetwork
+  bleu:
+    command: sh -c "uv run main.py --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric BLEU"
+    build:
+      context: .
+      dockerfile: Dockerfile.cpumetrics
+    environment:
+      HOST: "http://app:8000"
+      USERNAME: "test"
+      TOKEN: "test_user_key"
+    networks:
+      - mynetwork
+    depends_on:
+      - app
+    restart: always
+  chrf2:
+    command: sh -c "uv run main.py --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric chrF2"
+    build:
+      context: .
+      dockerfile: Dockerfile.cpumetrics
+    environment:
+      HOST: "http://app:8000"
+      USERNAME: "test"
+      TOKEN: "test_user_key"
+    networks:
+      - mynetwork
+    depends_on:
+      - app
+    restart: always
 
 volumes:
   db_data:
-
 
 networks:
   mynetwork:
