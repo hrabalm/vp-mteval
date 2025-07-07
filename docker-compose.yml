@@ -17,8 +17,6 @@ services:
     environment:
       SERVER_DATABASE_CONNECTION_STRING: postgresql+psycopg://postgres:postgres@db:5432/mydatabase
       SERVER_SAQ_QUEUE_DSN: "postgresql://postgres:postgres@db/mydatabase"
-    ports:
-      - "8000:8000"
     depends_on:
       - db
     networks:
