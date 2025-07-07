@@ -402,6 +402,8 @@ async def report_job_result(
             status_code=litestar.status_codes.HTTP_400_BAD_REQUEST,
         )
 
+    job.status = models.JobStatus.COMPLETED
+
     # Save dataset level metrics
     for dataset_metric in data.dataset_level_metrics:
         metric = models.DatasetMetric(
