@@ -49,9 +49,24 @@ services:
     depends_on:
       - app
     restart: always
+  pgadmin4:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-mteval@mteval}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-mteval}
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+       - ./pgadmin/servers.json:/pgadmin4/servers.json
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - mynetwork
+    restart: unless-stopped
 
 volumes:
   db_data:
+  pgadmin:
 
 networks:
   mynetwork:
