@@ -7,6 +7,15 @@ import { Input } from '@/components/ui/input';
 import { useMemo, useState } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
 import RefreshBar from '@/components/refresh-bar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/')({
   component: RouteComponent,
@@ -30,7 +39,7 @@ function preprocessRunsData(runs: Row[]) {
       delete processedRun.config;
     }
 
-    // Run contains a list of dataset level metrics, flatten them to m:[element][↑ | ↓] (only the score is shown)
+    // Run contains a list of dataset level metrics, flatten TableHeadem to m:[element][↑ | ↓] (only TableHeade score is shown)
     /* Example:
     "dataset_metrics": [
       {
@@ -153,12 +162,12 @@ function RunsTable({ runs }: { runs: Row[] }) {
         />
       </div>
       <div className="rounded-md border">
-        <table className="min-w-full divide-y divide-border">
-          <thead className="bg-muted/50">
+        <Table>
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <TableHead
                     key={header.id}
                     className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none"
                     onClick={header.column.getToggleSortingHandler()}
@@ -177,39 +186,39 @@ function RunsTable({ runs }: { runs: Row[] }) {
                         desc: ' ▼',
                       }[header.column.getIsSorted() as string] ?? null}
                     </div>
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-            <tr>
+            <TableRow>
               {table.getHeaderGroups()[0].headers.map((header) => (
-                <td key={header.id} className="px-3 py-2">
+                <TableCell key={header.id} className="px-3 py-2">
                   <Input
                     placeholder="Regex..."
                     className="w-full text-xs"
                     value={(header.column.getFilterValue() as string) ?? ''}
                     onChange={(e) => header.column.setFilterValue(e.target.value)}
                   />
-                </td>))}
-            </tr>
-          </thead>
-          <tbody className="bg-background divide-y divide-border">
+                </TableCell>))}
+            </TableRow>
+          </TableHeader>
+          <TableBody className="bg-background divide-y divide-border">
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="hover:bg-muted/50">
+              <TableRow key={row.id} className="hover:bg-muted/50">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                  <TableCell key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} of{' '}
-          {table.getCoreRowModel().rows.length} row(s) shown.
+          {table.getFilteredRowModel().rows.lengTableHead} of{' '}
+          {table.getCoreRowModel().rows.lengTableHead} row(s) shown.
         </div>
       </div>
     </div>
