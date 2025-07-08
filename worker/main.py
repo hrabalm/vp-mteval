@@ -51,6 +51,7 @@ class Worker:
     def __init__(
         self, metrics_processor: processors.protocols.MetricsProcessorProtocol
     ):
+        self.process = None
         self.examples_queue = multiprocessing.Queue()
         self.result_queue = multiprocessing.Queue()
         self.metrics_processor = metrics_processor
@@ -74,15 +75,91 @@ class Worker:
 
     def start(self):
         """Start the worker in a separate process."""
+        if self.process is not None and self.process.is_alive():
+            logging.warning("Worker process is already running")
+            return
+
         self.process = multiprocessing.Process(target=self._main_loop)
         self.process.start()
 
-    def start_thread(self):
-        """Start the worker in a separate thread."""
-        import threading
+    def restart(self, timeout: float = 10.0):
+        """Restart the worker process reliably."""
+        logging.info("Restarting worker process...")
 
-        self.thread = threading.Thread(target=self._main_loop)
-        self.thread.start()
+        # First, stop the current process if it exists
+        self.stop(timeout=timeout)
+
+        # Clear any remaining items in queues to prevent issues
+        self._clear_queues()
+
+        # Start a new process
+        self.start()
+        logging.info("Worker process restarted successfully")
+
+    def stop(self, timeout: float = 10.0):
+        """Stop the worker process gracefully, with forceful termination as fallback."""
+        if self.process is None:
+            return
+
+        if not self.process.is_alive():
+            logging.info("Worker process is already stopped")
+            return
+
+        logging.info("Stopping worker process...")
+
+        # Try graceful shutdown first by sending POISON_PILL
+        try:
+            self.examples_queue.put(POISON_PILL)
+            logging.debug("Sent POISON_PILL to worker")
+        except Exception as e:
+            logging.warning(f"Failed to send POISON_PILL: {e}")
+
+        # Wait for graceful shutdown
+        self.process.join(timeout=timeout / 2)
+
+        if self.process.is_alive():
+            logging.warning("Worker didn't shut down gracefully, terminating...")
+            self.process.terminate()
+
+            # Wait a bit for terminate to take effect
+            self.process.join(timeout=timeout / 4)
+
+            if self.process.is_alive():
+                logging.error("Worker didn't respond to terminate, killing...")
+                self.process.kill()
+
+                # Final wait for kill to take effect
+                self.process.join(timeout=timeout / 4)
+
+                if self.process.is_alive():
+                    logging.error("Failed to kill worker process!")
+                else:
+                    logging.info("Worker process killed successfully")
+            else:
+                logging.info("Worker process terminated successfully")
+        else:
+            logging.info("Worker process shut down gracefully")
+
+    def is_healthy(self) -> bool:
+        """Check if the worker process is healthy (alive and responsive)."""
+        if self.process is None or not self.process.is_alive():
+            return False
+
+        return True
+
+    def _clear_queues(self):
+        """Clear any remaining items in the queues."""
+        try:
+            while not self.examples_queue.empty():
+                self.examples_queue.get_nowait()
+        except:
+            pass
+
+        try:
+            while not self.result_queue.empty():
+                self.result_queue.get_nowait()
+        except:
+            pass
 
 
 @tenacity.retry(
@@ -353,6 +430,10 @@ async def main(host, token, username, namespace, metric, mode, log_level):
             worker = Worker(metrics_processor=processor())
             worker.start()
 
+            # Track consecutive failures for restart logic
+            consecutive_failures = 0
+            max_consecutive_failures = 3
+
             jobs_in_flight = 0
             for job in initial_jobs:
                 example = job_to_example(job)
@@ -390,6 +471,12 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                     break
 
                 try:
+                    # Check worker health before processing
+                    if not worker.is_healthy():
+                        logging.error("Worker process is unhealthy, restarting...")
+                        worker.restart()
+                        consecutive_failures = 0
+                        continue
                     # Wait for a result from the worker
                     example_result = await run_sync(
                         lambda: worker.result_queue.get(timeout=1)
@@ -399,6 +486,9 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                             "Worker sent unexpected POISON_PILL. Shutting down."
                         )
                         break
+
+                    # Reset failure counter on successful processing
+                    consecutive_failures = 0
 
                     jobs_in_flight -= 1
                     logging.info(
@@ -420,15 +510,37 @@ async def main(host, token, username, namespace, metric, mode, log_level):
 
                 except queue.Empty:
                     if not worker.process.is_alive():
+                        consecutive_failures += 1
                         logging.error(
-                            "Worker process has terminated unexpectedly. Exiting."
+                            f"Worker process has terminated unexpectedly. "
+                            f"Failure {consecutive_failures}/{max_consecutive_failures}"
                         )
-                        state["finished"] = True
-                        break
+
+                        if consecutive_failures >= max_consecutive_failures:
+                            logging.error(
+                                "Too many consecutive worker failures. Exiting."
+                            )
+                            state["finished"] = True
+                            break
+
+                        # Restart the worker
+                        worker.restart()
                     logging.debug("Result queue empty, continuing to wait.")
                     continue
                 except httpx.HTTPStatusError as e:
                     logging.error(f"HTTP error occurred: {e}, skipping this job")
+                    continue
+                except Exception as e:
+                    consecutive_failures += 1
+                    logging.error(f"Unexpected error in main loop: {e}")
+
+                    if consecutive_failures >= max_consecutive_failures:
+                        logging.error("Too many consecutive failures. Exiting.")
+                        state["finished"] = True
+                        break
+
+                    # Restart worker on unexpected errors
+                    worker.restart()
                     continue
 
     finally:
