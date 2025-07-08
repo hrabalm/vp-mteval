@@ -37,7 +37,7 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
         for bs in [32, 16, 8, 4, 2, 1]:
             try:
                 # Try to use the model with the given batch size
-                model_output = self.model.predict(data, batch_size=bs, gpus=1)
+                model_output = self.model.predict(data, batch_size=bs, gpus=1, num_workers=0)
                 break
             except Exception as e:
                 logger.warning(f"Batch size {bs} failed: {e}")
@@ -46,7 +46,8 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                 import gc
 
                 gc.collect()
-                torch.cuda.empty_cache()
+                with torch.no_grad():
+                    torch.cuda.empty_cache()
                 time.sleep(1)
                 logger.info(
                     f"Reserved: {torch.cuda.memory_reserved()} | Allocated: {torch.cuda.memory_allocated()}"
@@ -77,7 +78,8 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                     import gc
 
                     gc.collect()
-                    torch.cuda.empty_cache()
+                    with torch.no_grad():
+                        torch.cuda.empty_cache()
                     time.sleep(1)
                     logger.info(
                         f"Reserved: {torch.cuda.memory_reserved()} | Allocated: {torch.cuda.memory_allocated()}"
