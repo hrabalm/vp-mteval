@@ -24,7 +24,7 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
 
     def process_example(
         self, example: processors.protocols.WorkerExample
-    ) -> processors.protocols.WorkerExampleResult:
+    ) -> processors.protocols.WorkerExampleResult | None:
         data = [
             {
                 "src": seg.src,
@@ -37,7 +37,9 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
         for bs in [32, 16, 8, 4, 2, 1]:
             try:
                 # Try to use the model with the given batch size
-                model_output = self.model.predict(data, batch_size=bs, gpus=1, num_workers=0)
+                model_output = self.model.predict(
+                    data, batch_size=bs, gpus=1, num_workers=0
+                )
                 break
             except Exception as e:
                 logger.warning(f"Batch size {bs} failed: {e}")
@@ -86,7 +88,10 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                     )
 
         if model_output is None:
-            raise RuntimeError("Failed to compute model output with any batch size.")
+            logger.error(
+                "Failed to compute model output with any batch size, even after truncation. Skipping this job."
+            )
+            return None
 
         system_score = model_output.system_score
         segment_scores = model_output.scores

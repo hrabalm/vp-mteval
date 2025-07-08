@@ -66,6 +66,11 @@ class Worker:
                     break
                 logging.info(f"Worker processing job {example.job_id}...")
                 result = self.metrics_processor.process_example(example)
+                if result is None:
+                    logging.warning(
+                        f"Worker skipped processing job {example.job_id} due to None result."
+                    )
+                    continue
                 logging.info(f"Worker finished processing job {example.job_id}")
                 self.result_queue.put(result)
         except Exception as e:
