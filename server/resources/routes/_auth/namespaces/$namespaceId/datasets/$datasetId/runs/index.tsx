@@ -69,7 +69,6 @@ function preprocessRunsData(runs: Row[]) {
 
 function RunsTable({ runs }: { runs: Row[] }) {
   const processedRuns = useMemo(() => preprocessRunsData(runs), [runs]);
-  console.log('Processed Runs:', processedRuns);
 
   const { namespaceId, datasetId } = Route.useParams();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -174,7 +173,9 @@ function RunsTable({ runs }: { runs: Row[] }) {
       rowSelection,
     },
   });
-  console.log('Table Row Selection:', rowSelection);
+
+  const runAId = Object.keys(rowSelection)[0];
+  const runBId = Object.keys(rowSelection)[1];
 
   return (
     <div className="space-y-4">
@@ -195,9 +196,8 @@ function RunsTable({ runs }: { runs: Row[] }) {
               datasetId,
             }}
             search={{
-              runAId: 3,
-              runBId: 4,
-              // runBId: processedRuns[Object.keys(rowSelection)[1]].id,
+              runAId: processedRuns[runAId]?.id,
+              runBId: processedRuns[runBId]?.id,
             }}
           >
             Compare 2
