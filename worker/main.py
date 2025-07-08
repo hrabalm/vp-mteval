@@ -11,22 +11,20 @@ Ideally, I want to prefetch.
 # TODO: loading external python metric definition
 # TODO: catch status error exceptions or remove them
 
-import multiprocessing
-
-multiprocessing.set_start_method("spawn", force=True)
-
-import queue
 import logging
+import multiprocessing
+import queue
+from functools import partial
 
 import anyio
 import click
-from anyio.to_thread import run_sync
-from pydantic import BaseModel
 import httpx
-from functools import partial
-
 import processors
 import processors.protocols
+from anyio.to_thread import run_sync
+from pydantic import BaseModel
+
+multiprocessing.set_start_method("spawn", force=True)
 
 # Sentinel value to signal the worker to exit
 POISON_PILL = None
@@ -112,16 +110,6 @@ async def send_heartbeats(
         if not is_fake:
             await send_heartbeat(host, worker_id, namespace_name, token)
         await anyio.sleep(interval_seconds)
-
-
-async def fetch_task():
-    # TODO: Depending on whether to process only current or indefinitely wait
-    # for new tasks, we either wait or emit POISON_PILL.
-    pass
-
-
-async def process_result():
-    pass
 
 
 def create_auth_headers(token: str) -> dict[str, str]:
