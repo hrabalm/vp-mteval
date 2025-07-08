@@ -21,6 +21,7 @@ import click
 import httpx
 import processors
 import processors.protocols
+import tenacity
 from anyio.to_thread import run_sync
 from pydantic import BaseModel
 
@@ -84,6 +85,11 @@ class Worker:
         self.thread.start()
 
 
+@tenacity.retry(
+    wait=tenacity.wait_exponential(multiplier=1, min=1, max=10),
+    stop=tenacity.stop_after_attempt(3),
+    reraise=True,
+)
 async def send_heartbeat(host, worker_id: int, namespace_name: str, token: str):
     """Send a heartbeat to the server."""
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
@@ -108,7 +114,11 @@ async def send_heartbeats(
     while not state.get("finished", False):
         logging.info("Sending heartbeat...")
         if not is_fake:
-            await send_heartbeat(host, worker_id, namespace_name, token)
+            try:
+                await send_heartbeat(host, worker_id, namespace_name, token)
+            except Exception as e:
+                logging.error("Error sending heartbeat: %s", e)
+                raise e
         await anyio.sleep(interval_seconds)
 
 
@@ -158,6 +168,11 @@ async def unregister_worker(
         return response.json()
 
 
+@tenacity.retry(
+    wait=tenacity.wait_exponential(multiplier=1, min=1, max=5),
+    stop=tenacity.stop_after_attempt(2),
+    reraise=True,
+)
 async def assign_and_get_job(
     host: str,
     token: str,
@@ -218,6 +233,11 @@ class JobResultRequest(BaseModel):
     segment_level_metrics: list[PostSegmentMetric]
 
 
+@tenacity.retry(
+    wait=tenacity.wait_exponential(multiplier=1, min=1, max=10),
+    stop=tenacity.stop_after_attempt(3),
+    reraise=True,
+)
 async def report_job_results(
     example_result: processors.protocols.WorkerExampleResult,
     job_id: int,
