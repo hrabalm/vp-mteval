@@ -48,6 +48,10 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                 gc.collect()
                 torch.cuda.empty_cache()
                 time.sleep(1)
+                logger.info(
+                    f"Reserved: {torch.cuda.memory_reserved()} | Allocated: {torch.cuda.memory_allocated()}"
+                )
+
         # If we still failed, we will truncate the output to 6144 chars and try
         # again
         if model_output is None:
@@ -75,6 +79,9 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                     gc.collect()
                     torch.cuda.empty_cache()
                     time.sleep(1)
+                    logger.info(
+                        f"Reserved: {torch.cuda.memory_reserved()} | Allocated: {torch.cuda.memory_allocated()}"
+                    )
 
         if model_output is None:
             raise RuntimeError("Failed to compute model output with any batch size.")
