@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/')({
@@ -39,7 +40,7 @@ function preprocessRunsData(runs: Row[]) {
       delete processedRun.config;
     }
 
-    // Run contains a list of dataset level metrics, flatten TableHeadem to m:[element][↑ | ↓] (only TableHeade score is shown)
+    // Run contains a list of dataset level metrics, flatten them to m:[element][↑ | ↓] (only the score is shown)
     /* Example:
     "dataset_metrics": [
       {
@@ -74,6 +75,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [rowSelection, setRowSelection] = useState({});
 
   const columnHelper = createColumnHelper<Row>();
 
@@ -96,6 +98,22 @@ function RunsTable({ runs }: { runs: Row[] }) {
       return String(cellValue).toLowerCase().includes(value.toLowerCase());
     }
   };
+
+  const fixedColumns = [
+    {
+      id: "select",
+      header: () => null, // No header for select column
+      cell: ({ row }) => (
+        <Checkbox checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableColumnFilter: false,
+      enableHiding: false,
+    }
+  ]
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
@@ -134,13 +152,17 @@ function RunsTable({ runs }: { runs: Row[] }) {
 
   const table = useReactTable({
     data: processedRuns,
-    columns,
+    columns: [
+      ...fixedColumns,
+      ...columns,
+    ],
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    onRowSelectionChange: setRowSelection,
     filterFns: {
       regexp: regexpFilterFn,
     },
@@ -148,6 +170,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
       sorting,
       columnFilters,
       globalFilter,
+      rowSelection,
     },
   });
 
@@ -191,15 +214,19 @@ function RunsTable({ runs }: { runs: Row[] }) {
               </TableRow>
             ))}
             <TableRow>
-              {table.getHeaderGroups()[0].headers.map((header) => (
-                <TableCell key={header.id} className="px-3 py-2">
-                  <Input
-                    placeholder="Regex..."
-                    className="w-full text-xs"
-                    value={(header.column.getFilterValue() as string) ?? ''}
-                    onChange={(e) => header.column.setFilterValue(e.target.value)}
-                  />
-                </TableCell>))}
+              {table.getHeaderGroups()[0].headers.map((header) => {
+                if (header.id !== "select") {
+                  return (<TableCell key={header.id} className="px-3 py-2">
+                    <Input
+                      placeholder="Regex..."
+                      className="w-full text-xs"
+                      value={(header.column.getFilterValue() as string) ?? ''}
+                      onChange={(e) => header.column.setFilterValue(e.target.value)}
+                    />
+                  </TableCell>);
+                }
+                return <TableCell></TableCell>;
+              })}
             </TableRow>
           </TableHeader>
           <TableBody className="bg-background divide-y divide-border">
@@ -217,8 +244,9 @@ function RunsTable({ runs }: { runs: Row[] }) {
       </div>
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.lengTableHead} of{' '}
-          {table.getCoreRowModel().rows.lengTableHead} row(s) shown.
+          {table.getFilteredRowModel().rows.length} of{' '}
+          {table.getCoreRowModel().rows.length} row(s) shown.
+          {' '}{table.getSelectedRowModel().rows.length} selected.
         </div>
       </div>
     </div>
