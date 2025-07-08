@@ -467,8 +467,8 @@ async def get_translation_run(
                 src=ds.src,
                 tgt=ts.tgt,
                 ref=ds.tgt if ds.tgt is not None else None,
-                tgt_ngrams=_process_ngrams(ts.segment_ngrams)[1],
-                ref_ngrams=_process_ngrams(ts.segment_ngrams)[0],
+                tgt_ngrams=_process_ngrams(ts.segment_ngrams)[0],
+                ref_ngrams=_process_ngrams(ts.segment_ngrams)[1],
             )
             for ds, ts in zip(dataset_segments, translation_segments)
         ]
