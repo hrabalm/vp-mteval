@@ -257,6 +257,7 @@ async def _assign_job_to_worker(
         .where(
             models.Job.namespace_id == worker.namespace_id,
             models.Job.status == models.JobStatus.PENDING,
+            models.Job.metric == worker.metric,
             models.Job.worker_id.is_(None),  # Not assigned to any worker
             # Only add the reference requirement if the metric requires references
             *(
