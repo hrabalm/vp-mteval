@@ -48,6 +48,33 @@ class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
                 gc.collect()
                 torch.cuda.empty_cache()
                 time.sleep(1)
+        # If we still failed, we will truncate the output to 6144 chars and try
+        # again
+        if model_output is None:
+            logger.warning(
+                "Failed to compute model output with any batch size, truncating input data to 6144 characters."
+            )
+            data = [
+                {
+                    "src": seg.src[:6144],  # Truncate source text
+                    "mt": seg.tgt[:6144],  # Truncate target text
+                }
+                for seg in example.segments
+            ]
+            for bs in [32, 16, 8, 4, 2, 1]:
+                try:
+                    # Try to use the model with the given batch size
+                    model_output = self.model.predict(data, batch_size=bs, gpus=1)
+                    break
+                except Exception as e:
+                    logger.warning(f"Batch size {bs} failed: {e}")
+                    import torch
+                    import time
+                    import gc
+
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                    time.sleep(1)
 
         if model_output is None:
             raise RuntimeError("Failed to compute model output with any batch size.")
