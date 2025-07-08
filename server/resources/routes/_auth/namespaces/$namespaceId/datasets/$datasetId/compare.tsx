@@ -1,6 +1,6 @@
 import { createFileRoute, useSearch } from '@tanstack/react-router'
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
-import { TypographyH3, TypographyH4 } from '@/components/typography'
+import { TypographyH3, TypographyH4, TypographyH5 } from '@/components/typography'
 import {
   Select,
   SelectContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select"
 import { useState } from 'react';
 import { fetchRun } from '@/runs';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import {
   Table,
   TableBody,
@@ -60,10 +61,6 @@ function Overview() {
     throw new Error("Cannot compare runs from different datasets!")
   }
 
-  const availableMetrics = [
-    "BLEU", "chrF",  // FIXME, should be metrics present in both runs
-  ]
-
   return <>
     <div className="grid grid-cols-2 gap-4">
       <div className="p-4">
@@ -79,12 +76,7 @@ function Overview() {
         <MetricsTable runA={runA} runB={runB} />
       </div>
     </div>
-    <MetricSelect
-      value={selectedMetric}
-      onValueChange={setSelectedMetric}
-      metrics={availableMetrics}
-    />
-    {JSON.stringify(search, null, 4)}
+    <MetricsCharts runA={runA} runB={runB} />
   </>
 }
 
@@ -162,9 +154,106 @@ function MetricSelect({ value, onValueChange, metrics }: { value: any, onValueCh
   </>
 }
 
-function MetricsCharts() {
+function MetricsCharts({ runA, runB }) {
+  const commonMetrics = Array.from(new Set(Object.keys(runA.segment_metrics)).intersection(new Set(Object.keys(runB.segment_metrics)))).sort();
+  if (commonMetrics.length === 0) {
+    return <TypographyH4>No common metrics found between the two runs.</TypographyH4>
+  }
+  const [selectedMetric, setSelectedMetric] = useState(commonMetrics[0]);
+
+  const runAData = runA.segment_metrics[selectedMetric]?.map((d) => { return { score: d.score } }) || []
+  const runBData = runB.segment_metrics[selectedMetric]?.map((d) => { return { score: d.score } }) || []
+
+  const minScore = Math.min(...runAData.map(d => d.score), ...runBData.map(d => d.score))
+  const maxScore = Math.max(...runAData.map(d => d.score), ...runBData.map(d => d.score))
+
+  const BINS = 20;
+  const binWidth = (maxScore - minScore) / (BINS);
+  const bins = Array.from({ length: BINS }, (_, i) => minScore + i * binWidth);
+
+  const runAHist = bins.map((b, i) => {
+    const isLast = (i === bins.length - 1);
+    return {
+      x: b,
+      y: runAData.filter(d => {
+        if (isLast) {
+          // include the maxScore
+          return d.score >= b && d.score <= maxScore;
+        } else {
+          return d.score >= b && d.score < (b + binWidth);
+        }
+      }).length
+    };
+  });
+
+  const runBHist = bins.map((b, i) => {
+    const isLast = (i === bins.length - 1);
+    return {
+      x: b,
+      y: runBData.filter(d => {
+        if (isLast) {
+          return d.score >= b && d.score <= maxScore;
+        } else {
+          return d.score >= b && d.score < (b + binWidth);
+        }
+      }).length
+    };
+  });
+
+
+  const data = runAHist.map((d, i) => {
+    return {
+      name: d.x.toFixed(2),
+      "Run A": d.y,
+      "Run B": runBHist[i].y,
+    }
+  })
+
+  const deltaData = data.map((d) => {
+    return {
+      name: d.name,
+      "Run A": d["Run A"],
+      "Run B": d["Run B"],
+      "Run A-Run B": d["Run A"] - d["Run B"],
+    }
+  })
+
   return <>
     <TypographyH4>Charts</TypographyH4>
+    <MetricSelect
+      value={selectedMetric}
+      onValueChange={setSelectedMetric}
+      metrics={commonMetrics}
+    />
+    <TypographyH5>Segment-level {selectedMetric} histogram</TypographyH5>
+    <div style={{ width: '100%', height: 300 }}>
+      <ResponsiveContainer>
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <ReferenceLine y={0} stroke="#000" />
+          <Bar dataKey="Run A" stackId="a" fill="#8884d8" />
+          <Bar dataKey="Run B" stackId="a" fill="#82ca9d" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+    <TypographyH5>Segment-level Δ-{selectedMetric} histogram</TypographyH5>
+    <div style={{ width: '100%', height: 300 }}>
+      <ResponsiveContainer>
+        <BarChart data={deltaData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <ReferenceLine y={0} stroke="#000" />
+          <Bar dataKey="Run A-Run B" fill="#ff7300" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   </>
 }
 

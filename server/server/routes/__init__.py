@@ -149,7 +149,7 @@ class ReadTranslationRunDetail(BaseModel):
     namespace_name: str
     config: dict[str, Any]
     segments: list[ReadSegment] | None = None
-    segment_metrics: list[ReadSegmentMetric]
+    segment_metrics: dict[str, list[ReadSegmentMetric]]
     dataset_metrics: list[ReadDatasetMetric]
 
 
@@ -328,7 +328,7 @@ async def _add_translation_run(
         namespace_name=namespace.name,
         config=translation_run.config,
         dataset_metrics=[],
-        segment_metrics=[],
+        segment_metrics={},
         segments=None,
     ), is_new_run
 
@@ -472,6 +472,14 @@ async def get_translation_run(
             )
             for ds, ts in zip(dataset_segments, translation_segments)
         ]
+        from collections import defaultdict
+
+        segment_metrics_by_name = defaultdict(list)
+        for sm in result1.segment_metrics:
+            segment_metrics_by_name[sm.name].append(
+                ReadSegmentMetric.model_validate(sm)
+            )
+        print(segment_metrics_by_name)
         return ReadTranslationRunDetail(
             id=result1.id,
             uuid=str(result1.uuid),
@@ -484,9 +492,7 @@ async def get_translation_run(
             ),
             namespace_name=result1.namespace.name,
             config=result1.config,
-            segment_metrics=[
-                ReadSegmentMetric.model_validate(sm) for sm in result1.segment_metrics
-            ],
+            segment_metrics=dict(segment_metrics_by_name),
             dataset_metrics=[
                 ReadDatasetMetric.model_validate(dm) for dm in result1.dataset_metrics
             ],

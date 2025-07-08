@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef } from '@tanstack/react-table';
 import { fetchRuns } from '@/runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
@@ -75,6 +75,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+
   const [rowSelection, setRowSelection] = useState({});
 
   const columnHelper = createColumnHelper<Row>();
@@ -173,6 +174,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
       rowSelection,
     },
   });
+  console.log('Table Row Selection:', rowSelection);
 
   return (
     <div className="space-y-4">
@@ -183,6 +185,24 @@ function RunsTable({ runs }: { runs: Row[] }) {
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(String(event.target.value))}
           className="max-w-sm"
         />
+        <Button
+          disabled={Object.keys(rowSelection).length !== 2}
+        >
+          <Link
+            to="/namespaces/$namespaceId/datasets/$datasetId/compare"
+            params={{
+              namespaceId,
+              datasetId,
+            }}
+            search={{
+              runAId: 3,
+              runBId: 4,
+              // runBId: processedRuns[Object.keys(rowSelection)[1]].id,
+            }}
+          >
+            Compare 2
+          </Link>
+        </Button>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -249,7 +269,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
           {' '}{table.getSelectedRowModel().rows.length} selected.
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 
@@ -263,7 +283,6 @@ function RouteComponent() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Runs for Namespace: {namespaceId}</h1>
         <div className="flex space-x-4">
-
           <RefreshBar onRefresh={() => router.invalidate()} isRefreshing={false} />
           <Link
             to="/namespaces/$namespaceId"
