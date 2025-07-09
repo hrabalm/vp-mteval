@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Spinner } from '@/components/ui/spinner';
 
 const prettyColumnNames = {
   src: 'Source',
@@ -30,6 +31,7 @@ const prettyColumnNames = {
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/$runId')({
   component: RouteComponent,
+  pendingComponent: PendingComponent,
   loader: async ({ params }) => {
     const run = await fetchRun(params.runId, params.namespaceId);
     const n_grams = await fetchRunNGrams(params.runId, params.namespaceId);
@@ -512,6 +514,14 @@ function NGrams({ type }: { type: 'confirmed' | 'unconfirmed' }) {
         </div>
       </div>
       <pre className="bg-muted/50 p-4 rounded-md">{JSON.stringify(selected, null, 2)}</pre>
+    </div>
+  );
+}
+
+function PendingComponent() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <Spinner size="large">Loading run data...</Spinner>
     </div>
   );
 }
