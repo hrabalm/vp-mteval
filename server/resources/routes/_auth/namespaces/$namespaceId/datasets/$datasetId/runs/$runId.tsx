@@ -237,8 +237,31 @@ function RunTable() {
     });
   }), [customFilterFn, selectedColumns]);
 
+  console.log("Segment Metrics: ");
+  console.log(JSON.stringify(run.segment_metrics, null, 2));
+
+  const data = useMemo(() => {
+    const res = [];
+    for (const [segmentIdx, segment] of Object.entries(run.segments)) {
+      let x = {
+        ...segment,
+      };
+      for (const [metricName, metric] of Object.entries(run.segment_metrics)) {
+        console.log(`Test ${metricName}`)
+        x[`m:${metricName}`] = metric[segmentIdx].score;
+        if (metric[segmentIdx].custom) {
+          x[`m:${metricName}.custom`] = JSON.stringify(metric[segmentIdx].custom, null, 2);
+        }
+      }
+      res.push(x);
+    }
+    return res;
+  }, [run.segments, run.segment_metrics]);
+
+  console.log("Run Data: ", JSON.stringify(data, null, 2));
+
   const table = useReactTable({
-    data: run.segments,
+    data,
     columns,
     state: {
       columnFilters,
@@ -285,7 +308,7 @@ function RunTable() {
         {searchEnabled ? 'Hide Search' : 'Show Search'}
       </Button>
       <ColumnsPopover
-        allColumns={['src', 'tgt', 'ref', ...Object.keys(run.segments[0] || {})]}
+        allColumns={['src', 'tgt', 'ref', ...Object.keys(data[0] || {})]}
         selectedColumns={selectedColumns}
         onSelectionChange={setSelectedColumns}
       />

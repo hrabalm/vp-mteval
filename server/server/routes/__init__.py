@@ -112,6 +112,7 @@ class ReadSegmentMetric(BaseModel):
     segment_idx: int
     name: str
     score: float
+    custom: dict | None = None
     higher_is_better: bool = True
 
     run_id: int
