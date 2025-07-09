@@ -21,8 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Spinner } from '@/components/ui/spinner';
+import { PendingComponent } from '@/components/pending-component';
 import { isFloat } from '@/lib/utils';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 
 const prettyColumnNames = {
   src: 'Source',
@@ -227,7 +228,12 @@ function RunTable() {
 
   const columns = useMemo(() => selectedColumns.map(columnId => {
     return columnHelper.accessor(columnId, {
-      header: () => prettyColumnNames[columnId] || columnId,
+      header: ({ column }) => {
+        if (columnId === "idx") {
+          return <DataTableColumnHeader column={column} title="Idx" />;
+        }
+        return (prettyColumnNames[columnId] || columnId);
+      },
       cell: (info) => {
         const value = info.getValue();
         if (['tgt_ngrams', 'ref_ngrams'].includes(columnId)) {
@@ -552,13 +558,7 @@ function NGrams({ type }: { type: 'confirmed' | 'unconfirmed' }) {
   );
 }
 
-function PendingComponent() {
-  return (
-    <div className="flex items-center justify-center h-full">
-      <Spinner size="large">Loading run data...</Spinner>
-    </div>
-  );
-}
+
 
 function RouteComponent() {
   const { run } = Route.useLoaderData();

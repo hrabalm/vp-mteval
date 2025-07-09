@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef } from '@tanstack/react-table';
-import { fetchRuns } from '@/runs';
+import { addTag, deleteTag, fetchRuns } from '@/runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,18 @@ import {
 } from "@/components/ui/table"
 import { Checkbox } from '@/components/ui/checkbox';
 import { isFloat } from '@/lib/utils';
-
+import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react"
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/')({
   component: RouteComponent,
@@ -29,9 +40,6 @@ type Row = Record<string, any>; // unknown shape
 function preprocessRunsData(runs: Row[]) {
   return runs.map(run => {
     let processedRun: Row = { ...run };
-
-    // Delete namespace_name - it is not relevant here
-    delete processedRun.namespace_name;
 
     // Run contains config object, flatten it to c:[element]
     if (run.config && typeof run.config === 'object') {
@@ -67,6 +75,68 @@ function preprocessRunsData(runs: Row[]) {
 
     return processedRun;
   });
+}
+function AddTagDialog({ run }: { run: any }) {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name");
+    await addTag(run.id, run.namespace_name, String(name));
+    router.invalidate();
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Plus className="hover:bg-gray-200" />
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={onSubmit}>
+          <DialogHeader>
+            <DialogTitle>Add a tag</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <Label htmlFor="name">Tag Name</Label>
+            <Input id="name" name="name" placeholder="Add a tag" />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit">Save changes</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TagBadge({ run, tag }: { run: any, tag: string }) {
+  const router = useRouter();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Badge>
+          {tag}
+        </Badge>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={async () => {
+            await deleteTag(run.id, run.namespace_name, tag);
+            router.invalidate();
+          }}
+        >
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 function RunsTable({ runs }: { runs: Row[] }) {
@@ -114,12 +184,55 @@ function RunsTable({ runs }: { runs: Row[] }) {
       enableSorting: false,
       enableColumnFilter: false,
       enableHiding: false,
+    },
+    {
+      "id": "id",
+      "header": "ID",
+      "accessorKey": "id",
+      "enableSorting": true,
+      "enableColumnFilter": false,
+      "enableHiding": false,
+      "cell": (info) => {
+        const value = info.getValue();
+        return (
+          <Link
+            to="/namespaces/$namespaceId/datasets/$datasetId/runs/$runId"
+            params={{
+              namespaceId,
+              datasetId,
+              runId: info.row.original.id,
+            }}
+            className="text-blue-500 hover:underline"
+          >
+            {String(value)}
+          </Link>
+        );
+      },
+    },
+    {
+      "id": "tags",
+      "header": "Tags",
+      "accessorKey": "tags",
+      "enableSorting": false,
+      "enableColumnFilter": false,
+      "enableHiding": false,
+      "cell": (info) => {
+        const tags = info.getValue();
+        return (
+          <div className="flex flex-wrap gap-1 justify-end">
+            {tags.map((tag: string, index: number) => (
+              <TagBadge key={index} tag={tag} run={info.row.original} />
+            ))}
+            <AddTagDialog run={info.row.original} />
+          </div>
+        );
+      }
     }
   ]
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
-      allKeys.map((key) => ({
+      allKeys.filter((key) => !["id"].includes(key)).map((key) => ({
         accessorKey: key,
         header: key.charAt(0).toUpperCase() + key.slice(1),
         filterFn: regexpFilterFn,
@@ -127,7 +240,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
           const value = info.getValue();
 
           // Create links for id and uuid columns
-          if ((key === 'id' || key === 'uuid') && value) {
+          if ((key === 'uuid') && value) {
             return (
               <Link
                 to="/namespaces/$namespaceId/datasets/$datasetId/runs/$runId"
@@ -213,11 +326,11 @@ function RunsTable({ runs }: { runs: Row[] }) {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+            {table.getHeaderGroups().map((headerGroup, index) => (
+              <TableRow key={`42_${headerGroup.id}_${index}`}>
+                {headerGroup.headers.map((header, index) => (
                   <TableHead
-                    key={header.id}
+                    key={`43_${header.id}_${index}`}
                     className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none"
                     onClick={header.column.getToggleSortingHandler()}
                   >
@@ -239,10 +352,10 @@ function RunsTable({ runs }: { runs: Row[] }) {
                 ))}
               </TableRow>
             ))}
-            <TableRow>
-              {table.getHeaderGroups()[0].headers.map((header) => {
+            <TableRow key="774">
+              {table.getHeaderGroups()[0].headers.map((header, index) => {
                 if (header.id !== "select") {
-                  return (<TableCell key={header.id} className="px-3 py-2">
+                  return (<TableCell key={`${header.id}_${index}`} className="px-3 py-2">
                     <Input
                       placeholder="Regex..."
                       className="w-full text-xs"
@@ -256,10 +369,10 @@ function RunsTable({ runs }: { runs: Row[] }) {
             </TableRow>
           </TableHeader>
           <TableBody className="bg-background divide-y divide-border">
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} className="hover:bg-muted/50">
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+            {table.getRowModel().rows.map((row, index) => (
+              <TableRow key={`${row.id}_${index}`} className="hover:bg-muted/50">
+                {row.getVisibleCells().map((cell, index) => (
+                  <TableCell key={`${cell.id}_${index}`} className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

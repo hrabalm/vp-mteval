@@ -36,3 +36,27 @@ export const fetchRuns = async (namespaceId: string, datasetId: string | undefin
         })
         .then((r) => r.data)
 }
+
+export const addTag = async (runId: string, namespaceId: string, tagName: string) => {
+    return api
+        .put(`api/v1/namespaces/${namespaceId}/translations-runs/${runId}/tags/${tagName}`, {})
+        .then((r) => r.data)
+        .catch((err) => {
+            if (err.status === 404) {
+                throw new RunNotFoundError(`Run with id "${runId}" not found in namespace "${namespaceId}"`);
+            }
+            throw err;
+        })
+}
+
+export const deleteTag = async (runId: string, namespaceId: string, tagName: string) => {
+    return api
+        .delete(`api/v1/namespaces/${namespaceId}/translations-runs/${runId}/tags/${tagName}`, {})
+        .then((r) => r.data)
+        .catch((err) => {
+            if (err.status === 404) {
+                throw new RunNotFoundError(`Run with id "${runId}" not found in namespace "${namespaceId}"`);
+            }
+            throw err;
+        })
+}

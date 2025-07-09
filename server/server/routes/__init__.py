@@ -666,7 +666,7 @@ async def health() -> dict[str, str]:
 
 
 @put(
-    "/namespaces/{namespace_name:str}/translation_runs/{translation_run_id:int}/tags/{tag_name:str}"
+    "/namespaces/{namespace_name:str}/translations-runs/{translation_run_id:int}/tags/{tag_name:str}"
 )
 async def add_tag(
     namespace_name: str,
@@ -699,7 +699,7 @@ async def add_tag(
 
 
 @delete(
-    "/namespaces/{namespace_name:str}/translation_runs/{translation_run_id:int}/tags/{tag_name:str}"
+    "/namespaces/{namespace_name:str}/translations-runs/{translation_run_id:int}/tags/{tag_name:str}"
 )
 async def delete_tag(
     namespace_name: str,
@@ -721,10 +721,10 @@ async def delete_tag(
         ) from None
 
     tag_query = (
-        select(models.TranslationRunTag)
+        select(models.Tag)
         .where(
-            models.TranslationRunTag.translation_run_id == translation_run.id,
-            models.TranslationRunTag.name == tag_name,
+            models.Tag.translation_run_id == translation_run.id,
+            models.Tag.name == tag_name,
         )
         .limit(1)
     )
@@ -768,6 +768,8 @@ routes = [
     get_datasets,
     get_dataset_by_id,
     health,
+    add_tag,
+    delete_tag,
 ]
 
 api_v1_router = Router(
