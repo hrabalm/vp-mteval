@@ -108,7 +108,24 @@ function ConfigTable({ runA, runB }) {
 }
 
 function MetricsTable({ runA, runB }) {
-  const allMetrics: string[] = Array.from(new Set(Object.keys(runA.dataset_metrics)).union(new Set(Object.keys(runB.dataset_metrics)))).sort()
+  const extractMetrics = (run: any): string[] => {
+    return Object.values(run.dataset_metrics).reduce((acc: string[], value: any) => {
+      if (value?.name) {
+        console.log(`Extracting metric`, value);
+        acc.push(value.name);
+      }
+      return acc;
+    }, []);
+  };
+  const allMetrics: string[] = Array.from(new Set([...extractMetrics(runA), ...extractMetrics(runB)])).sort()
+
+  const runAMetricByName = Object.fromEntries(
+    Object.entries(runA.dataset_metrics).map(([key, value]) => [value.name, value])
+  );
+  const runBMetricByName = Object.fromEntries(
+    Object.entries(runB.dataset_metrics).map(([key, value]) => [value.name, value])
+  );
+
   return <>
     <TypographyH4>Metrics</TypographyH4>
     <Table>
@@ -121,11 +138,12 @@ function MetricsTable({ runA, runB }) {
       </TableHeader>
       <TableBody>
         {allMetrics.map((metric) => {
+          console.log(`Comparing metric: ${metric}`);
           return <>
             <TableRow>
-              <TableCell>{(runA.dataset_metrics[metric] || runB.dataset_metrics[metric]).name}</TableCell>
-              <TableCell>{runA.dataset_metrics[metric]?.score.toFixed(4)}</TableCell>
-              <TableCell>{runB.dataset_metrics[metric]?.score.toFixed(4)}</TableCell>
+              <TableCell>{metric}</TableCell>
+              <TableCell>{runAMetricByName[metric]?.score.toFixed(4)}</TableCell>
+              <TableCell>{runBMetricByName[metric]?.score.toFixed(4)}</TableCell>
             </TableRow>
           </>
         })}
