@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
-    def __init__(self):
+    def __init__(self, config: dict | None = None) -> None:
         try:
             import sacrebleu
         except ImportError as e:

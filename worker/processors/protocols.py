@@ -20,6 +20,7 @@ class WorkerExampleResult(BaseModel):
     job_id: int
     name: str
     segment_scores: list[float] | None
+    segment_custom: list[dict] | None = None  # Additional data specific to the metric
     dataset_score: float | None
     higher_is_better: bool
 
@@ -35,5 +36,7 @@ class MetricsProcessorProtocol(Protocol):
     name: ClassVar[str]
     requires_references: ClassVar[bool]
     higher_is_better: ClassVar[bool] = True
+
+    def __init__(self, config: dict | None = None) -> None: ...
 
     def process_example(self, example: WorkerExample) -> WorkerExampleResult | None: ...

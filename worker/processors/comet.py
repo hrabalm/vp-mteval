@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class CometKiwiProcessor(processors.protocols.MetricsProcessorProtocol):
-    def __init__(self):
+    def __init__(self, config: dict | None = None) -> None:
         try:
             import comet
         except ImportError as e:

@@ -12,7 +12,7 @@ MAX_BATCH_SIZE = 32
 
 
 class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
-    def __init__(self):
+    def __init__(self, config: dict | None = None) -> None:
         try:
             from processors.metricx24_impl import Model
         except ImportError as e:

@@ -19,7 +19,7 @@ def load_custom_metric(filename: str):
     """Load a custom metric implementation from a Python file."""
     module = load_module(filename)
     print(module)
-    return module.processor
+    return module.processor_factory
 
 
 if __name__ == "__main__":

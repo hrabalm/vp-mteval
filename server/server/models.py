@@ -103,9 +103,7 @@ class DatasetName(Base):
 
 class SegmentTranslation(Base):
     __tablename__ = "segment_translations"
-    __table_args__ = (
-        Index("ix_st_run_id_segment_idx", "run_id", "segment_idx"),
-    )
+    __table_args__ = (Index("ix_st_run_id_segment_idx", "run_id", "segment_idx"),)
     tgt: Mapped[str] = mapped_column(Text, nullable=False)
     run_id: Mapped[int] = mapped_column(
         ForeignKey("translation_runs.id"),
@@ -233,15 +231,11 @@ class TranslationRun(Base):
 
 
 # Metric results
-# TODO: add JSON payloads (used for fingerprints and any additional data)
-# TODO: I should think through how to build efficient search index and FTS
 
 
 class SegmentMetric(Base):
     __tablename__ = "segment_metrics"
-    __table_args__ = (
-        Index("ix_sm_run_id_segment_idx", "run_id", "segment_idx"),
-    )
+    __table_args__ = (Index("ix_sm_run_id_segment_idx", "run_id", "segment_idx"),)
 
     name: Mapped[str] = mapped_column(
         Text,
@@ -272,6 +266,15 @@ class SegmentMetric(Base):
     segment_translation: Mapped[SegmentTranslation] = relationship(
         "SegmentTranslation",
         back_populates="segment_metrics",
+    )
+
+    custom: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        # Any additional data specific to the metric, in case custom rendering
+        # code is meant to be added to client instead of rendering as string
+        # it is recommended to prefix the key with the metric name
     )
 
 

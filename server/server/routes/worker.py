@@ -342,6 +342,7 @@ class PostSegmentMetric(BaseModel):
     name: str
     higher_is_better: bool
     scores: list[float]
+    custom: list[dict] | None = None  # Additional data specific to the metric
 
 
 class PostDatasetMetric(BaseModel):
@@ -427,16 +428,9 @@ async def report_job_result(
                 score=score,
                 segment_translation_id=job.run.translations[idx].id,
                 segment_idx=idx,
+                custom=segment_metric.custom[idx] if segment_metric.custom else None,
             )
             transaction.add(metric)
-
-
-# @litestar.get()
-# async def get_job(
-#     request: Any,
-#     transaction: AsyncSession,
-# ):
-#     pass
 
 
 # endregion

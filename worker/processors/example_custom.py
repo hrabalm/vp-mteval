@@ -1,1 +1,1 @@
-processor = "stub"
+processor_factory = "stub"

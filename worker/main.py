@@ -15,6 +15,7 @@ import logging
 import multiprocessing
 import queue
 from functools import partial
+import json
 
 import anyio
 import click
@@ -49,14 +50,39 @@ def setup_logging(log_level: str):
 
 class Worker:
     def __init__(
-        self, metrics_processor: processors.protocols.MetricsProcessorProtocol
+        self,
+        metrics_processor_name: str | None = None,
+        metrics_processor_file: str | None = None,
+        config: dict | None = None,
     ):
+        if config is None:
+            config = {}
+        if metrics_processor_name is None and metrics_processor_file is None:
+            raise ValueError(
+                "You must provide either a metrics_processor or a metrics_processor_file."
+            )
+        self.metrics_processor_name = metrics_processor_name
+        self.metrics_processor_file = metrics_processor_file
+        self.metrics_processor = None
+        self.config = config
+
         self.process = None
         self.examples_queue = multiprocessing.Queue()
         self.result_queue = multiprocessing.Queue()
-        self.metrics_processor = metrics_processor
 
     def _main_loop(self):
+        if (
+            self.metrics_processor_name is None
+            and self.metrics_processor_file is not None
+        ):
+            metrics_processor = processors.get_processor_from_file(
+                self.metrics_processor_file
+            )(config=self.config)
+        else:
+            metrics_processor = processors.get_processor_factory(
+                self.metrics_processor_name
+            )(config=self.config)
+        self.metrics_processor = metrics_processor
         try:
             while True:
                 example = self.examples_queue.get()
@@ -301,6 +327,7 @@ class PostSegmentMetric(BaseModel):
     name: str
     higher_is_better: bool
     scores: list[float]
+    custom: list[dict] | None = None  # Additional data specific to the metric
 
 
 class PostDatasetMetric(BaseModel):
@@ -346,6 +373,7 @@ async def report_job_results(
                 name=example_result.name,
                 higher_is_better=example_result.higher_is_better,
                 scores=[float(score) for score in example_result.segment_scores],
+                custom=example_result.segment_custom or None,
             ),
         )
 
@@ -383,17 +411,22 @@ def job_to_example(job):
     return example
 
 
-async def main(host, token, username, namespace, metric, mode, log_level):
+async def main(
+    host, token, username, namespace, metric, mode, log_level, config, metric_file
+):
     # Setup logging with the specified level
     setup_logging(log_level)
 
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
-    processor = processors.get_processor_factory(metric)
+    if metric:
+        processor = processors.get_processor_factory(metric)
+    else:
+        processor = processors.get_processor_from_file(metric_file)
     res = await register_worker(
         host=host,
         token=token,
-        metric=metric,
+        metric=processor.name,
         metric_requires_references=processor.requires_references,
         namespace_name=namespace,
         username=username,
@@ -432,7 +465,13 @@ async def main(host, token, username, namespace, metric, mode, log_level):
                 state["finished"] = True
                 return
 
-            worker = Worker(metrics_processor=processor())
+            if metric_file is not None:
+                worker = Worker(metrics_processor_file=metric_file, config=config)
+            else:
+                worker = Worker(
+                    metrics_processor_name=metric,
+                    config=config,
+                )
             worker.start()
 
             # Track consecutive failures for restart logic
@@ -587,8 +626,13 @@ async def main(host, token, username, namespace, metric, mode, log_level):
 @click.option(
     "--metric",
     type=click.Choice([name for name in processors.processors_by_name.keys()]),
-    required=True,
     help="Metric to be used",
+)
+@click.option(
+    "--metric-file",
+    type=str,
+    default=None,
+    help="Path to a custom metric Python file.",
 )
 @click.option(
     "--mode",
@@ -604,7 +648,17 @@ async def main(host, token, username, namespace, metric, mode, log_level):
     show_default=True,
     help="Set the logging level",
 )
-def cli(host, token, username, namespace, metric, mode, log_level):
+@click.option(
+    "--config",
+    type=str,
+    default="{}",
+    help="JSON string with additional configuration for the metric processor, if needed.",
+)
+def cli(host, token, username, namespace, metric, mode, log_level, metric_file, config):
+    if not metric and not metric_file:
+        raise click.UsageError(
+            "You must specify either a metric or a metric file to use."
+        )
     anyio.run(
         partial(
             main,
@@ -615,6 +669,8 @@ def cli(host, token, username, namespace, metric, mode, log_level):
             metric=metric,
             mode=mode,
             log_level=log_level,
+            config=json.loads(config),
+            metric_file=metric_file,
         )
     )
 
