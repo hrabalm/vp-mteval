@@ -2,7 +2,7 @@ from typing import ClassVar
 import logging
 import processors.protocols
 
-METRIC_NAME = "Gemma3_DSPy_v1"
+METRIC_NAME = "Gemma3_DSPy_v1.1"
 
 try:
     import dspy
