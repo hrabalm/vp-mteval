@@ -656,7 +656,7 @@ async def get_dataset_by_id(
 
 
 @get("/health", opt={"exclude_from_auth": True})
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
