@@ -111,7 +111,6 @@ function MetricsTable({ runA, runB }) {
   const extractMetrics = (run: any): string[] => {
     return Object.values(run.dataset_metrics).reduce((acc: string[], value: any) => {
       if (value?.name) {
-        console.log(`Extracting metric`, value);
         acc.push(value.name);
       }
       return acc;
@@ -138,7 +137,6 @@ function MetricsTable({ runA, runB }) {
       </TableHeader>
       <TableBody>
         {allMetrics.map((metric) => {
-          console.log(`Comparing metric: ${metric}`);
           return <>
             <TableRow>
               <TableCell>{metric}</TableCell>
