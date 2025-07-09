@@ -7,11 +7,6 @@ import { rankItem } from '@tanstack/match-sorter-utils';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import ColumnSelector from '@/components/column-selector';
 import {
   Table,
@@ -24,6 +19,7 @@ import {
 import { PendingComponent } from '@/components/pending-component';
 import { isFloat } from '@/lib/utils';
 import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const prettyColumnNames = {
   src: 'Source',
@@ -45,17 +41,25 @@ function NGramsRender({ ngrams }: { ngrams: string[] }) {
   return <span>{ngrams.join(' | ')}</span>
 }
 
-function ColumnsPopover({ allColumns, selectedColumns, onSelectionChange }) {
-  return <Popover>
-    <PopoverTrigger asChild><Button variant="outline">Columns</Button></PopoverTrigger>
-    <PopoverContent className="w-1/4 flex">
-      <ColumnSelector
-        allColumns={allColumns}
-        selectedColumns={selectedColumns}
-        onSelectionChange={onSelectionChange}
-      />
-    </PopoverContent>
-  </Popover >
+function VisibleColumnsDialog({ allColumns, selectedColumns, onSelectionChange }) {
+  return (
+    <>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline">Columns</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a tag</DialogTitle>
+          </DialogHeader>
+          <ColumnSelector
+            allColumns={allColumns}
+            selectedColumns={selectedColumns}
+            onSelectionChange={onSelectionChange}
+          />
+        </DialogContent>
+      </Dialog>
+    </>)
 }
 
 function flattenObject(obj: Record<string, any>): Record<string, any> {
@@ -324,7 +328,7 @@ function RunTable() {
       <Button variant="outline" onClick={() => setSearchEnabled(!searchEnabled)}>
         {searchEnabled ? 'Hide Search' : 'Show Search'}
       </Button>
-      <ColumnsPopover
+      <VisibleColumnsDialog
         allColumns={['src', 'tgt', 'ref', ...Object.keys(data[0] || {})]}
         selectedColumns={selectedColumns}
         onSelectionChange={setSelectedColumns}
