@@ -654,7 +654,7 @@ async def get_dataset_by_id(
         ) from e
 
 
-@get("/health")
+@get("/health", opt={"exclude_from_auth": True})
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
@@ -687,6 +687,7 @@ routes = [
     get_namespaces,
     get_datasets,
     get_dataset_by_id,
+    health,
 ]
 
 api_v1_router = Router(
