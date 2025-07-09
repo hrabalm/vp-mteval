@@ -205,7 +205,7 @@ function MetricsCharts({ runA, runB }) {
     return {
       name: d.x.toFixed(2),
       "Run A": d.y,
-      "Run B": runBHist[i].y,
+      "Run B": -runBHist[i].y,
     }
   })
 
@@ -235,8 +235,8 @@ function MetricsCharts({ runA, runB }) {
           <Tooltip />
           <Legend />
           <ReferenceLine y={0} stroke="#000" />
-          <Bar dataKey="Run A" stackId="a" fill="#8884d8" />
-          <Bar dataKey="Run B" stackId="a" fill="#82ca9d" />
+          <Bar dataKey="Run A" fill="#8884d8" />
+          <Bar dataKey="-Run B" fill="#82ca9d" />
         </BarChart>
       </ResponsiveContainer>
     </div>
