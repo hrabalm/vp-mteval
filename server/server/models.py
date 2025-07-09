@@ -216,6 +216,12 @@ class TranslationRun(Base):
         "Namespace",
     )
     config: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    tags: Mapped[list["Tag"]] = relationship(
+        "Tag",
+        back_populates="translation_run",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         UniqueConstraint("namespace_id", "uuid", name="uix_namespace_uuid"),
@@ -227,6 +233,30 @@ class TranslationRun(Base):
             "dataset_id",
             desc("id"),
         ),
+    )
+
+
+class Tag(Base):
+    __tablename__ = "translation_run_tags"
+    __table_args__ = (
+        Index(
+            "ix_trt_translation_run_id_tag",
+            "translation_run_id",
+            "name",
+            unique=True,
+        ),
+    )
+    translation_run_id: Mapped[int] = mapped_column(
+        ForeignKey("translation_runs.id"),
+    )
+    name: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    translation_run: Mapped[TranslationRun] = relationship(
+        "TranslationRun",
+        back_populates="tags",
     )
 
 

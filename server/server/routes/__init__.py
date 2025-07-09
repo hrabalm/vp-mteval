@@ -2,7 +2,7 @@ import logging
 from typing import Any, Optional
 
 import litestar
-from litestar import Controller, Litestar, Router, get, post
+from litestar import Controller, Litestar, Router, get, post, put, delete
 from litestar.exceptions import ClientException, NotFoundException
 from litestar.response import Template
 from litestar.status_codes import HTTP_200_OK, HTTP_409_CONFLICT, HTTP_201_CREATED
@@ -141,6 +141,7 @@ class ReadTranslationRun(BaseModel):
     namespace_name: str
     config: dict[str, Any]
     dataset_metrics: list[ReadDatasetMetric]
+    tags: list[str]
 
 
 class ReadTranslationRunDetail(BaseModel):
@@ -152,6 +153,7 @@ class ReadTranslationRunDetail(BaseModel):
     segments: list[ReadSegment] | None = None
     segment_metrics: dict[str, list[ReadSegmentMetric]]
     dataset_metrics: list[ReadDatasetMetric]
+    tags: list[str]
 
 
 class ReadNamespace(BaseModel):
@@ -331,6 +333,7 @@ async def _add_translation_run(
         dataset_metrics=[],
         segment_metrics={},
         segments=None,
+        tags=[],
     ), is_new_run
 
 
@@ -402,6 +405,7 @@ async def get_translation_runs(
             dataset_metrics=[
                 ReadDatasetMetric.model_validate(dm) for dm in run.dataset_metrics
             ],
+            tags=[tag.name for tag in run.tags] if run.tags else [],
         )
         for run in runs
     ]
@@ -498,6 +502,7 @@ async def get_translation_run(
                 ReadDatasetMetric.model_validate(dm) for dm in result1.dataset_metrics
             ],
             segments=segments,
+            tags=[tag.name for tag in result1.tags] if result1.tags else [],
         )
     except NoResultFound:
         raise NotFoundException(
@@ -658,6 +663,80 @@ async def get_dataset_by_id(
 @get("/health", opt={"exclude_from_auth": True})
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@put(
+    "/namespaces/{namespace_name:str}/translation_runs/{translation_run_id:int}/tags/{tag_name:str}"
+)
+async def add_tag(
+    namespace_name: str,
+    translation_run_id: int,
+    tag_name: str,
+    transaction: AsyncSession,
+) -> None:
+    """Add a tag to a translation run."""
+    run_query = select(models.TranslationRun).where(
+        models.TranslationRun.id == translation_run_id,
+        models.TranslationRun.namespace.has(name=namespace_name),
+    )
+    result = await transaction.execute(run_query)
+    try:
+        translation_run = result.scalar_one()
+    except NoResultFound:
+        raise NotFoundException(
+            detail=f"Translation run {translation_run_id} not found in namespace '{namespace_name}'"
+        ) from None
+    tag = models.Tag(
+        translation_run_id=translation_run.id,
+        name=tag_name,
+    )
+    transaction.add(tag)
+    try:
+        await transaction.flush()
+    except IntegrityError as e:
+        # If the tag already exists, we can ignore this error
+        pass
+
+
+@delete(
+    "/namespaces/{namespace_name:str}/translation_runs/{translation_run_id:int}/tags/{tag_name:str}"
+)
+async def delete_tag(
+    namespace_name: str,
+    translation_run_id: int,
+    tag_name: str,
+    transaction: AsyncSession,
+) -> None:
+    """Delete a tag from a translation run."""
+    run_query = select(models.TranslationRun).where(
+        models.TranslationRun.id == translation_run_id,
+        models.TranslationRun.namespace.has(name=namespace_name),
+    )
+    result = await transaction.execute(run_query)
+    try:
+        translation_run = result.scalar_one()
+    except NoResultFound:
+        raise NotFoundException(
+            detail=f"Translation run {translation_run_id} not found in namespace '{namespace_name}'"
+        ) from None
+
+    tag_query = (
+        select(models.TranslationRunTag)
+        .where(
+            models.TranslationRunTag.translation_run_id == translation_run.id,
+            models.TranslationRunTag.name == tag_name,
+        )
+        .limit(1)
+    )
+    tag_result = await transaction.execute(tag_query)
+    try:
+        tag = tag_result.scalar_one()
+        await transaction.delete(tag)
+        await transaction.flush()
+    except NoResultFound:
+        raise NotFoundException(
+            detail=f"Tag {tag_name!r} not found for run {translation_run_id}"
+        )
 
 
 @get("/namespaces/")
