@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { PendingComponent } from '@/components/pending-component';
 
 type CompareSearch = {
   runAId: number
@@ -48,6 +49,7 @@ export const Route = createFileRoute(
     }
   },
   component: RouteComponent,
+  pendingComponent: PendingComponent,
 })
 
 function Overview() {
