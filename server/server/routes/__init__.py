@@ -654,6 +654,11 @@ async def get_dataset_by_id(
         ) from e
 
 
+@get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @get("/namespaces/")
 async def get_namespaces(
     transaction: AsyncSession,
