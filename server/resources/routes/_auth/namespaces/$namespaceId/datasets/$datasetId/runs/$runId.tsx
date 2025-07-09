@@ -247,10 +247,16 @@ function RunTable() {
         ...segment,
       };
       for (const [metricName, metric] of Object.entries(run.segment_metrics)) {
+        const metricNameSafe = metricName.replace(/\./g, '․'); // we can't have dots in keys
         console.log(`Test ${metricName}`)
-        x[`m:${metricName}`] = metric[segmentIdx].score;
+        x[`m:${metricNameSafe}`] = metric[segmentIdx].score;
         if (metric[segmentIdx].custom) {
-          x[`m:${metricName}.custom`] = JSON.stringify(metric[segmentIdx].custom, null, 2);
+          x[`m:${metricNameSafe}:custom`] = JSON.stringify(metric[segmentIdx].custom, null, 2);
+          for (const [key, value] of Object.entries(metric[segmentIdx].custom)) {
+            const customKeySafe = key.replace(/\./g, '․'); // we can't have dots in keys
+            const formattedValue = typeof value === 'object' ? JSON.stringify(value, null, 2) : value;
+            x[`m:${metricNameSafe}:custom:${customKeySafe}`] = formattedValue;
+          }
         }
       }
       res.push(x);

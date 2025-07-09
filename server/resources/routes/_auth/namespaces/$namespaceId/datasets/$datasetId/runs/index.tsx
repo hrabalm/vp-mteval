@@ -55,7 +55,8 @@ function preprocessRunsData(runs: Row[]) {
     if (run.dataset_metrics && Array.isArray(run.dataset_metrics)) {
       run.dataset_metrics.forEach((metric, index) => {
         if (metric.name && metric.score !== undefined) {
-          const key = `m:${metric.name}${metric.higher_is_better ? '↑' : '↓'}`;
+          const safeName = metric.name.replace(/\./g, '․'); // we can't have dots in keys
+          const key = `m:${safeName}${metric.higher_is_better ? '↑' : '↓'}`;
           processedRun[key] = metric.score;
         }
       });
