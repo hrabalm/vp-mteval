@@ -232,7 +232,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
 
   const columns = useMemo<ColumnDef<Row>[]>(
     () =>
-      allKeys.filter((key) => !["id"].includes(key)).map((key) => ({
+      allKeys.filter((key) => !["id", "tags"].includes(key)).map((key) => ({
         accessorKey: key,
         header: key.charAt(0).toUpperCase() + key.slice(1),
         filterFn: regexpFilterFn,
