@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Checkbox } from '@/components/ui/checkbox';
+import { isFloat } from '@/lib/utils';
 
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/')({
@@ -143,6 +144,10 @@ function RunsTable({ runs }: { runs: Row[] }) {
           } else if ((key === 'dataset') && value) {
             // FIXME: should be flattened instead
             return value.names;
+          }
+
+          if ((key !== "id") && (isFloat(value))) {
+            return value.toFixed(4);
           }
 
           return String(value ?? '');

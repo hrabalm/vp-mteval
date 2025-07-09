@@ -124,8 +124,8 @@ function MetricsTable({ runA, runB }) {
           return <>
             <TableRow>
               <TableCell>{(runA.dataset_metrics[metric] || runB.dataset_metrics[metric]).name}</TableCell>
-              <TableCell>{JSON.stringify(runA.dataset_metrics[metric]?.score)}</TableCell>
-              <TableCell>{JSON.stringify(runB.dataset_metrics[metric]?.score)}</TableCell>
+              <TableCell>{runA.dataset_metrics[metric]?.score.toFixed(4)}</TableCell>
+              <TableCell>{runB.dataset_metrics[metric]?.score.toFixed(4)}</TableCell>
             </TableRow>
           </>
         })}

@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Spinner } from '@/components/ui/spinner';
+import { isFloat } from '@/lib/utils';
 
 const prettyColumnNames = {
   src: 'Source',
@@ -228,10 +229,14 @@ function RunTable() {
     return columnHelper.accessor(columnId, {
       header: () => prettyColumnNames[columnId] || columnId,
       cell: (info) => {
+        const value = info.getValue();
         if (['tgt_ngrams', 'ref_ngrams'].includes(columnId)) {
-          return <NGramsRender ngrams={info.getValue()['1,v1_case'] || []} />;
+          return <NGramsRender ngrams={value['1,v1_case'] || []} />;
         }
-        return info.getValue();
+        if (isFloat(value)) {
+          return value.toFixed(4);
+        }
+        return value;
       },
       filterFn: customFilterFn,
     });
