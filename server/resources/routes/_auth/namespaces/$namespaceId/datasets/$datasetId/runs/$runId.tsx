@@ -41,9 +41,9 @@ function NGramsRender({ ngrams }: { ngrams: string[] }) {
   return <span>{ngrams.join(' | ')}</span>
 }
 
-function FiltersPopover({ allColumns, selectedColumns, onSelectionChange }) {
+function ColumnsPopover({ allColumns, selectedColumns, onSelectionChange }) {
   return <Popover>
-    <PopoverTrigger asChild><Button variant="outline">Filters</Button></PopoverTrigger>
+    <PopoverTrigger asChild><Button variant="outline">Columns</Button></PopoverTrigger>
     <PopoverContent className="w-full">
       <ColumnSelector
         allColumns={allColumns}
@@ -282,7 +282,7 @@ function RunTable() {
       <Button variant="outline" onClick={() => setSearchEnabled(!searchEnabled)}>
         {searchEnabled ? 'Hide Search' : 'Show Search'}
       </Button>
-      <FiltersPopover
+      <ColumnsPopover
         allColumns={['src', 'tgt', 'ref', ...Object.keys(run.segments[0] || {})]}
         selectedColumns={selectedColumns}
         onSelectionChange={setSelectedColumns}
