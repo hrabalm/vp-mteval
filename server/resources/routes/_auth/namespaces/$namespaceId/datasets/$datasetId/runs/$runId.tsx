@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { fetchRun, fetchRunNGrams } from "@/runs";
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel } from '@tanstack/react-table';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel, ColumnOrderState } from '@tanstack/react-table';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { rankItem } from '@tanstack/match-sorter-utils';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
 import { Button } from '@/components/ui/button';
-import ColumnSelector from '@/components/column-selector';
+import ColumnSelectorTable from '@/components/column-selector';
 import {
   Table,
   TableBody,
@@ -20,6 +20,7 @@ import { PendingComponent } from '@/components/pending-component';
 import { isFloat } from '@/lib/utils';
 import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import ColumnSelectorDialog from '@/components/column-selector';
 
 const prettyColumnNames = {
   src: 'Source',
@@ -39,27 +40,6 @@ export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$d
 
 function NGramsRender({ ngrams }: { ngrams: string[] }) {
   return <span>{ngrams.join(' | ')}</span>
-}
-
-function VisibleColumnsDialog({ allColumns, selectedColumns, onSelectionChange }) {
-  return (
-    <>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline">Columns</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add a tag</DialogTitle>
-          </DialogHeader>
-          <ColumnSelector
-            allColumns={allColumns}
-            selectedColumns={selectedColumns}
-            onSelectionChange={onSelectionChange}
-          />
-        </DialogContent>
-      </Dialog>
-    </>)
 }
 
 function flattenObject(obj: Record<string, any>): Record<string, any> {
@@ -91,8 +71,6 @@ function OverviewTable({ run, cellFormatters = {}, defaultCellFormatter = (value
     // if value is an array, return false
     !Array.isArray(value)
   )).map(([key, value]) => ({ key: key, value: value }));
-  console.log("DATA: ");
-  console.log(JSON.stringify(data, null, 2));
   const columns = ["key", "value"].map(
     key => ({
       accessorKey: key,
@@ -177,9 +155,10 @@ function RunTable() {
     pageSize: 10,
   })
 
+
+  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [caseSensitiveRE, setCaseSensitiveRE] = useState(true);
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(['src', 'tgt', 'ref']);
 
   // Refs for debouncing
   const fuzzyTimeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -228,9 +207,36 @@ function RunTable() {
     return matches;
   }, [fuzzyFilters, regexpFilters]);
 
+  const data = useMemo(() => {
+    const res = [];
+    for (const [segmentIdx, segment] of Object.entries(run.segments)) {
+      let x = {
+        ...segment,
+      };
+      for (const [metricName, metric] of Object.entries(run.segment_metrics)) {
+        const metricNameSafe = metricName.replace(/\./g, '․'); // we can't have dots in keys
+        x[`m:${metricNameSafe}`] = metric[segmentIdx].score;
+        if (metric[segmentIdx].custom) {
+          x[`m:${metricNameSafe}:custom`] = JSON.stringify(metric[segmentIdx].custom, null, 2);
+          for (const [key, value] of Object.entries(metric[segmentIdx].custom)) {
+            const customKeySafe = key.replace(/\./g, '․'); // we can't have dots in keys
+            const formattedValue = typeof value === 'object' ? JSON.stringify(value, null, 2) : value;
+            x[`m:${metricNameSafe}:custom:${customKeySafe}`] = formattedValue;
+          }
+        }
+      }
+      res.push(x);
+    }
+    return res;
+  }, [run.segments, run.segment_metrics]);
+
   const columnHelper = createColumnHelper<any>();
 
-  const columns = useMemo(() => selectedColumns.map(columnId => {
+  const allColumnIds = ['src', 'tgt', 'ref', ...Object.keys(data[0] || {}).filter((key) => !['src', 'tgt', 'ref'].includes(key))];
+  const [columnVisibility, setColumnVisibility] = useState(Object.fromEntries(
+    allColumnIds.map(key => [key, ['src', 'tgt', 'ref'].includes(key)])
+  ));
+  const columns = useMemo(() => allColumnIds.map(columnId => {
     return columnHelper.accessor(columnId, {
       header: ({ column }) => {
         if (columnId === "idx") {
@@ -250,36 +256,7 @@ function RunTable() {
       },
       filterFn: customFilterFn,
     });
-  }), [customFilterFn, selectedColumns]);
-
-  console.log("Segment Metrics: ");
-  console.log(JSON.stringify(run.segment_metrics, null, 2));
-
-  const data = useMemo(() => {
-    const res = [];
-    for (const [segmentIdx, segment] of Object.entries(run.segments)) {
-      let x = {
-        ...segment,
-      };
-      for (const [metricName, metric] of Object.entries(run.segment_metrics)) {
-        const metricNameSafe = metricName.replace(/\./g, '․'); // we can't have dots in keys
-        console.log(`Test ${metricName}`)
-        x[`m:${metricNameSafe}`] = metric[segmentIdx].score;
-        if (metric[segmentIdx].custom) {
-          x[`m:${metricNameSafe}:custom`] = JSON.stringify(metric[segmentIdx].custom, null, 2);
-          for (const [key, value] of Object.entries(metric[segmentIdx].custom)) {
-            const customKeySafe = key.replace(/\./g, '․'); // we can't have dots in keys
-            const formattedValue = typeof value === 'object' ? JSON.stringify(value, null, 2) : value;
-            x[`m:${metricNameSafe}:custom:${customKeySafe}`] = formattedValue;
-          }
-        }
-      }
-      res.push(x);
-    }
-    return res;
-  }, [run.segments, run.segment_metrics]);
-
-  console.log("Run Data: ", JSON.stringify(data, null, 2));
+  }), [customFilterFn]);
 
   const table = useReactTable({
     data,
@@ -287,12 +264,16 @@ function RunTable() {
     state: {
       columnFilters,
       pagination,
+      columnVisibility,
+      columnOrder,
     },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
   });
 
   const handleFuzzyFilterChange = useCallback((columnId: string, value: string) => {
@@ -328,11 +309,7 @@ function RunTable() {
       <Button variant="outline" onClick={() => setSearchEnabled(!searchEnabled)}>
         {searchEnabled ? 'Hide Search' : 'Show Search'}
       </Button>
-      <VisibleColumnsDialog
-        allColumns={['src', 'tgt', 'ref', ...Object.keys(data[0] || {})]}
-        selectedColumns={selectedColumns}
-        onSelectionChange={setSelectedColumns}
-      />
+      <ColumnSelectorDialog table={table} />
       <div className={`flex items-center gap-4 ${searchEnabled ? '' : 'collapse'}`}>
         <label className="flex items-center gap-2 text-xs">
           <input
@@ -566,7 +543,6 @@ function NGrams({ type }: { type: 'confirmed' | 'unconfirmed' }) {
 
 function RouteComponent() {
   const { run } = Route.useLoaderData();
-  console.log(JSON.stringify(run, null, 2));
   return (
     <>
       <h1 className="text-2xl font-bold">Run: {run.id}</h1>

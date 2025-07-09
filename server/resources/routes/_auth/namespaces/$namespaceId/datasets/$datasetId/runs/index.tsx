@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel, getFilteredRowModel, ColumnFiltersState, SortingState, ColumnDef, ColumnOrderState } from '@tanstack/react-table';
 import { addTag, deleteTag, fetchRuns } from '@/runs';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import ColumnSelectorDialog from '@/components/column-selector';
 
 export const Route = createFileRoute('/_auth/namespaces/$namespaceId/datasets/$datasetId/runs/')({
   component: RouteComponent,
@@ -144,6 +145,8 @@ function RunsTable({ runs }: { runs: Row[] }) {
 
   const { namespaceId, datasetId } = Route.useParams();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
@@ -282,6 +285,8 @@ function RunsTable({ runs }: { runs: Row[] }) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     filterFns: {
       regexp: regexpFilterFn,
     },
@@ -290,6 +295,8 @@ function RunsTable({ runs }: { runs: Row[] }) {
       columnFilters,
       globalFilter,
       rowSelection,
+      columnVisibility,
+      columnOrder,
     },
   });
 
@@ -322,6 +329,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
             Compare 2
           </Link>
         </Button>
+        <ColumnSelectorDialog table={table} />
       </div>
       <div className="rounded-md border">
         <Table>
