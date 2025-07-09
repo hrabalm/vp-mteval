@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { fetchRun, fetchRunNGrams } from "@/runs";
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel, ColumnOrderState } from '@tanstack/react-table';
+import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getFilteredRowModel, ColumnFiltersState, PaginationState, getPaginationRowModel, ColumnOrderState, SortingState, getSortedRowModel } from '@tanstack/react-table';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { rankItem } from '@tanstack/match-sorter-utils';
@@ -155,7 +155,7 @@ function RunTable() {
     pageSize: 10,
   })
 
-
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [caseSensitiveRE, setCaseSensitiveRE] = useState(true);
@@ -266,14 +266,17 @@ function RunTable() {
       pagination,
       columnVisibility,
       columnOrder,
+      sorting,
     },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
+    onSortingChange: setSorting,
   });
 
   const handleFuzzyFilterChange = useCallback((columnId: string, value: string) => {
@@ -326,13 +329,21 @@ function RunTable() {
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map(header => (
-                <th key={header.id} className="w-1/3 px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th
+                  key={header.id}
+                  className="w-1/3 px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none"
+                  onClick={header.column.getToggleSortingHandler()}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(
                       header.column.columnDef.header,
                       header.getContext()
                     )}
+                  {{
+                    asc: ' ▲',
+                    desc: ' ▼',
+                  }[header.column.getIsSorted() as string] ?? null}
                 </th>
               ))}
             </tr>
