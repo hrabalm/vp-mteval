@@ -1,0 +1,82 @@
+[
+  {
+    "namespace_name": "default",
+    "dataset_name": "example_dataset",
+    "dataset_source_lang": "en",
+    "dataset_target_lang": "fr",
+    "segments": [
+      {
+        "src": "Hello, world!",
+        "tgt": "Bonjour, le monde!"
+      },
+      {
+        "src": "How are you?",
+        "tgt": "Comment ça va?"
+      }
+    ],
+    "config": {
+      "system_name": "Fixture1NoRef"
+    }
+  },
+  {
+    "namespace_name": "default",
+    "dataset_name": "example_dataset",
+    "dataset_source_lang": "en",
+    "dataset_target_lang": "fr",
+    "segments": [
+      {
+        "src": "Hello, world!",
+        "tgt": "Ahoj, světe!"
+      },
+      {
+        "src": "How are you?",
+        "tgt": "Jak se máš?"
+      }
+    ],
+    "config": {
+      "system_name": "Fixture1NoRefWrong"
+    }
+  },
+  {
+    "namespace_name": "default",
+    "dataset_name": "example_dataset_references",
+    "dataset_source_lang": "en",
+    "dataset_target_lang": "fr",
+    "segments": [
+      {
+        "src": "Hello, world!",
+        "tgt": "Bonjour, le monde!",
+        "ref": "Bonjour, le monde!"
+      },
+      {
+        "src": "How are you?",
+        "tgt": "Comment ça va?",
+        "ref": "Comment ça va?"
+      }
+    ],
+    "config": {
+      "system_name": "Fixture1WithRef"
+    }
+  },
+  {
+    "namespace_name": "default",
+    "dataset_name": "example_dataset_references",
+    "dataset_source_lang": "en",
+    "dataset_target_lang": "fr",
+    "segments": [
+      {
+        "src": "Hello, world!",
+        "tgt": "Ahoj, světe!",
+        "ref": "Bonjour, le monde!"
+      },
+      {
+        "src": "How are you?",
+        "tgt": "Jak se máš?",
+        "ref": "Comment ça va?"
+      }
+    ],
+    "config": {
+      "system_name": "Fixture1WithRefWrong"
+    }
+  }
+]

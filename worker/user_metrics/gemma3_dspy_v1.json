@@ -1,0 +1,101 @@
+{
+  "predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "source_language": "English",
+        "translation_language": "Chinese",
+        "source_text": "I'm going to California. You're going to California. And why should you go to California? The United States saying, good enough for you? A, I find citizen you are, yes? You don't even know that California is in the United States. What are you about? I got a laugh, because you are so dumb. You didn't even know that I was making a joke with you.",
+        "translation": "我要去加州。你要去加州。为什么要去加州？美国人说，这对你来说足够好了吗？ A，我发现你是个公民，是吗？你甚至不知道加州在美国。你在做什么？我笑了，因为你太蠢了。你甚至不知道我在跟你开玩笑。",
+        "score": 27
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Chinese",
+        "source_text": "That is to say, it is a delight, she employed all of this excellent skill in a service of a larger social point this week.",
+        "translation": "也就是说，她用了这么好的技巧为一个更大的社会利益服务，这本身就是一件快乐的事情。",
+        "score": 67
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Czech",
+        "source_text": "Regulators Approve New Bitcoin ETFs in Watershed Moment for Crypto",
+        "translation": "Regulátoři schválili nové ETF ve zlomovém pro bitcoinové fondy okamžiku",
+        "score": 35
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Spanish",
+        "source_text": "Free Matt Gray stickers.",
+        "translation": "Pegatinas de \"Liberen a Matt Gray\".",
+        "score": 10
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Hindi",
+        "source_text": "We are at Tukka Beach today. Tukka Beach is a resort here in Sierra Leone. I'm here with my cousins. Should be a lovely day. It's a really chill time on the beach. Nothing too much is happening or nothing planned, but, oh, it looks like they might be a wedding reception. Everybody's being married. It seems like there's a wedding or some kind of engagement. It looks beautiful out here. Look at this.",
+        "translation": "हम आज तुक्का बीच पर हैं। तुक्का बीच सिएरा लियोन में एक रिसॉर्ट है। मैं अपने चचेरे भाइयों के साथ यहाँ हूँ। यह एक प्यारा दिन होना चाहिए। समुद्र तट पर यह वास्तव में एक शांत समय है। कुछ भी बहुत ज्यादा नहीं हो रहा है या कुछ भी योजना नहीं बनाई गई है, लेकिन, ओह, ऐसा लग रहा है कि शायद वे एक शादी का रिसेप्शन हो। हर कोई शादी कर रहा है। ऐसा लगता है कि कोई शादी या किसी तरह की सगाई है। यहाँ बहुत सुंदर लग रहा है। इसे देखो।",
+        "score": 30
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Hindi",
+        "source_text": "Brewers froth over winemakers\" exemption from anti-waste rules",
+        "translation": "ब्रूअर्स वाइनमेकर्स के एंटी-वेस्ट नियमों से छूट को लेकर खफा होते हैं",
+        "score": 3
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Chinese",
+        "source_text": "is was",
+        "translation": "是",
+        "score": 47
+      },
+      {
+        "source_language": "English",
+        "translation_language": "Spanish",
+        "source_text": "first complaint: we need cute logbooks. black is boring, pink is not even pink, it's salmon.",
+        "translation": "primera queja: necesitamos cuadernos de registro bonitos. el negro es aburrido, el rosa ni siquiera es rosa, es salmón.",
+        "score": 66
+      }
+    ],
+    "signature": {
+      "instructions": "You are an expert in machine translation quality assessment. Your task is to evaluate the quality of a translation and assign it a score between 0 and 100, along with a detailed reasoning for your score. Consider the following criteria: meaning preservation, grammatical correctness, fluency, and contextual appropriateness. A perfect translation (100) accurately and naturally conveys the meaning of the source text with no errors. A score of 66 indicates that most of the meaning is preserved with only minor grammatical issues. A score of 33 means some meaning is retained, but significant parts are lost or distorted, making the translation difficult to understand. A score of 0 indicates that the translation fails to convey the original meaning.\n\nHere's how to approach the evaluation:\n\n1. **Carefully compare** the source text and the translation.\n2. **Identify any discrepancies** in meaning, grammar, or style.\n3. **Assess the overall fluency** and naturalness of the translation in the target language.\n4. **Consider the context** and whether the translation is appropriate for the intended audience.\n5. **Provide a step-by-step reasoning** explaining your score, referencing specific examples from the text.\n\nYou will be provided with:\n* **Source Language:** The language of the original text.\n* **Translation Language:** The language of the translated text.\n* **Source Text:** The original text.\n* **Translation:** The translated text.\n\nYour output should include:\n* **Reasoning:** A detailed explanation of your assessment, following a step-by-step thought process.\n* **Score:** An integer between 0 and 100 representing the translation quality.",
+      "fields": [
+        {
+          "prefix": "Source Language:",
+          "description": "${source_language}"
+        },
+        {
+          "prefix": "Translation Language:",
+          "description": "${translation_language}"
+        },
+        {
+          "prefix": "Source Text:",
+          "description": "${source_text}"
+        },
+        {
+          "prefix": "Translation:",
+          "description": "${translation}"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Score:",
+          "description": "Score (0-100) assigned to the translation."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.12",
+      "dspy": "3.0.0b2",
+      "cloudpickle": "3.1"
+    }
+  }
+}

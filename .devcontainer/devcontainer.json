@@ -1,0 +1,35 @@
+{
+    "name": "Python Development",
+    "dockerComposeFile": [
+        "../docker-compose.yml",
+        "../docker-compose.dev.yml",
+        "docker-compose.devcontainer.yml"
+    ],
+    "service": "app",
+    "workspaceFolder": "/app",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-azuretools.vscode-docker",
+                "charliermarsh.ruff",
+                "ms-python.flake8"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.flake8Enabled": true,
+                "python.formatting.provider": "ruff",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": true
+                }
+            }
+        }
+    },
+    "forwardPorts": [
+        8000
+    ],
+    "remoteUser": "appuser"
+}

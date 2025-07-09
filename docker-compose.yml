@@ -1,0 +1,72 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydatabase
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SERVER_DATABASE_CONNECTION_STRING: postgresql+psycopg://postgres:postgres@db:5432/mydatabase
+      SERVER_SAQ_QUEUE_DSN: "postgresql://postgres:postgres@db/mydatabase"
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+  bleu:
+    command: sh -c "uv run main.py --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric BLEU"
+    build:
+      context: .
+      dockerfile: Dockerfile.cpumetrics
+    environment:
+      HOST: "http://app:8000"
+      USERNAME: "test"
+      TOKEN: "test_user_key"
+    networks:
+      - mynetwork
+    depends_on:
+      - app
+    restart: always
+  chrf2:
+    command: sh -c "uv run main.py --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric chrF2"
+    build:
+      context: .
+      dockerfile: Dockerfile.cpumetrics
+    environment:
+      HOST: "http://app:8000"
+      USERNAME: "test"
+      TOKEN: "test_user_key"
+    networks:
+      - mynetwork
+    depends_on:
+      - app
+    restart: always
+  pgadmin4:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-mteval@mteval.hrabal.eu}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-mteval}
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+       - ./pgadmin/servers.json:/pgadmin4/servers.json
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - mynetwork
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  pgadmin:
+
+networks:
+  mynetwork:
