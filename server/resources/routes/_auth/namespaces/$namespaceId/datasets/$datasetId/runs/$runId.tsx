@@ -46,14 +46,14 @@ function NGramsRender({ ngrams }: { ngrams: string[] }) {
 function ColumnsPopover({ allColumns, selectedColumns, onSelectionChange }) {
   return <Popover>
     <PopoverTrigger asChild><Button variant="outline">Columns</Button></PopoverTrigger>
-    <PopoverContent className="w-full">
+    <PopoverContent className="w-1/4 flex">
       <ColumnSelector
         allColumns={allColumns}
         selectedColumns={selectedColumns}
         onSelectionChange={onSelectionChange}
       />
     </PopoverContent>
-  </Popover>
+  </Popover >
 }
 
 function flattenObject(obj: Record<string, any>): Record<string, any> {
