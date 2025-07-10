@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>server.routes.worker - VP-MTEval Server Docs</title><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=397bb51e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=c516b45e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="server.routes.worker"/>
+<meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      
+      
+      <strong>VP-MTEval</strong>
+    </a>
+    <div class="sy-head-nav" id="HeadNav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="HeadNav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2 -translate-x-2"></span>
+          <span class="hamburger_3 -translate-x-1"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/index.html">Usage Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../usage/installation.html">Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/app.html">Application Core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/models.html">Database Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/config.html">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/hooks.html">Application Hooks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/auth.html">Authentication &amp; Authorization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/routes.html">API Routes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/services.html">Services</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/tasks.html">Background Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/events.html">Event System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/ngrams.html">N-gram Analysis</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6"><div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">VP-MTEval</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../routes.html"><span itemprop="name">server.routes</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">server.routes.worker</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+        <article class="yue" role="main">
+          <h1>Source code for server.routes.worker</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="2"><span class="sd">Process:</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="sd">1. Worker announces namespace, optionally user and other filters and what metrics it handles.</span>
+</span><span data-line="5"><span class="sd">2. Server creates a list of corresponding jobs and runs and initializes them if they don&#39;t already exist. It responds with success.</span>
+</span><span data-line="6"><span class="sd">3. Worker asks for a job, server assigns it or anounces that there are no jobs available.</span>
+</span><span data-line="7"><span class="sd">4. Worker processes the job and reports the result. If the job already exists, error is raised. (concurrency issues)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="sd">Other notes:</span>
+</span><span data-line="10"><span class="sd">- Workers and jobs have an assigned uuid.</span>
+</span><span data-line="11"><span class="sd">- Jobs have state and expiration time. It would be ideal to keep track if the worker is alive, but that might be needlessly complicated for now.</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="sd">For now, we will implement this with HTTP requests, but</span>
+</span><span data-line="14"><span class="sd">perhaps gRPC would be a better fit in the future.</span>
+</span><span data-line="15"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="kn">import</span><span class="w"> </span><span class="nn">litestar</span>
+</span><span data-line="18"><span class="kn">import</span><span class="w"> </span><span class="nn">litestar.exceptions</span>
+</span><span data-line="19"><span class="kn">import</span><span class="w"> </span><span class="nn">litestar.status_codes</span>
+</span><span data-line="20"><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+</span><span data-line="21"><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">select</span>
+</span><span data-line="22"><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">selectinload</span>
+</span><span data-line="23"><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.exc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoResultFound</span>
+</span><span data-line="24"><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncSession</span>
+</span><span data-line="25"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+</span><span data-line="26"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="kn">import</span><span class="w"> </span><span class="nn">server.models</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">models</span>
+</span><span data-line="29"><span class="kn">import</span><span class="w"> </span><span class="nn">server.services</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">services</span>
+</span><span data-line="30">
+</span><span data-line="31"><span class="c1"># region Worker Registration and Management</span>
+</span><span data-line="32">
+</span><span data-line="33">
+<div class="viewcode-block" id="WorkerRegistrationData">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.WorkerRegistrationData">[docs]</a>
+</span><span data-line="34"><span class="k">class</span><span class="w"> </span><span class="nc">WorkerRegistrationData</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="35">    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="36">    <span class="n">metric_requires_references</span><span class="p">:</span> <span class="nb">bool</span>
+</span><span data-line="37">    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># If None, runs of all users are considered.</span>
+</span><span data-line="38">    <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="39">        <span class="kc">None</span>  <span class="c1"># If None, the worker will be assigned to the default queue.</span>
+</span><span data-line="40">    <span class="p">)</span></div>
+
+</span><span data-line="41">
+</span><span data-line="42">
+<div class="viewcode-block" id="WorkerRegistrationResponse">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.WorkerRegistrationResponse">[docs]</a>
+</span><span data-line="43"><span class="k">class</span><span class="w"> </span><span class="nc">WorkerRegistrationResponse</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="44">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="45">    <span class="n">num_jobs</span><span class="p">:</span> <span class="nb">int</span>  <span class="c1"># estimated number of remaining jobs at the moment (in case it is zero and the worker is working in one shot mode, it can exit without fully loading expensive libraries/models/etc.)</span></div>
+
+</span><span data-line="46">
+</span><span data-line="47">
+</span><span data-line="48"><span class="nd">@litestar</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/namespaces/{namespace_name:str}/workers/register&quot;</span><span class="p">)</span>
+</span><span data-line="49"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">register_worker</span><span class="p">(</span>
+</span><span data-line="50">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="51">    <span class="n">data</span><span class="p">:</span> <span class="n">WorkerRegistrationData</span><span class="p">,</span>
+</span><span data-line="52">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="53"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WorkerRegistrationResponse</span><span class="p">:</span>
+</span><span data-line="54">    <span class="c1"># Create a worker record</span>
+</span><span data-line="55">    <span class="n">namespace_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="56">        <span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">namespace_name</span>
+</span><span data-line="57">    <span class="p">)</span>
+</span><span data-line="58">    <span class="n">namespace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">namespace_query</span><span class="p">)</span>
+</span><span data-line="59">    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="60">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="61">            <span class="sa">f</span><span class="s2">&quot;Namespace with name &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="62">        <span class="p">)</span>
+</span><span data-line="63">
+</span><span data-line="64">    <span class="n">user_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="n">data</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+</span><span data-line="65">    <span class="n">user</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">user_query</span><span class="p">)</span>
+</span><span data-line="66">    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="67">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="68">            <span class="sa">f</span><span class="s2">&quot;User with username &#39;</span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">username</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="69">        <span class="p">)</span>
+</span><span data-line="70">    <span class="n">worker</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">(</span>
+</span><span data-line="71">        <span class="n">namespace_id</span><span class="o">=</span><span class="n">namespace</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+</span><span data-line="72">        <span class="n">user_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+</span><span data-line="73">        <span class="n">status</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">WorkerStatus</span><span class="o">.</span><span class="n">WAITING</span><span class="p">,</span>
+</span><span data-line="74">        <span class="n">metric</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
+</span><span data-line="75">        <span class="n">metric_requires_references</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">metric_requires_references</span><span class="p">,</span>
+</span><span data-line="76">        <span class="n">queue</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">queue</span> <span class="ow">or</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>  <span class="c1"># Default to &quot;default&quot; queue if not specified</span>
+</span><span data-line="77">    <span class="p">)</span>
+</span><span data-line="78">    <span class="n">transaction</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">worker</span><span class="p">)</span>
+</span><span data-line="79">    <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</span><span data-line="80">
+</span><span data-line="81">    <span class="c1"># Create and assign jobs for the worker</span>
+</span><span data-line="82">    <span class="c1"># note that they are not yet assigned to it yet, because</span>
+</span><span data-line="83">    <span class="c1"># another worker doing the same metric might get to them first.</span>
+</span><span data-line="84">    <span class="n">jobs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">services</span><span class="o">.</span><span class="n">create_new_jobs</span><span class="p">(</span><span class="n">transaction</span><span class="p">,</span> <span class="n">worker</span><span class="p">)</span>
+</span><span data-line="85">    <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</span><span data-line="86">
+</span><span data-line="87">    <span class="k">return</span> <span class="n">WorkerRegistrationResponse</span><span class="p">(</span>
+</span><span data-line="88">        <span class="n">worker_id</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+</span><span data-line="89">        <span class="n">num_jobs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">jobs</span><span class="p">),</span>
+</span><span data-line="90">    <span class="p">)</span>
+</span><span data-line="91">
+</span><span data-line="92">
+<div class="viewcode-block" id="ReadWorker">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.ReadWorker">[docs]</a>
+</span><span data-line="93"><span class="k">class</span><span class="w"> </span><span class="nc">ReadWorker</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="94">    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="95">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="96">    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+</span><span data-line="97">    <span class="n">status</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">WorkerStatus</span>
+</span><span data-line="98">    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="99">    <span class="n">metric_requires_references</span><span class="p">:</span> <span class="nb">bool</span>
+</span><span data-line="100">    <span class="n">last_heartbeat</span><span class="p">:</span> <span class="nb">float</span></div>
+
+</span><span data-line="101">
+</span><span data-line="102">
+</span><span data-line="103"><span class="nd">@litestar</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/namespaces/{namespace_name:str}/workers/{worker_id:int}&quot;</span><span class="p">)</span>
+</span><span data-line="104"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_worker</span><span class="p">(</span>
+</span><span data-line="105">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="106">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="107">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="108"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ReadWorker</span><span class="p">:</span>
+</span><span data-line="109">    <span class="n">namespace_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="110">        <span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">namespace_name</span>
+</span><span data-line="111">    <span class="p">)</span>
+</span><span data-line="112">    <span class="n">namespace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">namespace_query</span><span class="p">)</span>
+</span><span data-line="113">    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="114">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="115">            <span class="sa">f</span><span class="s2">&quot;Namespace with name &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="116">        <span class="p">)</span>
+</span><span data-line="117">
+</span><span data-line="118">    <span class="n">worker</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="119">    <span class="k">if</span> <span class="n">worker</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">worker</span><span class="o">.</span><span class="n">namespace_id</span> <span class="o">!=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+</span><span data-line="120">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="121">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found in namespace &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+</span><span data-line="122">        <span class="p">)</span>
+</span><span data-line="123">    <span class="k">return</span> <span class="n">ReadWorker</span><span class="p">(</span>
+</span><span data-line="124">        <span class="nb">id</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+</span><span data-line="125">        <span class="n">namespace_name</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+</span><span data-line="126">        <span class="n">username</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+</span><span data-line="127">        <span class="n">status</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+</span><span data-line="128">        <span class="n">metric</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
+</span><span data-line="129">        <span class="n">metric_requires_references</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">metric_requires_references</span><span class="p">,</span>
+</span><span data-line="130">        <span class="n">last_heartbeat</span><span class="o">=</span><span class="n">worker</span><span class="o">.</span><span class="n">last_heartbeat</span><span class="p">,</span>
+</span><span data-line="131">    <span class="p">)</span>
+</span><span data-line="132">
+</span><span data-line="133">
+</span><span data-line="134"><span class="nd">@litestar</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/namespaces/{namespace_name:str}/workers/{worker_id:int}/unregister&quot;</span><span class="p">)</span>
+</span><span data-line="135"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">unregister_worker</span><span class="p">(</span>
+</span><span data-line="136">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="137">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="138">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="139"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="140"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Explicitly unregister a worker from the server. In case the worker forgets to call this, the cleanup will take place after a timeout.&quot;&quot;&quot;</span>
+</span><span data-line="141">    <span class="n">namespace_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="142">        <span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">namespace_name</span>
+</span><span data-line="143">    <span class="p">)</span>
+</span><span data-line="144">    <span class="n">namespace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">namespace_query</span><span class="p">)</span>
+</span><span data-line="145">    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="146">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="147">            <span class="sa">f</span><span class="s2">&quot;Namespace with name &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="148">        <span class="p">)</span>
+</span><span data-line="149">
+</span><span data-line="150">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="151">        <span class="n">worker</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="152">    <span class="k">except</span> <span class="n">NoResultFound</span><span class="p">:</span>
+</span><span data-line="153">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="154">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="155">        <span class="p">)</span>
+</span><span data-line="156">    <span class="k">if</span> <span class="n">worker</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">worker</span><span class="o">.</span><span class="n">namespace_id</span> <span class="o">!=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+</span><span data-line="157">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="158">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found in namespace &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+</span><span data-line="159">        <span class="p">)</span>
+</span><span data-line="160">
+</span><span data-line="161">    <span class="n">worker</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">WorkerStatus</span><span class="o">.</span><span class="n">FINISHED</span>
+</span><span data-line="162">
+</span><span data-line="163">    <span class="c1"># TODO: we also have to dissociate the worker from any jobs it was assigned to and were not finished yet.</span>
+</span><span data-line="164">    <span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">==</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="165">    <span class="n">unfinished_jobs</span> <span class="o">=</span> <span class="p">(</span><span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalars</span><span class="p">(</span><span class="n">query</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</span><span data-line="166">    <span class="nb">print</span><span class="p">(</span>
+</span><span data-line="167">        <span class="sa">f</span><span class="s2">&quot;Worker </span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2"> is ending with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unfinished_jobs</span><span class="p">)</span><span class="si">}</span><span class="s2"> unfinished jobs...&quot;</span>
+</span><span data-line="168">    <span class="p">)</span>
+</span><span data-line="169">    <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">unfinished_jobs</span><span class="p">:</span>
+</span><span data-line="170">        <span class="n">job</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+</span><span data-line="171">        <span class="n">job</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JobStatus</span><span class="o">.</span><span class="n">PENDING</span>
+</span><span data-line="172">
+</span><span data-line="173">    <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</span><span data-line="174">
+</span><span data-line="175">
+</span><span data-line="176"><span class="nd">@litestar</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s2">&quot;/namespaces/{namespace_name:str}/workers/{worker_id:int}/heartbeat&quot;</span><span class="p">)</span>
+</span><span data-line="177"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">heartbeat_worker</span><span class="p">(</span>
+</span><span data-line="178">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="179">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="180">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="181"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="182"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the worker&#39;s last heartbeat time to indicate that it is still alive.&quot;&quot;&quot;</span>
+</span><span data-line="183">    <span class="n">namespace_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="184">        <span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">namespace_name</span>
+</span><span data-line="185">    <span class="p">)</span>
+</span><span data-line="186">    <span class="n">namespace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">namespace_query</span><span class="p">)</span>
+</span><span data-line="187">    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="188">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="189">            <span class="sa">f</span><span class="s2">&quot;Namespace with name &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="190">        <span class="p">)</span>
+</span><span data-line="191">
+</span><span data-line="192">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="193">        <span class="n">worker</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="194">    <span class="k">except</span> <span class="n">NoResultFound</span><span class="p">:</span>
+</span><span data-line="195">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="196">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="197">        <span class="p">)</span>
+</span><span data-line="198">    <span class="k">if</span> <span class="n">worker</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">worker</span><span class="o">.</span><span class="n">namespace_id</span> <span class="o">!=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+</span><span data-line="199">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="200">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found in namespace &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+</span><span data-line="201">        <span class="p">)</span>
+</span><span data-line="202">
+</span><span data-line="203">    <span class="n">worker</span><span class="o">.</span><span class="n">last_heartbeat</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+</span><span data-line="204">    <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</span><span data-line="205">
+</span><span data-line="206">
+</span><span data-line="207"><span class="c1"># endregion</span>
+</span><span data-line="208">
+</span><span data-line="209"><span class="c1"># region Job Management</span>
+</span><span data-line="210">
+</span><span data-line="211">
+</span><span data-line="212"><span class="c1"># FIXME: this type should not be duplicated, move it to a commin place</span>
+<div class="viewcode-block" id="ReadSegment">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.ReadSegment">[docs]</a>
+</span><span data-line="213"><span class="k">class</span><span class="w"> </span><span class="nc">ReadSegment</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="214">    <span class="n">src</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="215">    <span class="n">tgt</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="216">    <span class="n">ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+</span><span data-line="217">
+</span><span data-line="218">
+<div class="viewcode-block" id="ReadJob">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.ReadJob">[docs]</a>
+</span><span data-line="219"><span class="k">class</span><span class="w"> </span><span class="nc">ReadJob</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="220">    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="221">    <span class="n">namespace_id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="222">    <span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
+</span><span data-line="223">    <span class="n">run_id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="224">    <span class="n">queue</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="225">    <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="226">    <span class="n">status</span><span class="p">:</span> <span class="n">models</span><span class="o">.</span><span class="n">JobStatus</span>
+</span><span data-line="227">    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="228">    <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span>
+</span><span data-line="229">    <span class="n">segments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReadSegment</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="230">    <span class="n">source_lang</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="231">    <span class="n">target_lang</span><span class="p">:</span> <span class="nb">str</span></div>
+
+</span><span data-line="232">
+</span><span data-line="233">
+</span><span data-line="234"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_assign_job_to_worker</span><span class="p">(</span>
+</span><span data-line="235">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="236">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="237"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">models</span><span class="o">.</span><span class="n">Job</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="238"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Assign a job to a worker if available.&quot;&quot;&quot;</span>
+</span><span data-line="239">    <span class="c1"># Find a job that is pending and not assigned to any worker</span>
+</span><span data-line="240">    <span class="n">worker</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="241">    <span class="k">if</span> <span class="n">worker</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="242">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="243">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="244">        <span class="p">)</span>
+</span><span data-line="245">
+</span><span data-line="246">    <span class="n">job_query</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="247">        <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="p">)</span>
+</span><span data-line="248">        <span class="o">.</span><span class="n">with_for_update</span><span class="p">(</span><span class="n">skip_locked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># lock to prevent race condition</span>
+</span><span data-line="249">        <span class="o">.</span><span class="n">options</span><span class="p">(</span>
+</span><span data-line="250">            <span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+</span><span data-line="251">            <span class="o">.</span><span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TranslationRun</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+</span><span data-line="252">            <span class="o">.</span><span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">segments</span><span class="p">),</span>
+</span><span data-line="253">            <span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="o">.</span><span class="n">selectinload</span><span class="p">(</span>
+</span><span data-line="254">                <span class="n">models</span><span class="o">.</span><span class="n">TranslationRun</span><span class="o">.</span><span class="n">translations</span>
+</span><span data-line="255">            <span class="p">),</span>
+</span><span data-line="256">        <span class="p">)</span>
+</span><span data-line="257">        <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="258">            <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">namespace_id</span> <span class="o">==</span> <span class="n">worker</span><span class="o">.</span><span class="n">namespace_id</span><span class="p">,</span>
+</span><span data-line="259">            <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">models</span><span class="o">.</span><span class="n">JobStatus</span><span class="o">.</span><span class="n">PENDING</span><span class="p">,</span>
+</span><span data-line="260">            <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">metric</span> <span class="o">==</span> <span class="n">worker</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
+</span><span data-line="261">            <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">worker_id</span><span class="o">.</span><span class="n">is_</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>  <span class="c1"># Not assigned to any worker</span>
+</span><span data-line="262">            <span class="c1"># Only add the reference requirement if the metric requires references</span>
+</span><span data-line="263">            <span class="o">*</span><span class="p">(</span>
+</span><span data-line="264">                <span class="p">[</span>
+</span><span data-line="265">                    <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">has</span><span class="p">(</span>
+</span><span data-line="266">                        <span class="n">models</span><span class="o">.</span><span class="n">TranslationRun</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">has_reference</span><span class="p">)</span>
+</span><span data-line="267">                    <span class="p">)</span>
+</span><span data-line="268">                <span class="p">]</span>
+</span><span data-line="269">                <span class="k">if</span> <span class="n">worker</span><span class="o">.</span><span class="n">metric_requires_references</span>
+</span><span data-line="270">                <span class="k">else</span> <span class="p">[]</span>
+</span><span data-line="271">            <span class="p">),</span>
+</span><span data-line="272">        <span class="p">)</span>
+</span><span data-line="273">        <span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
+</span><span data-line="274">            <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">priority</span><span class="o">.</span><span class="n">desc</span><span class="p">(),</span>  <span class="c1"># Prefer higher priority jobs</span>
+</span><span data-line="275">            <span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">desc</span><span class="p">(),</span>  <span class="c1"># Prefer newer jobs</span>
+</span><span data-line="276">        <span class="p">)</span>
+</span><span data-line="277">        <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="278">    <span class="p">)</span>
+</span><span data-line="279">    <span class="n">job</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">job_query</span><span class="p">)</span>
+</span><span data-line="280">
+</span><span data-line="281">    <span class="k">if</span> <span class="n">job</span><span class="p">:</span>
+</span><span data-line="282">        <span class="n">job</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">worker_id</span>  <span class="c1"># Assign the job to the worker</span>
+</span><span data-line="283">        <span class="n">job</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JobStatus</span><span class="o">.</span><span class="n">RUNNING</span>
+</span><span data-line="284">        <span class="k">return</span> <span class="n">job</span>
+</span><span data-line="285">    <span class="k">else</span><span class="p">:</span>
+</span><span data-line="286">        <span class="k">await</span> <span class="n">services</span><span class="o">.</span><span class="n">create_new_jobs</span><span class="p">(</span><span class="n">transaction</span><span class="p">,</span> <span class="n">worker</span><span class="p">)</span>
+</span><span data-line="287">
+</span><span data-line="288">
+</span><span data-line="289"><span class="nd">@litestar</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/assign&quot;</span><span class="p">)</span>
+</span><span data-line="290"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">assign_job</span><span class="p">(</span>
+</span><span data-line="291">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="292">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="293">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="294"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ReadJob</span><span class="p">]:</span>
+</span><span data-line="295"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Note that this currently returns either [] if no appropriate</span>
+</span><span data-line="296"><span class="sd">    job available or a list of single job if any jobs are available.&quot;&quot;&quot;</span>
+</span><span data-line="297">    <span class="n">namespace_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="298">        <span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">namespace_name</span>
+</span><span data-line="299">    <span class="p">)</span>
+</span><span data-line="300">    <span class="n">namespace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">namespace_query</span><span class="p">)</span>
+</span><span data-line="301">    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="302">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="303">            <span class="sa">f</span><span class="s2">&quot;Namespace with name &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="304">        <span class="p">)</span>
+</span><span data-line="305">
+</span><span data-line="306">    <span class="n">worker</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="307">    <span class="k">if</span> <span class="n">worker</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">worker</span><span class="o">.</span><span class="n">namespace_id</span> <span class="o">!=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+</span><span data-line="308">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="309">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found in namespace &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+</span><span data-line="310">        <span class="p">)</span>
+</span><span data-line="311">
+</span><span data-line="312">    <span class="n">job</span> <span class="o">=</span> <span class="k">await</span> <span class="n">_assign_job_to_worker</span><span class="p">(</span><span class="n">worker_id</span><span class="p">,</span> <span class="n">transaction</span><span class="p">)</span>
+</span><span data-line="313">    <span class="k">if</span> <span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="314">        <span class="k">return</span> <span class="p">[]</span>
+</span><span data-line="315">    <span class="n">segments</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="316">        <span class="n">ReadSegment</span><span class="p">(</span>
+</span><span data-line="317">            <span class="n">src</span><span class="o">=</span><span class="n">ds</span><span class="o">.</span><span class="n">src</span><span class="p">,</span>
+</span><span data-line="318">            <span class="n">tgt</span><span class="o">=</span><span class="n">ts</span><span class="o">.</span><span class="n">tgt</span><span class="p">,</span>
+</span><span data-line="319">            <span class="n">ref</span><span class="o">=</span><span class="n">ds</span><span class="o">.</span><span class="n">tgt</span> <span class="k">if</span> <span class="n">ds</span><span class="o">.</span><span class="n">tgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="320">        <span class="p">)</span>
+</span><span data-line="321">        <span class="k">for</span> <span class="n">ds</span><span class="p">,</span> <span class="n">ts</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">segments</span><span class="p">,</span> <span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">translations</span><span class="p">)</span>
+</span><span data-line="322">    <span class="p">]</span>
+</span><span data-line="323">    <span class="k">return</span> <span class="p">[</span>
+</span><span data-line="324">        <span class="n">ReadJob</span><span class="p">(</span>
+</span><span data-line="325">            <span class="nb">id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+</span><span data-line="326">            <span class="n">namespace_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">namespace_id</span><span class="p">,</span>
+</span><span data-line="327">            <span class="n">user_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span>
+</span><span data-line="328">            <span class="n">run_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span>
+</span><span data-line="329">            <span class="n">queue</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+</span><span data-line="330">            <span class="n">priority</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span>
+</span><span data-line="331">            <span class="n">status</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+</span><span data-line="332">            <span class="n">metric</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">metric</span><span class="p">,</span>
+</span><span data-line="333">            <span class="n">payload</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">payload</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+</span><span data-line="334">            <span class="n">segments</span><span class="o">=</span><span class="n">segments</span><span class="p">,</span>
+</span><span data-line="335">            <span class="n">source_lang</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">source_lang</span><span class="p">,</span>
+</span><span data-line="336">            <span class="n">target_lang</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">target_lang</span><span class="p">,</span>
+</span><span data-line="337">        <span class="p">)</span>
+</span><span data-line="338">    <span class="p">]</span>
+</span><span data-line="339">
+</span><span data-line="340">
+<div class="viewcode-block" id="PostSegmentMetric">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.PostSegmentMetric">[docs]</a>
+</span><span data-line="341"><span class="k">class</span><span class="w"> </span><span class="nc">PostSegmentMetric</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="342">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="343">    <span class="n">higher_is_better</span><span class="p">:</span> <span class="nb">bool</span>
+</span><span data-line="344">    <span class="n">scores</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+</span><span data-line="345">    <span class="n">custom</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Additional data specific to the metric</span></div>
+
+</span><span data-line="346">
+</span><span data-line="347">
+<div class="viewcode-block" id="PostDatasetMetric">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.PostDatasetMetric">[docs]</a>
+</span><span data-line="348"><span class="k">class</span><span class="w"> </span><span class="nc">PostDatasetMetric</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="349">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="350">    <span class="n">higher_is_better</span><span class="p">:</span> <span class="nb">bool</span>
+</span><span data-line="351">    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span></div>
+
+</span><span data-line="352">
+</span><span data-line="353">
+<div class="viewcode-block" id="JobResultRequest">
+<a class="viewcode-back" href="../../../api/routes.html#server.routes.worker.JobResultRequest">[docs]</a>
+</span><span data-line="354"><span class="k">class</span><span class="w"> </span><span class="nc">JobResultRequest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span data-line="355">    <span class="n">job_id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="356">    <span class="n">dataset_level_metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PostDatasetMetric</span><span class="p">]</span>
+</span><span data-line="357">    <span class="n">segment_level_metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PostSegmentMetric</span><span class="p">]</span></div>
+
+</span><span data-line="358">
+</span><span data-line="359">
+</span><span data-line="360"><span class="nd">@litestar</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+</span><span data-line="361">    <span class="s2">&quot;/namespaces/{namespace_name:str}/workers/{worker_id:int}/jobs/{job_id:int}/report_result&quot;</span>
+</span><span data-line="362"><span class="p">)</span>
+</span><span data-line="363"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">report_job_result</span><span class="p">(</span>
+</span><span data-line="364">    <span class="n">namespace_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="365">    <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="366">    <span class="n">job_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="367">    <span class="n">data</span><span class="p">:</span> <span class="n">JobResultRequest</span><span class="p">,</span>
+</span><span data-line="368">    <span class="n">transaction</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span>
+</span><span data-line="369"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="370">    <span class="n">namespace_query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+</span><span data-line="371">        <span class="n">models</span><span class="o">.</span><span class="n">Namespace</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">namespace_name</span>
+</span><span data-line="372">    <span class="p">)</span>
+</span><span data-line="373">    <span class="n">namespace</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">namespace_query</span><span class="p">)</span>
+</span><span data-line="374">    <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="375">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="376">            <span class="sa">f</span><span class="s2">&quot;Namespace with name &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="377">        <span class="p">)</span>
+</span><span data-line="378">
+</span><span data-line="379">    <span class="n">worker</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Worker</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">)</span>
+</span><span data-line="380">    <span class="k">if</span> <span class="n">worker</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">worker</span><span class="o">.</span><span class="n">namespace_id</span> <span class="o">!=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+</span><span data-line="381">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="382">            <span class="sa">f</span><span class="s2">&quot;Worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39; not found in namespace &#39;</span><span class="si">{</span><span class="n">namespace_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+</span><span data-line="383">        <span class="p">)</span>
+</span><span data-line="384">
+</span><span data-line="385">    <span class="n">job_query</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="386">        <span class="n">select</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="p">)</span>
+</span><span data-line="387">        <span class="o">.</span><span class="n">with_for_update</span><span class="p">(</span><span class="n">skip_locked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="388">        <span class="o">.</span><span class="n">options</span><span class="p">(</span>
+</span><span data-line="389">            <span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+</span><span data-line="390">            <span class="o">.</span><span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">TranslationRun</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+</span><span data-line="391">            <span class="o">.</span><span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">segments</span><span class="p">),</span>
+</span><span data-line="392">            <span class="n">selectinload</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="o">.</span><span class="n">selectinload</span><span class="p">(</span>
+</span><span data-line="393">                <span class="n">models</span><span class="o">.</span><span class="n">TranslationRun</span><span class="o">.</span><span class="n">translations</span>
+</span><span data-line="394">            <span class="p">),</span>
+</span><span data-line="395">        <span class="p">)</span>
+</span><span data-line="396">        <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Job</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">job_id</span><span class="p">)</span>
+</span><span data-line="397">    <span class="p">)</span>
+</span><span data-line="398">    <span class="n">job</span> <span class="o">=</span> <span class="k">await</span> <span class="n">transaction</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="n">job_query</span><span class="p">)</span>
+</span><span data-line="399">    <span class="k">if</span> <span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="400">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundException</span><span class="p">(</span>
+</span><span data-line="401">            <span class="sa">f</span><span class="s2">&quot;Job with ID &#39;</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span>
+</span><span data-line="402">        <span class="p">)</span>
+</span><span data-line="403">    <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">!=</span> <span class="n">worker_id</span><span class="p">:</span>
+</span><span data-line="404">        <span class="k">raise</span> <span class="n">litestar</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">HTTPException</span><span class="p">(</span>
+</span><span data-line="405">            <span class="sa">f</span><span class="s2">&quot;Job with ID &#39;</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">&#39; is not assigned to worker with ID &#39;</span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">,</span>
+</span><span data-line="406">            <span class="n">status_code</span><span class="o">=</span><span class="n">litestar</span><span class="o">.</span><span class="n">status_codes</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+</span><span data-line="407">        <span class="p">)</span>
+</span><span data-line="408">
+</span><span data-line="409">    <span class="n">job</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JobStatus</span><span class="o">.</span><span class="n">COMPLETED</span>
+</span><span data-line="410">
+</span><span data-line="411">    <span class="c1"># Save dataset level metrics</span>
+</span><span data-line="412">    <span class="k">for</span> <span class="n">dataset_metric</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dataset_level_metrics</span><span class="p">:</span>
+</span><span data-line="413">        <span class="n">metric</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DatasetMetric</span><span class="p">(</span>
+</span><span data-line="414">            <span class="n">run_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span>
+</span><span data-line="415">            <span class="n">name</span><span class="o">=</span><span class="n">dataset_metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+</span><span data-line="416">            <span class="n">higher_is_better</span><span class="o">=</span><span class="n">dataset_metric</span><span class="o">.</span><span class="n">higher_is_better</span><span class="p">,</span>
+</span><span data-line="417">            <span class="n">score</span><span class="o">=</span><span class="n">dataset_metric</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+</span><span data-line="418">        <span class="p">)</span>
+</span><span data-line="419">        <span class="n">transaction</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+</span><span data-line="420">
+</span><span data-line="421">    <span class="c1"># Save segment level metrics</span>
+</span><span data-line="422">    <span class="k">for</span> <span class="n">segment_metric</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">segment_level_metrics</span><span class="p">:</span>
+</span><span data-line="423">        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">segment_metric</span><span class="o">.</span><span class="n">scores</span><span class="p">):</span>
+</span><span data-line="424">            <span class="n">metric</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">SegmentMetric</span><span class="p">(</span>
+</span><span data-line="425">                <span class="n">run_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span>
+</span><span data-line="426">                <span class="n">name</span><span class="o">=</span><span class="n">segment_metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+</span><span data-line="427">                <span class="n">higher_is_better</span><span class="o">=</span><span class="n">segment_metric</span><span class="o">.</span><span class="n">higher_is_better</span><span class="p">,</span>
+</span><span data-line="428">                <span class="n">score</span><span class="o">=</span><span class="n">score</span><span class="p">,</span>
+</span><span data-line="429">                <span class="n">segment_translation_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="o">.</span><span class="n">translations</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+</span><span data-line="430">                <span class="n">segment_idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+</span><span data-line="431">                <span class="n">custom</span><span class="o">=</span><span class="n">segment_metric</span><span class="o">.</span><span class="n">custom</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">if</span> <span class="n">segment_metric</span><span class="o">.</span><span class="n">custom</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="432">            <span class="p">)</span>
+</span><span data-line="433">            <span class="n">transaction</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+</span><span data-line="434">
+</span><span data-line="435">
+</span><span data-line="436"><span class="c1"># endregion</span>
+</span><span data-line="437">
+</span><span data-line="438"><span class="n">worker_routes</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="439">    <span class="n">register_worker</span><span class="p">,</span>
+</span><span data-line="440">    <span class="n">get_worker</span><span class="p">,</span>
+</span><span data-line="441">    <span class="n">unregister_worker</span><span class="p">,</span>
+</span><span data-line="442">    <span class="n">heartbeat_worker</span><span class="p">,</span>
+</span><span data-line="443">    <span class="n">assign_job</span><span class="p">,</span>
+</span><span data-line="444">    <span class="n">report_job_result</span><span class="p">,</span>
+</span><span data-line="445">    <span class="c1"># get_job,</span>
+</span><span data-line="446"><span class="p">]</span>
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2025, Miroslav Hrabal</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+      <script src="../../../_static/shibuya.js?v=e2230717"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+      <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+      <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+      <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script></body>
+</html>

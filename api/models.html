@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Database Models - VP-MTEval Server Docs</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Configuration" href="config.html" /><link rel="prev" title="Application Core" href="app.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=397bb51e" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=c516b45e" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="Database Models"/>
+<meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>VP-MTEval</strong>
+    </a>
+    <div class="sy-head-nav" id="HeadNav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="HeadNav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2 -translate-x-2"></span>
+          <span class="hamburger_3 -translate-x-1"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app.html">Application Core</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Database Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hooks.html">Application Hooks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auth.html">Authentication &amp; Authorization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="routes.html">API Routes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">Services</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html">Background Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="events.html">Event System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ngrams.html">N-gram Analysis</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#server.models.Base"><code class="docutils literal notranslate"><span class="pre">Base</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment"><code class="docutils literal notranslate"><span class="pre">Segment</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.Segment.dataset_id"><code class="docutils literal notranslate">dataset_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.idx"><code class="docutils literal notranslate">idx</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.src"><code class="docutils literal notranslate">src</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.tgt"><code class="docutils literal notranslate">tgt</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.dataset"><code class="docutils literal notranslate">dataset</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.translations"><code class="docutils literal notranslate">translations</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Segment.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.Dataset"><code class="docutils literal notranslate"><span class="pre">Dataset</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.Dataset.namespace_id"><code class="docutils literal notranslate">namespace_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.data_hash"><code class="docutils literal notranslate">data_hash</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.source_lang"><code class="docutils literal notranslate">source_lang</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.target_lang"><code class="docutils literal notranslate">target_lang</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.has_reference"><code class="docutils literal notranslate">has_reference</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.names"><code class="docutils literal notranslate">names</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.namespace"><code class="docutils literal notranslate">namespace</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.segments"><code class="docutils literal notranslate">segments</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.translation_runs"><code class="docutils literal notranslate">translation_runs</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Dataset.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.DatasetName"><code class="docutils literal notranslate"><span class="pre">DatasetName</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.DatasetName.dataset_id"><code class="docutils literal notranslate">dataset_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetName.dataset"><code class="docutils literal notranslate">dataset</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetName.name"><code class="docutils literal notranslate">name</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetName.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetName.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetName.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetName.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation"><code class="docutils literal notranslate"><span class="pre">SegmentTranslation</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.tgt"><code class="docutils literal notranslate">tgt</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.run_id"><code class="docutils literal notranslate">run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.segment_id"><code class="docutils literal notranslate">segment_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.segment"><code class="docutils literal notranslate">segment</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.segment_idx"><code class="docutils literal notranslate">segment_idx</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.run"><code class="docutils literal notranslate">run</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.segment_metrics"><code class="docutils literal notranslate">segment_metrics</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.segment_ngrams"><code class="docutils literal notranslate">segment_ngrams</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslation.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams"><code class="docutils literal notranslate"><span class="pre">SegmentTranslationNGrams</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.run_id"><code class="docutils literal notranslate">run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.segment_translation_id"><code class="docutils literal notranslate">segment_translation_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.tokenizer"><code class="docutils literal notranslate">tokenizer</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.ngrams"><code class="docutils literal notranslate">ngrams</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.ngrams_ref"><code class="docutils literal notranslate">ngrams_ref</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.n"><code class="docutils literal notranslate">n</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.segment_translation"><code class="docutils literal notranslate">segment_translation</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentTranslationNGrams.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.TranslationRun"><code class="docutils literal notranslate"><span class="pre">TranslationRun</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.TranslationRun.dataset_id"><code class="docutils literal notranslate">dataset_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.namespace_id"><code class="docutils literal notranslate">namespace_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.uuid"><code class="docutils literal notranslate">uuid</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.dataset"><code class="docutils literal notranslate">dataset</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.translations"><code class="docutils literal notranslate">translations</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.segment_metrics"><code class="docutils literal notranslate">segment_metrics</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.dataset_metrics"><code class="docutils literal notranslate">dataset_metrics</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.generic_metrics"><code class="docutils literal notranslate">generic_metrics</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.namespace"><code class="docutils literal notranslate">namespace</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.config"><code class="docutils literal notranslate">config</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.tags"><code class="docutils literal notranslate">tags</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.TranslationRun.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.Tag"><code class="docutils literal notranslate"><span class="pre">Tag</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.Tag.translation_run_id"><code class="docutils literal notranslate">translation_run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Tag.name"><code class="docutils literal notranslate">name</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Tag.translation_run"><code class="docutils literal notranslate">translation_run</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Tag.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Tag.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Tag.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Tag.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.SegmentMetric"><code class="docutils literal notranslate"><span class="pre">SegmentMetric</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.SegmentMetric.name"><code class="docutils literal notranslate">name</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.score"><code class="docutils literal notranslate">score</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.higher_is_better"><code class="docutils literal notranslate">higher_is_better</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.run_id"><code class="docutils literal notranslate">run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.segment_translation_id"><code class="docutils literal notranslate">segment_translation_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.segment_idx"><code class="docutils literal notranslate">segment_idx</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.run"><code class="docutils literal notranslate">run</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.segment_translation"><code class="docutils literal notranslate">segment_translation</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.custom"><code class="docutils literal notranslate">custom</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.SegmentMetric.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.DatasetMetric"><code class="docutils literal notranslate"><span class="pre">DatasetMetric</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.DatasetMetric.name"><code class="docutils literal notranslate">name</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.run_id"><code class="docutils literal notranslate">run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.score"><code class="docutils literal notranslate">score</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.higher_is_better"><code class="docutils literal notranslate">higher_is_better</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.run"><code class="docutils literal notranslate">run</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.DatasetMetric.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.GenericMetric"><code class="docutils literal notranslate"><span class="pre">GenericMetric</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.GenericMetric.run_id"><code class="docutils literal notranslate">run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.GenericMetric.payload"><code class="docutils literal notranslate">payload</span></code></a></li>
+<li><a class="reference internal" href="#server.models.GenericMetric.run"><code class="docutils literal notranslate">run</span></code></a></li>
+<li><a class="reference internal" href="#server.models.GenericMetric.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.GenericMetric.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.GenericMetric.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.GenericMetric.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.Namespace"><code class="docutils literal notranslate"><span class="pre">Namespace</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.Namespace.name"><code class="docutils literal notranslate">name</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.datasets"><code class="docutils literal notranslate">datasets</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.namespace_users"><code class="docutils literal notranslate">namespace_users</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.users"><code class="docutils literal notranslate">users</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Namespace.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.NamespaceUser"><code class="docutils literal notranslate"><span class="pre">NamespaceUser</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.NamespaceUser.namespace_id"><code class="docutils literal notranslate">namespace_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.user_id"><code class="docutils literal notranslate">user_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.can_write"><code class="docutils literal notranslate">can_write</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.namespace"><code class="docutils literal notranslate">namespace</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.user"><code class="docutils literal notranslate">user</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.NamespaceUser.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.User"><code class="docutils literal notranslate"><span class="pre">User</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.User.username"><code class="docutils literal notranslate">username</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.password_hash"><code class="docutils literal notranslate">password_hash</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.api_key"><code class="docutils literal notranslate">api_key</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.is_admin"><code class="docutils literal notranslate">is_admin</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.namespaces"><code class="docutils literal notranslate">namespaces</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.namespace_users"><code class="docutils literal notranslate">namespace_users</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.User.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.WorkerStatus"><code class="docutils literal notranslate"><span class="pre">WorkerStatus</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.WorkerStatus.WAITING"><code class="docutils literal notranslate">WAITING</span></code></a></li>
+<li><a class="reference internal" href="#server.models.WorkerStatus.WORKING"><code class="docutils literal notranslate">WORKING</span></code></a></li>
+<li><a class="reference internal" href="#server.models.WorkerStatus.FINISHED"><code class="docutils literal notranslate">FINISHED</span></code></a></li>
+<li><a class="reference internal" href="#server.models.WorkerStatus.TIMED_OUT"><code class="docutils literal notranslate">TIMED_OUT</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.Worker"><code class="docutils literal notranslate"><span class="pre">Worker</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.Worker.namespace_id"><code class="docutils literal notranslate">namespace_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.user_id"><code class="docutils literal notranslate">user_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.status"><code class="docutils literal notranslate">status</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.last_heartbeat"><code class="docutils literal notranslate">last_heartbeat</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.metric"><code class="docutils literal notranslate">metric</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.metric_requires_references"><code class="docutils literal notranslate">metric_requires_references</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.queue"><code class="docutils literal notranslate">queue</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.user"><code class="docutils literal notranslate">user</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.namespace"><code class="docutils literal notranslate">namespace</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Worker.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.JobStatus"><code class="docutils literal notranslate"><span class="pre">JobStatus</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.JobStatus.PENDING"><code class="docutils literal notranslate">PENDING</span></code></a></li>
+<li><a class="reference internal" href="#server.models.JobStatus.RUNNING"><code class="docutils literal notranslate">RUNNING</span></code></a></li>
+<li><a class="reference internal" href="#server.models.JobStatus.COMPLETED"><code class="docutils literal notranslate">COMPLETED</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.models.Job"><code class="docutils literal notranslate"><span class="pre">Job</span></code></a><ul>
+<li><a class="reference internal" href="#server.models.Job.namespace_id"><code class="docutils literal notranslate">namespace_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.user_id"><code class="docutils literal notranslate">user_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.run_id"><code class="docutils literal notranslate">run_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.worker_id"><code class="docutils literal notranslate">worker_id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.queue"><code class="docutils literal notranslate">queue</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.priority"><code class="docutils literal notranslate">priority</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.status"><code class="docutils literal notranslate">status</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.payload"><code class="docutils literal notranslate">payload</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.metric"><code class="docutils literal notranslate">metric</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.namespace"><code class="docutils literal notranslate">namespace</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.user"><code class="docutils literal notranslate">user</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.run"><code class="docutils literal notranslate">run</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.created_at"><code class="docutils literal notranslate">created_at</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.id"><code class="docutils literal notranslate">id</span></code></a></li>
+<li><a class="reference internal" href="#server.models.Job.updated_at"><code class="docutils literal notranslate">updated_at</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#base-model">Base Model</a><ul>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Base</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6"><div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">VP-MTEval</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">API Reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Database Models</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+        <article class="yue" role="main">
+          <section id="database-models">
+<h1>Database Models<a class="headerlink" href="#database-models" title="Link to this heading">¶</a></h1>
+<p>This module defines all SQLAlchemy models used for data persistence.</p>
+<dl class="py class" id="module-server.models">
+<dt class="sig sig-object py" id="server.models.Base">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Base" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BigIntAuditBase</span></code></p>
+<p>BigIntAuditBase adds id, created_at and updated_at columns.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.Segment">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Segment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Segment" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.dataset_id">
+<span class="sig-name descname"><span class="pre">dataset_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.dataset_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.idx">
+<span class="sig-name descname"><span class="pre">idx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.idx" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.src">
+<span class="sig-name descname"><span class="pre">src</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.src" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.tgt">
+<span class="sig-name descname"><span class="pre">tgt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.tgt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.dataset">
+<span class="sig-name descname"><span class="pre">dataset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Dataset" title="server.models.Dataset"><span class="pre">Dataset</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.dataset" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.translations">
+<span class="sig-name descname"><span class="pre">translations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentTranslation" title="server.models.SegmentTranslation"><span class="pre">SegmentTranslation</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.translations" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.Segment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.Segment.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.Segment.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Segment.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Segment.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.Dataset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Dataset" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>A dataset is a collection of segments. If document level information
+becomes represent, we will represent it as an optional mapping in another
+table.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.namespace_id">
+<span class="sig-name descname"><span class="pre">namespace_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.namespace_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.data_hash">
+<span class="sig-name descname"><span class="pre">data_hash</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.data_hash" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.source_lang">
+<span class="sig-name descname"><span class="pre">source_lang</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.source_lang" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.target_lang">
+<span class="sig-name descname"><span class="pre">target_lang</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.target_lang" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.has_reference">
+<span class="sig-name descname"><span class="pre">has_reference</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.has_reference" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.names">
+<span class="sig-name descname"><span class="pre">names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.DatasetName" title="server.models.DatasetName"><span class="pre">DatasetName</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.names" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.namespace">
+<span class="sig-name descname"><span class="pre">namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Namespace" title="server.models.Namespace"><span class="pre">Namespace</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.namespace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.segments">
+<span class="sig-name descname"><span class="pre">segments</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Segment" title="server.models.Segment"><span class="pre">Segment</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.segments" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.translation_runs">
+<span class="sig-name descname"><span class="pre">translation_runs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.translation_runs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.Dataset.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.Dataset.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.Dataset.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Dataset.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Dataset.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.DatasetName">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">DatasetName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#DatasetName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.DatasetName" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetName.dataset_id">
+<span class="sig-name descname"><span class="pre">dataset_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetName.dataset_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetName.dataset">
+<span class="sig-name descname"><span class="pre">dataset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Dataset" title="server.models.Dataset"><span class="pre">Dataset</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetName.dataset" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetName.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetName.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.DatasetName.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.DatasetName.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetName.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetName.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetName.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.DatasetName.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetName.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetName.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">SegmentTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#SegmentTranslation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.SegmentTranslation" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.tgt">
+<span class="sig-name descname"><span class="pre">tgt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.tgt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.segment_id">
+<span class="sig-name descname"><span class="pre">segment_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.segment_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.segment">
+<span class="sig-name descname"><span class="pre">segment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Segment" title="server.models.Segment"><span class="pre">Segment</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.segment" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.segment_idx">
+<span class="sig-name descname"><span class="pre">segment_idx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.segment_idx" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.run">
+<span class="sig-name descname"><span class="pre">run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.segment_metrics">
+<span class="sig-name descname"><span class="pre">segment_metrics</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentMetric" title="server.models.SegmentMetric"><span class="pre">SegmentMetric</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.segment_metrics" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.segment_ngrams">
+<span class="sig-name descname"><span class="pre">segment_ngrams</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentTranslationNGrams" title="server.models.SegmentTranslationNGrams"><span class="pre">SegmentTranslationNGrams</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.segment_ngrams" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.SegmentTranslation.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.SegmentTranslation.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslation.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslation.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">SegmentTranslationNGrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#SegmentTranslationNGrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.SegmentTranslationNGrams" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.segment_translation_id">
+<span class="sig-name descname"><span class="pre">segment_translation_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.segment_translation_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.tokenizer">
+<span class="sig-name descname"><span class="pre">tokenizer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.tokenizer" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.ngrams">
+<span class="sig-name descname"><span class="pre">ngrams</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.ngrams" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.ngrams_ref">
+<span class="sig-name descname"><span class="pre">ngrams_ref</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.ngrams_ref" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.n">
+<span class="sig-name descname"><span class="pre">n</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.n" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.segment_translation">
+<span class="sig-name descname"><span class="pre">segment_translation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentTranslation" title="server.models.SegmentTranslation"><span class="pre">SegmentTranslation</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.segment_translation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.SegmentTranslationNGrams.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.SegmentTranslationNGrams.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentTranslationNGrams.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentTranslationNGrams.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.TranslationRun">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">TranslationRun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#TranslationRun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.TranslationRun" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.dataset_id">
+<span class="sig-name descname"><span class="pre">dataset_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.dataset_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.namespace_id">
+<span class="sig-name descname"><span class="pre">namespace_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.namespace_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.uuid">
+<span class="sig-name descname"><span class="pre">uuid</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">Uuid</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.uuid" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.dataset">
+<span class="sig-name descname"><span class="pre">dataset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Dataset" title="server.models.Dataset"><span class="pre">Dataset</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.dataset" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.translations">
+<span class="sig-name descname"><span class="pre">translations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentTranslation" title="server.models.SegmentTranslation"><span class="pre">SegmentTranslation</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.translations" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.segment_metrics">
+<span class="sig-name descname"><span class="pre">segment_metrics</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentMetric" title="server.models.SegmentMetric"><span class="pre">SegmentMetric</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.segment_metrics" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.dataset_metrics">
+<span class="sig-name descname"><span class="pre">dataset_metrics</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.DatasetMetric" title="server.models.DatasetMetric"><span class="pre">DatasetMetric</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.dataset_metrics" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.generic_metrics">
+<span class="sig-name descname"><span class="pre">generic_metrics</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.GenericMetric" title="server.models.GenericMetric"><span class="pre">GenericMetric</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.generic_metrics" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.namespace">
+<span class="sig-name descname"><span class="pre">namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Namespace" title="server.models.Namespace"><span class="pre">Namespace</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.namespace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.config">
+<span class="sig-name descname"><span class="pre">config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.config" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.tags">
+<span class="sig-name descname"><span class="pre">tags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Tag" title="server.models.Tag"><span class="pre">Tag</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.tags" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.TranslationRun.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.TranslationRun.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.TranslationRun.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.TranslationRun.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.TranslationRun.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.Tag">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Tag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Tag" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Tag.translation_run_id">
+<span class="sig-name descname"><span class="pre">translation_run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Tag.translation_run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Tag.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Tag.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Tag.translation_run">
+<span class="sig-name descname"><span class="pre">translation_run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Tag.translation_run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.Tag.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.Tag.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Tag.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Tag.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Tag.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.Tag.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Tag.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Tag.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.SegmentMetric">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">SegmentMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#SegmentMetric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.SegmentMetric" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.score">
+<span class="sig-name descname"><span class="pre">score</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.score" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.higher_is_better">
+<span class="sig-name descname"><span class="pre">higher_is_better</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.higher_is_better" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.segment_translation_id">
+<span class="sig-name descname"><span class="pre">segment_translation_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.segment_translation_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.segment_idx">
+<span class="sig-name descname"><span class="pre">segment_idx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.segment_idx" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.run">
+<span class="sig-name descname"><span class="pre">run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.segment_translation">
+<span class="sig-name descname"><span class="pre">segment_translation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.SegmentTranslation" title="server.models.SegmentTranslation"><span class="pre">SegmentTranslation</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.segment_translation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.custom">
+<span class="sig-name descname"><span class="pre">custom</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.custom" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.SegmentMetric.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.SegmentMetric.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.SegmentMetric.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.SegmentMetric.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.DatasetMetric">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">DatasetMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#DatasetMetric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.DatasetMetric" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.score">
+<span class="sig-name descname"><span class="pre">score</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.score" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.higher_is_better">
+<span class="sig-name descname"><span class="pre">higher_is_better</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.higher_is_better" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.run">
+<span class="sig-name descname"><span class="pre">run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.DatasetMetric.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.DatasetMetric.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.DatasetMetric.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.DatasetMetric.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.GenericMetric">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">GenericMetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#GenericMetric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.GenericMetric" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>ids, class + JSON payload only</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.GenericMetric.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.GenericMetric.run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.GenericMetric.payload">
+<span class="sig-name descname"><span class="pre">payload</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.GenericMetric.payload" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.GenericMetric.run">
+<span class="sig-name descname"><span class="pre">run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.GenericMetric.run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.GenericMetric.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.GenericMetric.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.GenericMetric.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.GenericMetric.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.GenericMetric.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.GenericMetric.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.GenericMetric.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.GenericMetric.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.Namespace">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Namespace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Namespace" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>Users are global, everything else belongs to some namespace. User has either no-access/read-only/read-write access to each namespace. We plan no further granularity. Read-only access is meant to be used for public demos if any.</p>
+<p>Note that internally, we use integer IDs for namespaces, but to
+the user, we expose them as unique strings.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Namespace.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.datasets">
+<span class="sig-name descname"><span class="pre">datasets</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Dataset" title="server.models.Dataset"><span class="pre">Dataset</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Namespace.datasets" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.namespace_users">
+<span class="sig-name descname"><span class="pre">namespace_users</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.NamespaceUser" title="server.models.NamespaceUser"><span class="pre">NamespaceUser</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Namespace.namespace_users" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.users">
+<span class="sig-name descname"><span class="pre">users</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.User" title="server.models.User"><span class="pre">User</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Namespace.users" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.Namespace.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.Namespace.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Namespace.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.Namespace.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Namespace.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Namespace.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.NamespaceUser">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">NamespaceUser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#NamespaceUser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.NamespaceUser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<p>Association table for the many-to-many relationship between users and namespaces</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.namespace_id">
+<span class="sig-name descname"><span class="pre">namespace_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.namespace_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.user_id">
+<span class="sig-name descname"><span class="pre">user_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.user_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.can_write">
+<span class="sig-name descname"><span class="pre">can_write</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.can_write" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.namespace">
+<span class="sig-name descname"><span class="pre">namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Namespace" title="server.models.Namespace"><span class="pre">Namespace</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.namespace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.user">
+<span class="sig-name descname"><span class="pre">user</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.User" title="server.models.User"><span class="pre">User</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.user" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.NamespaceUser.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.NamespaceUser.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.NamespaceUser.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.NamespaceUser.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.User">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">User</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#User"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.User" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.username">
+<span class="sig-name descname"><span class="pre">username</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.username" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.password_hash">
+<span class="sig-name descname"><span class="pre">password_hash</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.password_hash" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.api_key">
+<span class="sig-name descname"><span class="pre">api_key</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.api_key" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.is_admin">
+<span class="sig-name descname"><span class="pre">is_admin</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.is_admin" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.namespaces">
+<span class="sig-name descname"><span class="pre">namespaces</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Namespace" title="server.models.Namespace"><span class="pre">Namespace</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.namespaces" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.namespace_users">
+<span class="sig-name descname"><span class="pre">namespace_users</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.NamespaceUser" title="server.models.NamespaceUser"><span class="pre">NamespaceUser</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.namespace_users" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.User.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.User.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.User.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.User.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.User.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.WorkerStatus">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">WorkerStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#WorkerStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.WorkerStatus" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.WorkerStatus.WAITING">
+<span class="sig-name descname"><span class="pre">WAITING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#server.models.WorkerStatus.WAITING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.WorkerStatus.WORKING">
+<span class="sig-name descname"><span class="pre">WORKING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#server.models.WorkerStatus.WORKING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.WorkerStatus.FINISHED">
+<span class="sig-name descname"><span class="pre">FINISHED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#server.models.WorkerStatus.FINISHED" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.WorkerStatus.TIMED_OUT">
+<span class="sig-name descname"><span class="pre">TIMED_OUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#server.models.WorkerStatus.TIMED_OUT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.Worker">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Worker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Worker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Worker" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.namespace_id">
+<span class="sig-name descname"><span class="pre">namespace_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.namespace_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.user_id">
+<span class="sig-name descname"><span class="pre">user_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.user_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.status">
+<span class="sig-name descname"><span class="pre">status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.WorkerStatus" title="server.models.WorkerStatus"><span class="pre">WorkerStatus</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.status" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.last_heartbeat">
+<span class="sig-name descname"><span class="pre">last_heartbeat</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.last_heartbeat" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.metric">
+<span class="sig-name descname"><span class="pre">metric</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.metric" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.metric_requires_references">
+<span class="sig-name descname"><span class="pre">metric_requires_references</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.metric_requires_references" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.queue">
+<span class="sig-name descname"><span class="pre">queue</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.queue" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.user">
+<span class="sig-name descname"><span class="pre">user</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.User" title="server.models.User"><span class="pre">User</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.user" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.namespace">
+<span class="sig-name descname"><span class="pre">namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Namespace" title="server.models.Namespace"><span class="pre">Namespace</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.namespace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.Worker.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.Worker.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.Worker.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Worker.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Worker.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.JobStatus">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">JobStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#JobStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.JobStatus" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.JobStatus.PENDING">
+<span class="sig-name descname"><span class="pre">PENDING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#server.models.JobStatus.PENDING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.JobStatus.RUNNING">
+<span class="sig-name descname"><span class="pre">RUNNING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#server.models.JobStatus.RUNNING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.JobStatus.COMPLETED">
+<span class="sig-name descname"><span class="pre">COMPLETED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#server.models.JobStatus.COMPLETED" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.models.Job">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.models.Job" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#id0" title="server.models.Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">Base</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.namespace_id">
+<span class="sig-name descname"><span class="pre">namespace_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.namespace_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.user_id">
+<span class="sig-name descname"><span class="pre">user_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.user_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.run_id">
+<span class="sig-name descname"><span class="pre">run_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.run_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.worker_id">
+<span class="sig-name descname"><span class="pre">worker_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.worker_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.queue">
+<span class="sig-name descname"><span class="pre">queue</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.queue" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.priority">
+<span class="sig-name descname"><span class="pre">priority</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.priority" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.status">
+<span class="sig-name descname"><span class="pre">status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.JobStatus" title="server.models.JobStatus"><span class="pre">JobStatus</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.status" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.payload">
+<span class="sig-name descname"><span class="pre">payload</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.payload" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.metric">
+<span class="sig-name descname"><span class="pre">metric</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.metric" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.namespace">
+<span class="sig-name descname"><span class="pre">namespace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.Namespace" title="server.models.Namespace"><span class="pre">Namespace</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.namespace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.user">
+<span class="sig-name descname"><span class="pre">user</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.User" title="server.models.User"><span class="pre">User</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.user" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.run">
+<span class="sig-name descname"><span class="pre">run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#server.models.TranslationRun" title="server.models.TranslationRun"><span class="pre">TranslationRun</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.run" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.models.Job.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#server.models.Job.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>A simple constructor that allows initialization from kwargs.</p>
+<p>Sets attributes on the constructed instance using the names and
+values in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<p>Only keys that are present as
+attributes of the instance’s class are allowed. These could be,
+for example, any mapped columns or relationships.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance creation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#server.models.Job.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="server.models.Job.updated_at">
+<span class="sig-name descname"><span class="pre">updated_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Mapped</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#server.models.Job.updated_at" title="Link to this definition">¶</a></dt>
+<dd><p>Date/time of instance last update.</p>
+</dd></dl>
+
+</dd></dl>
+
+<section id="base-model">
+<h2>Base Model<a class="headerlink" href="#base-model" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.models.</span></span><span class="sig-name descname"><span class="pre">Base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/models.html#Base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BigIntAuditBase</span></code></p>
+<p>BigIntAuditBase adds id, created_at and updated_at columns.</p>
+</dd></dl>
+
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="app.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Application Core</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="config.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Configuration</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2025, Miroslav Hrabal</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script src="../_static/shibuya.js?v=e2230717"></script></body>
+</html>

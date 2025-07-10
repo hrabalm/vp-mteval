@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>N-gram Analysis - VP-MTEval Server Docs</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="Event System" href="events.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=397bb51e" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=c516b45e" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    <meta property="og:type" content="website"/><meta property="og:title" content="N-gram Analysis"/>
+<meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>VP-MTEval</strong>
+    </a>
+    <div class="sy-head-nav" id="HeadNav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials"></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="HeadNav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2 -translate-x-2"></span>
+          <span class="hamburger_3 -translate-x-1"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/index.html">Usage Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app.html">Application Core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Database Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hooks.html">Application Hooks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="auth.html">Authentication &amp; Authorization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="routes.html">API Routes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">Services</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html">Background Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="events.html">Event System</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">N-gram Analysis</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#server.ngrams.INormalizer"><code class="docutils literal notranslate"><span class="pre">INormalizer</span></code></a><ul>
+<li><a class="reference internal" href="#server.ngrams.INormalizer.normalize"><code class="docutils literal notranslate">normalize()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.ngrams.MTEvalNormalizer"><code class="docutils literal notranslate"><span class="pre">MTEvalNormalizer</span></code></a><ul>
+<li><a class="reference internal" href="#server.ngrams.MTEvalNormalizer.normalize"><code class="docutils literal notranslate">normalize()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.ngrams.MTEvalInternationalNormalizer"><code class="docutils literal notranslate"><span class="pre">MTEvalInternationalNormalizer</span></code></a><ul>
+<li><a class="reference internal" href="#server.ngrams.MTEvalInternationalNormalizer.normalize"><code class="docutils literal notranslate">normalize()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.ngrams.Tokenizer"><code class="docutils literal notranslate"><span class="pre">Tokenizer</span></code></a><ul>
+<li><a class="reference internal" href="#server.ngrams.Tokenizer.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.ngrams.Tokenizer.tokenize"><code class="docutils literal notranslate">tokenize()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.ngrams.NGramizer"><code class="docutils literal notranslate"><span class="pre">NGramizer</span></code></a><ul>
+<li><a class="reference internal" href="#server.ngrams.NGramizer.__init__"><code class="docutils literal notranslate">__init__()</span></code></a></li>
+<li><a class="reference internal" href="#server.ngrams.NGramizer.get_ngrams"><code class="docutils literal notranslate">get_ngrams()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#server.ngrams.ConfirmedNGramsFinder"><code class="docutils literal notranslate"><span class="pre">ConfirmedNGramsFinder</span></code></a><ul>
+<li><a class="reference internal" href="#server.ngrams.ConfirmedNGramsFinder.get_confirmed_ngrams"><code class="docutils literal notranslate">get_confirmed_ngrams()</span></code></a></li>
+<li><a class="reference internal" href="#server.ngrams.ConfirmedNGramsFinder.get_unconfirmed_ngrams"><code class="docutils literal notranslate">get_unconfirmed_ngrams()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-server.ngrams_sql">N-gram SQL Operations</a><ul>
+<li><a class="reference internal" href="#server.ngrams_sql.get_confirmed_unconfirmed_ngrams"><code class="docutils literal notranslate"><span class="pre">get_confirmed_unconfirmed_ngrams()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6"><div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">VP-MTEval</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">API Reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">N-gram Analysis</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+        <article class="yue" role="main">
+          <section id="n-gram-analysis">
+<h1>N-gram Analysis<a class="headerlink" href="#n-gram-analysis" title="Link to this heading">¶</a></h1>
+<p>N-gram processing and analysis for translation evaluation.</p>
+<p id="module-server.ngrams">Port of <a class="reference external" href="https://github.com/ondrejklejch/MT-ComparEval/tree/master/libs/NGrams">https://github.com/ondrejklejch/MT-ComparEval/tree/master/libs/NGrams</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="server.ngrams.INormalizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams.</span></span><span class="sig-name descname"><span class="pre">INormalizer</span></span><a class="reference internal" href="../_modules/server/ngrams.html#INormalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.INormalizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Interface for sentence normalizers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.INormalizer.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#INormalizer.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.INormalizer.normalize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.ngrams.MTEvalNormalizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams.</span></span><span class="sig-name descname"><span class="pre">MTEvalNormalizer</span></span><a class="reference internal" href="../_modules/server/ngrams.html#MTEvalNormalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.MTEvalNormalizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#server.ngrams.INormalizer" title="server.ngrams.INormalizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">INormalizer</span></code></a></p>
+<p>MTEval-style normalizer: adds spaces around punctuation and special characters.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.MTEvalNormalizer.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#MTEvalNormalizer.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.MTEvalNormalizer.normalize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.ngrams.MTEvalInternationalNormalizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams.</span></span><span class="sig-name descname"><span class="pre">MTEvalInternationalNormalizer</span></span><a class="reference internal" href="../_modules/server/ngrams.html#MTEvalInternationalNormalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.MTEvalInternationalNormalizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#server.ngrams.INormalizer" title="server.ngrams.INormalizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">INormalizer</span></code></a></p>
+<p>International MTEval normalizer: uses Unicode properties to tokenize punctuation and symbols.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.MTEvalInternationalNormalizer.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#MTEvalInternationalNormalizer.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.MTEvalInternationalNormalizer.normalize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.ngrams.Tokenizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams.</span></span><span class="sig-name descname"><span class="pre">Tokenizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_sensitive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/ngrams.html#Tokenizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.Tokenizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Splits sentences into tokens based on whitespace, with optional lowercasing.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.Tokenizer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_sensitive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/ngrams.html#Tokenizer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.Tokenizer.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.Tokenizer.tokenize">
+<span class="sig-name descname"><span class="pre">tokenize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#Tokenizer.tokenize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.Tokenizer.tokenize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.ngrams.NGramizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams.</span></span><span class="sig-name descname"><span class="pre">NGramizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#server.ngrams.Tokenizer" title="server.ngrams.Tokenizer"><span class="pre">Tokenizer</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/ngrams.html#NGramizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.NGramizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generates all n-grams (1- to 4-grams) from a tokenized sentence.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.NGramizer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#server.ngrams.Tokenizer" title="server.ngrams.Tokenizer"><span class="pre">Tokenizer</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/server/ngrams.html#NGramizer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.NGramizer.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.NGramizer.get_ngrams">
+<span class="sig-name descname"><span class="pre">get_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sentence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#NGramizer.get_ngrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.NGramizer.get_ngrams" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="server.ngrams.ConfirmedNGramsFinder">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams.</span></span><span class="sig-name descname"><span class="pre">ConfirmedNGramsFinder</span></span><a class="reference internal" href="../_modules/server/ngrams.html#ConfirmedNGramsFinder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.ConfirmedNGramsFinder" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Finds confirmed and unconfirmed n-grams between reference and translation.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.ConfirmedNGramsFinder.get_confirmed_ngrams">
+<span class="sig-name descname"><span class="pre">get_confirmed_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_ngrams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation_ngrams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#ConfirmedNGramsFinder.get_confirmed_ngrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.ConfirmedNGramsFinder.get_confirmed_ngrams" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="server.ngrams.ConfirmedNGramsFinder.get_unconfirmed_ngrams">
+<span class="sig-name descname"><span class="pre">get_unconfirmed_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_ngrams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation_ngrams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/server/ngrams.html#ConfirmedNGramsFinder.get_unconfirmed_ngrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams.ConfirmedNGramsFinder.get_unconfirmed_ngrams" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<section id="module-server.ngrams_sql">
+<span id="n-gram-sql-operations"></span><h2>N-gram SQL Operations<a class="headerlink" href="#module-server.ngrams_sql" title="Link to this heading">¶</a></h2>
+<p>SQL queries for finding top-10 confirmed and unconfirmed n-grams in translation runs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="server.ngrams_sql.get_confirmed_unconfirmed_ngrams">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">server.ngrams_sql.</span></span><span class="sig-name descname"><span class="pre">get_confirmed_unconfirmed_ngrams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AsyncSession</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/server/ngrams_sql.html#get_confirmed_unconfirmed_ngrams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#server.ngrams_sql.get_confirmed_unconfirmed_ngrams" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregated across the whole run and filtered by tokenizer.
+Returns a mapping from n to a dict with two lists:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>‘confirmed’: top-10 confirmed n-grams with their ref/target counts &amp; confirmed_size</p></li>
+<li><p>‘unconfirmed’: top-10 unconfirmed n-grams with their ref/target counts &amp; unconfirmed_size</p></li>
+</ul>
+</div></blockquote>
+<dl class="simple">
+<dt>Each list item is a dict { ‘ngram’: str, ‘count_ref’: int, ‘count_tgt’: int,</dt><dd><p>‘confirmed_size’: int, ‘unconfirmed_size’: int }.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="events.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Event System</div></div>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2025, Miroslav Hrabal</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials"></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script src="../_static/shibuya.js?v=e2230717"></script></body>
+</html>
