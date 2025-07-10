@@ -21,7 +21,11 @@ gpu = [
     "transformers>=4.53.1",
     "unbabel-comet>=2.2.6",
 ]
-llm = ["dspy==3.0.0b2", "openai>=1.93.0"]
+llm = [
+    "dspy==3.0.0b2",
+ "iso639>=0.1.4",
+ "openai>=1.93.0",
+]
 
 [project.scripts]
 mteval-worker = "mteval_worker.main:main"
