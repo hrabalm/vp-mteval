@@ -27,7 +27,6 @@ function RouteComponent() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log('Login attempt with:', { username, password }) // FIXME: Remove
 
     try {
       await authContext.login(username, password)
