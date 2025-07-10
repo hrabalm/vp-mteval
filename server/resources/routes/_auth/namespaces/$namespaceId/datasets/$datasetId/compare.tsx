@@ -66,10 +66,10 @@ function CompareOverview() {
   return <>
     <div className="grid grid-cols-2 gap-4">
       <div className="p-4">
-        <TypographyH3>Run A</TypographyH3>
+        <TypographyH3>Run A (id={runA.id})</TypographyH3>
       </div>
       <div className="p-4">
-        <TypographyH3>Run B</TypographyH3>
+        <TypographyH3>Run B (id={runB.id})</TypographyH3>
       </div>
       <div className="p-4 col-span-2">
         <ConfigTable runA={runA} runB={runB} />
@@ -223,7 +223,7 @@ function MetricsCharts({ runA, runB }) {
     return {
       name: d.x.toFixed(2),
       "Run A": d.y,
-      "Run B": -runBHist[i].y,
+      "Run B": runBHist[i].y,
     }
   })
 
