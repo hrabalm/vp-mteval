@@ -164,10 +164,17 @@ function RunsTable({ runs }: { runs: Row[] }) {
     const cellValue = row.getValue(columnId);
     if (cellValue == null) return false;
 
+    const stringifyValue = (s) => {
+      if (typeof s === 'object') {
+        return JSON.stringify(s);
+      }
+      return String(s);
+    }
+
     try {
       const regex = new RegExp(value, 'i'); // Case-insensitive regex
-      // return regex.test(String(cellValue));
-      return regex.test(JSON.stringify(cellValue));  // FIXME
+      const cellString = stringifyValue(cellValue);
+      return regex.test(cellString);
     } catch (error) {
       // Invalid regex, fallback to string includes
       return String(cellValue).toLowerCase().includes(value.toLowerCase());
@@ -195,6 +202,7 @@ function RunsTable({ runs }: { runs: Row[] }) {
       "enableSorting": true,
       "enableColumnFilter": false,
       "enableHiding": false,
+      filterFn: regexpFilterFn,
       "cell": (info) => {
         const value = info.getValue();
         return (
@@ -216,9 +224,10 @@ function RunsTable({ runs }: { runs: Row[] }) {
       "id": "tags",
       "header": "Tags",
       "accessorKey": "tags",
-      "enableSorting": false,
-      "enableColumnFilter": false,
-      "enableHiding": false,
+      "enableSorting": true,
+      "enableColumnFilter": true,
+      "enableHiding": true,
+      filterFn: regexpFilterFn,
       "cell": (info) => {
         const tags = info.getValue();
         return (
