@@ -1,11 +1,15 @@
 from functools import partial
 
 import anyio
-import main
+import mteval_worker.main
 import pytest
 from anyio.to_thread import run_sync
-from processors.bleu import BLEUProcessor
-from processors.protocols import Segment, WorkerExample, WorkerExampleResult
+from mteval_worker.processors.bleu import BLEUProcessor
+from mteval_worker.processors.protocols import (
+    Segment,
+    WorkerExample,
+    WorkerExampleResult,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -87,7 +91,7 @@ async def test_main_mp():
     import queue
 
     bleu_processor = BLEUProcessor()
-    worker_instance = main.Worker(metrics_processor=bleu_processor)
+    worker_instance = mteval_worker.main.Worker(metrics_processor=bleu_processor)
 
     print(f"Starting worker with {bleu_processor.name} processor...")
 
@@ -99,8 +103,8 @@ async def test_main_mp():
         # Start the heartbeat task
         tg.start_soon(
             partial(
-                main.send_heartbeats,
-                main.HEARTBEAT_INTERVAL_SECONDS,
+                mteval_worker.main.send_heartbeats,
+                mteval_worker.main.HEARTBEAT_INTERVAL_SECONDS,
                 host="",
                 namespace_name="default",
                 worker_id=1,
@@ -123,7 +127,9 @@ async def test_main_mp():
 
         # Signal the worker to exit
         print("Sending POISON_PILL to worker...")
-        await run_sync(worker_instance.examples_queue.put, main.POISON_PILL)
+        await run_sync(
+            worker_instance.examples_queue.put, mteval_worker.main.POISON_PILL
+        )
         print("Worker shutdown signaled.")
 
         # Process the results
@@ -131,7 +137,7 @@ async def test_main_mp():
             try:
                 result = await run_sync(worker_instance.result_queue.get_nowait)
                 print(f"Processed result: {result}")
-                if result is main.POISON_PILL:
+                if result is mteval_worker.main.POISON_PILL:
                     print("Received POISON_PILL, exiting result processing loop.")
                     tg.cancel_scope.cancel()  # stop remaining heartbeat task
                     break
@@ -144,7 +150,7 @@ async def test_main_threading():
     import queue
 
     bleu_processor = BLEUProcessor()
-    worker_instance = main.Worker(metrics_processor=bleu_processor)
+    worker_instance = mteval_worker.main.Worker(metrics_processor=bleu_processor)
 
     print(f"Starting worker with {bleu_processor.name} processor...")
 
@@ -156,8 +162,8 @@ async def test_main_threading():
         # Start the heartbeat task
         tg.start_soon(
             partial(
-                main.send_heartbeats,
-                main.HEARTBEAT_INTERVAL_SECONDS,
+                mteval_worker.main.send_heartbeats,
+                mteval_worker.main.HEARTBEAT_INTERVAL_SECONDS,
                 host="",
                 namespace_name="default",
                 worker_id=1,
@@ -180,7 +186,9 @@ async def test_main_threading():
 
         # Signal the worker to exit
         print("Sending POISON_PILL to worker...")
-        await run_sync(worker_instance.examples_queue.put, main.POISON_PILL)
+        await run_sync(
+            worker_instance.examples_queue.put, mteval_worker.main.POISON_PILL
+        )
         print("Worker shutdown signaled.")
 
         # Process the results
@@ -188,7 +196,7 @@ async def test_main_threading():
             try:
                 result = await run_sync(worker_instance.result_queue.get_nowait)
                 print(f"Processed result: {result}")
-                if result is main.POISON_PILL:
+                if result is mteval_worker.main.POISON_PILL:
                     print("Received POISON_PILL, exiting result processing loop.")
                     tg.cancel_scope.cancel()  # stop remaining heartbeat task
                     break

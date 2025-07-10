@@ -1,12 +1,12 @@
 from typing import ClassVar
 import logging
 
-import processors.protocols
+from . import protocols
 
 logger = logging.getLogger(__name__)
 
 
-class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
+class BLEUProcessor(protocols.MetricsProcessorProtocol):
     def __init__(self, config: dict | None = None) -> None:
         try:
             import sacrebleu
@@ -27,8 +27,8 @@ class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
     higher_is_better: ClassVar[bool] = True
 
     def process_example(
-        self, example: processors.protocols.WorkerExample
-    ) -> processors.protocols.WorkerExampleResult:
+        self, example: protocols.WorkerExample
+    ) -> protocols.WorkerExampleResult:
         assert all(x.ref for x in example.segments)
         hypotheses = [seg.tgt for seg in example.segments]
         references = [seg.ref for seg in example.segments]
@@ -46,7 +46,7 @@ class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
             for hypo, ref in zip(hypotheses, references)
         ]
         logger.debug(f"Segment scores: {segment_scores}")
-        return processors.protocols.WorkerExampleResult(
+        return protocols.WorkerExampleResult(
             job_id=example.job_id,
             name=self.name,
             segment_scores=segment_scores,

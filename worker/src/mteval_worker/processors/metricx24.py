@@ -1,7 +1,7 @@
 import logging
 from typing import ClassVar
 
-import processors.protocols
+from . import protocols
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +11,10 @@ MAX_INPUT_LENGTH = 1536
 MAX_BATCH_SIZE = 32
 
 
-class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
+class MetricX24Processor(protocols.MetricsProcessorProtocol):
     def __init__(self, config: dict | None = None) -> None:
         try:
-            from processors.metricx24_impl import Model
+            from mteval_worker.processors.metricx24_impl import Model
         except ImportError as e:
             raise ImportError(
                 f"unbabel-comet>=2.0 is required for {MetricX24Processor.name} metric."
@@ -32,8 +32,8 @@ class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
     higher_is_better: ClassVar[bool] = False
 
     def process_example(
-        self, example: processors.protocols.WorkerExample
-    ) -> processors.protocols.WorkerExampleResult:
+        self, example: protocols.WorkerExample
+    ) -> protocols.WorkerExampleResult:
         sources = [seg.src for seg in example.segments]
         hypotheses = [seg.tgt for seg in example.segments]
 
@@ -53,7 +53,7 @@ class MetricX24Processor(processors.protocols.MetricsProcessorProtocol):
 
         system_score = sum(segment_scores) / len(segment_scores)
         logger.debug(f"Segment scores: {segment_scores}")
-        return processors.protocols.WorkerExampleResult(
+        return protocols.WorkerExampleResult(
             job_id=example.job_id,
             name=self.name,
             segment_scores=segment_scores,

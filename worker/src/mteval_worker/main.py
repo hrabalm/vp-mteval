@@ -3,13 +3,7 @@ We handle main async main loop which frequently sends heartbeats to the
 server. The actual processing of jobs is done in a synchronous loop and
 data is sent to it via a queue. Results are returned through another
 queue.
-
-Ideally, I want to prefetch.
 """
-
-# TODO: logging levels per click option
-# TODO: loading external python metric definition
-# TODO: catch status error exceptions or remove them
 
 import logging
 import multiprocessing
@@ -20,8 +14,8 @@ import json
 import anyio
 import click
 import httpx
-import processors
-import processors.protocols
+import mteval_worker.processors
+import mteval_worker.processors.protocols
 import tenacity
 from anyio.to_thread import run_sync
 from pydantic import BaseModel
@@ -75,11 +69,11 @@ class Worker:
             self.metrics_processor_name is None
             and self.metrics_processor_file is not None
         ):
-            metrics_processor = processors.get_processor_from_file(
+            metrics_processor = mteval_worker.processors.get_processor_from_file(
                 self.metrics_processor_file
             )(config=self.config)
         else:
-            metrics_processor = processors.get_processor_factory(
+            metrics_processor = mteval_worker.processors.get_processor_factory(
                 self.metrics_processor_name
             )(config=self.config)
         self.metrics_processor = metrics_processor
@@ -244,7 +238,7 @@ async def register_worker(
     metric_requires_references: bool,
     namespace_name: str,
     username: str | None,
-) -> processors.protocols.WorkerRegistrationResponse:
+) -> mteval_worker.processors.protocols.WorkerRegistrationResponse:
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
         response = await client.post(
             f"{host}/api/v1/namespaces/{namespace_name}/workers/register",
@@ -256,7 +250,7 @@ async def register_worker(
             },
         )
         response.raise_for_status()
-        return processors.protocols.WorkerRegistrationResponse.model_validate(
+        return mteval_worker.processors.protocols.WorkerRegistrationResponse.model_validate(
             response.json()
         )
 
@@ -348,7 +342,7 @@ class JobResultRequest(BaseModel):
     reraise=True,
 )
 async def report_job_results(
-    example_result: processors.protocols.WorkerExampleResult,
+    example_result: mteval_worker.processors.protocols.WorkerExampleResult,
     job_id: int,
     host: str,
     token: str,
@@ -394,10 +388,10 @@ async def report_job_results(
 def job_to_example(job):
     logging.debug(f"Processing job: {job}")
     logging.debug(f"Job segments: {job['segments']}")
-    example = processors.protocols.WorkerExample(
+    example = mteval_worker.processors.protocols.WorkerExample(
         job_id=job["id"],
         segments=[
-            processors.protocols.Segment(
+            mteval_worker.processors.protocols.Segment(
                 src=seg["src"],
                 tgt=seg["tgt"],
                 ref=seg.get("ref"),
@@ -411,7 +405,7 @@ def job_to_example(job):
     return example
 
 
-async def main(
+async def _main(
     host, token, username, namespace, metric, mode, log_level, config, metric_file
 ):
     # Setup logging with the specified level
@@ -420,9 +414,9 @@ async def main(
     # 1. Register the worker and announce what metric and what data, if in
     #    single shot mode, we can leave if no data is provided before loading
     if metric:
-        processor = processors.get_processor_factory(metric)
+        processor = mteval_worker.processors.get_processor_factory(metric)
     else:
-        processor = processors.get_processor_from_file(metric_file)
+        processor = mteval_worker.processors.get_processor_from_file(metric_file)
     res = await register_worker(
         host=host,
         token=token,
@@ -625,7 +619,9 @@ async def main(
 )
 @click.option(
     "--metric",
-    type=click.Choice([name for name in processors.processors_by_name.keys()]),
+    type=click.Choice(
+        [name for name in mteval_worker.processors.processors_by_name.keys()]
+    ),
     help="Metric to be used",
 )
 @click.option(
@@ -661,7 +657,7 @@ def cli(host, token, username, namespace, metric, mode, log_level, metric_file, 
         )
     anyio.run(
         partial(
-            main,
+            _main,
             host=host,
             token=token,
             username=username,
@@ -675,5 +671,9 @@ def cli(host, token, username, namespace, metric, mode, log_level, metric_file, 
     )
 
 
-if __name__ == "__main__":
+def main():
     cli()
+
+
+if __name__ == "__main__":
+    main()

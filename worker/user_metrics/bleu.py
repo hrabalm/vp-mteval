@@ -5,12 +5,12 @@ dependencies."""
 from typing import ClassVar
 import logging
 
-import processors.protocols
+import mteval_worker.processors.protocols
 
 logger = logging.getLogger(__name__)
 
 
-class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
+class BLEUProcessor(mteval_worker.processors.protocols.MetricsProcessorProtocol):
     def __init__(self, config: dict | None = None) -> None:
         try:
             import sacrebleu
@@ -31,8 +31,8 @@ class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
     higher_is_better: ClassVar[bool] = True
 
     def process_example(
-        self, example: processors.protocols.WorkerExample
-    ) -> processors.protocols.WorkerExampleResult:
+        self, example: mteval_worker.processors.protocols.WorkerExample
+    ) -> mteval_worker.processors.protocols.WorkerExampleResult:
         assert all(x.ref for x in example.segments)
         hypotheses = [seg.tgt for seg in example.segments]
         references = [seg.ref for seg in example.segments]
@@ -50,7 +50,7 @@ class BLEUProcessor(processors.protocols.MetricsProcessorProtocol):
             for hypo, ref in zip(hypotheses, references)
         ]
         logger.debug(f"Segment scores: {segment_scores}")
-        return processors.protocols.WorkerExampleResult(
+        return mteval_worker.processors.protocols.WorkerExampleResult(
             job_id=example.job_id,
             name=self.name,
             segment_scores=segment_scores,

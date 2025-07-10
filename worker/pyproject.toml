@@ -1,5 +1,5 @@
 [project]
-name = "worker"
+name = "mteval-worker"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -13,9 +13,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-cpu = [
-    "sacrebleu>=2.5.1",
-]
+cpu = ["sacrebleu>=2.5.1"]
 gpu = [
     "datasets>=3.6.0",
     "joblib>=1.5.1",
@@ -23,7 +21,11 @@ gpu = [
     "transformers>=4.53.1",
     "unbabel-comet>=2.2.6",
 ]
-llm = [
-    "dspy==3.0.0b2",
-    "openai>=1.93.0",
-]
+llm = ["dspy==3.0.0b2", "openai>=1.93.0"]
+
+[project.scripts]
+mteval-worker = "mteval_worker.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
