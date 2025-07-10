@@ -7,11 +7,10 @@ export const Route = createFileRoute('/')({
 })
 
 const markdownContent = `
-### Introduction
-
 ### Documentation
 
-Nice page content written in Markdown.
+- GitHub: [vp-mteval](https://github.com/hrabalm/vp-mteval)
+- Server Sphinx Docs: [vp-mteval](https://hrabalm.github.io/vp-mteval/)
 `;
 
 function Index() {
