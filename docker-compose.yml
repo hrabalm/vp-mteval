@@ -27,7 +27,7 @@ services:
       timeout: 2s
       retries: 10
   bleu:
-    command: sh -c "uv run main.py --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric BLEU"
+    command: sh -c "uv run mteval-worker --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric BLEU"
     build:
       context: .
       dockerfile: Dockerfile.cpumetrics
@@ -42,7 +42,7 @@ services:
         condition: service_healthy
     restart: always
   chrf2:
-    command: sh -c "uv run main.py --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric chrF2"
+    command: sh -c "uv run mteval-worker --host $${HOST} --username $${USERNAME} --token $${TOKEN} --metric chrF2"
     build:
       context: .
       dockerfile: Dockerfile.cpumetrics
