@@ -11,13 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx-autobuild sphinx-copybutton sphinx-toolbox sphinx-design sphinx-click "sphinxcontrib-mermaid>=0.9.2" shibuya myst_parser
+          cd server
+          pdm install
       - name: Sphinx build
         run: |
           cd server
-          sphinx-build docs docs/_build
+          pdm run sphinx-build docs docs/_build
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
