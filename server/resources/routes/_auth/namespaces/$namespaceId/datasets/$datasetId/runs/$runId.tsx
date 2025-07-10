@@ -7,7 +7,6 @@ import { rankItem } from '@tanstack/match-sorter-utils';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import VirtualizedJSON from '@/components/virtualized-json';
 import { Button } from '@/components/ui/button';
-import ColumnSelectorTable from '@/components/column-selector';
 import {
   Table,
   TableBody,
@@ -18,8 +17,6 @@ import {
 } from "@/components/ui/table"
 import { PendingComponent } from '@/components/pending-component';
 import { isFloat } from '@/lib/utils';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ColumnSelectorDialog from '@/components/column-selector';
 
 const prettyColumnNames = {
@@ -239,9 +236,6 @@ function RunTable() {
   const columns = useMemo(() => allColumnIds.map(columnId => {
     return columnHelper.accessor(columnId, {
       header: ({ column }) => {
-        if (columnId === "idx") {
-          return <DataTableColumnHeader column={column} title="Idx" />;
-        }
         return (prettyColumnNames[columnId] || columnId);
       },
       cell: (info) => {
