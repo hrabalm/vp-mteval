@@ -17,13 +17,13 @@ A Python tool for uploading machine translation evaluation data to the vp-mteval
 The CLI tool can be used directly using `uv tool`:
 
 ```bash
-uv tool run "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval-upload"
+uv tool run "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval_upload"
 ```
 
 Or install directly from the GitHub repository using uv:
 
 ```bash
-uv add "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval-upload"
+uv add "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval_upload"
 ```
 
 ### Install Specific Version
@@ -31,7 +31,7 @@ uv add "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval-upload"
 To install a specific commit or tag, specify it in the URL:
 
 ```bash
-uv add "git+https://github.com/hrabalm/vp-mteval.git@v1.0.0#subdirectory=mteval-upload"
+uv add "git+https://github.com/hrabalm/vp-mteval.git@v1.0.0#subdirectory=mteval_upload"
 ```
 
 Replace `v1.0.0` with the desired tag or commit hash.
