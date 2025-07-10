@@ -26,6 +26,12 @@ Or install directly from the GitHub repository using uv:
 uv add "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval_upload"
 ```
 
+or using pip:
+
+```bash
+pip install "git+https://github.com/hrabalm/vp-mteval.git#subdirectory=mteval_upload"
+```
+
 ### Install Specific Version
 
 To install a specific commit or tag, specify it in the URL:
