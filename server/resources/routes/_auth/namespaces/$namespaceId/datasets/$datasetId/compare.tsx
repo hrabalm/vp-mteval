@@ -52,7 +52,7 @@ export const Route = createFileRoute(
   pendingComponent: PendingComponent,
 })
 
-function Overview() {
+function CompareOverview() {
   const search = Route.useSearch();
 
   let [selectedMetric, setSelectedMetric] = useState();
@@ -254,7 +254,7 @@ function MetricsCharts({ runA, runB }) {
           <Legend />
           <ReferenceLine y={0} stroke="#000" />
           <Bar dataKey="Run A" fill="#8884d8" />
-          <Bar dataKey="-Run B" fill="#82ca9d" />
+          <Bar dataKey="Run B" fill="#82ca9d" />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -275,21 +275,10 @@ function MetricsCharts({ runA, runB }) {
   </>
 }
 
-function Segments() {
-  return <></>
-}
-
 function RouteComponent() {
   return (
     <>
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="segments">Segments</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview"><Overview /></TabsContent>
-        <TabsContent value="segments"><Segments /></TabsContent>
-      </Tabs>
+      <CompareOverview />
     </>
   )
 }
