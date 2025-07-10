@@ -41,7 +41,7 @@ class Gemma3_DSPy_v1(mteval_worker.processors.protocols.MetricsProcessorProtocol
         program_path = config["program_path"]
 
         self.lm = dspy.LM(
-            model="google/Gemma-3-27B-it",
+            model="openai/google/gemma-3-27b-it",
             api_base=api_base,
             api_key=api_key,
             max_tokens=8000,
