@@ -1,6 +1,6 @@
 from typing import ClassVar
 import logging
-import processors.protocols
+import mteval_worker.processors.protocols
 
 METRIC_NAME = "Gemma3_DSPy_v1.1"
 
@@ -34,7 +34,7 @@ class TranslationQualityEstimation(dspy.Signature):
     score: int = dspy.OutputField(desc="Score (0-100) assigned to the translation.")
 
 
-class Gemma3_DSPy_v1(processors.protocols.MetricsProcessorProtocol):
+class Gemma3_DSPy_v1(mteval_worker.processors.protocols.MetricsProcessorProtocol):
     def __init__(self, config: dict):
         api_base = config["api_base"]
         api_key = config["api_key"]
@@ -56,8 +56,8 @@ class Gemma3_DSPy_v1(processors.protocols.MetricsProcessorProtocol):
     higher_is_better: ClassVar[bool] = True
 
     def process_example(
-        self, example: processors.protocols.WorkerExample
-    ) -> processors.protocols.WorkerExampleResult:
+        self, example: mteval_worker.processors.protocols.WorkerExample
+    ) -> mteval_worker.processors.protocols.WorkerExampleResult:
         sources = [seg.src for seg in example.segments]
         hypotheses = [seg.tgt for seg in example.segments]
         src_lang = example.src_lang
@@ -83,7 +83,7 @@ class Gemma3_DSPy_v1(processors.protocols.MetricsProcessorProtocol):
         reasonings = [pred.reasoning for pred in predictions]
         system_score = sum(segment_scores) / len(segment_scores)
         logger.debug(f"Segment scores: {segment_scores}")
-        return processors.protocols.WorkerExampleResult(
+        return mteval_worker.processors.protocols.WorkerExampleResult(
             job_id=example.job_id,
             name=self.name,
             segment_scores=segment_scores,
