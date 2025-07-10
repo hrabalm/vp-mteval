@@ -47,19 +47,19 @@ Replace `v1.0.0` with the desired tag or commit hash.
 ### Upload a translation run
 
 ```bash
-mteval_upload upload -d example.json -h http://localhost:8000 -k your-api-key
+mteval-upload upload -d example.json -h http://localhost:8000 -k your-api-key
 ```
 
 ### Upload failed runs
 
 ```bash
-mteval_upload upload-failed -h http://localhost:8000 -k your-api-key
+mteval-upload upload-failed -h http://localhost:8000 -k your-api-key
 ```
 
 ### Upload successful runs
 
 ```bash
-mteval_upload upload-successful -h http://localhost:8000 -k your-api-key
+mteval-upload upload-successful -h http://localhost:8000 -k your-api-key
 ```
 
 ### Options
